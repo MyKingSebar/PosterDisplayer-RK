@@ -8,10 +8,8 @@
 package com.youngsee.osd;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.res.Configuration;
@@ -23,9 +21,6 @@ import android.view.ViewTreeObserver;
 import android.view.View.OnClickListener;
 import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -40,16 +35,15 @@ import com.youngsee.posterdisplayer.PosterOsdActivity;
 
 public class OsdLoginFragment extends Fragment
 {
-    private static final String OSD_DEFAULT_PWD    = "123456";
+	static final String OSD_DEFAULT_UN    = "ehualu";
+    static final String OSD_DEFAULT_PWD    = "ehualu$888";
     
     private Editor              mEditor            = null;
     private SharedPreferences   mSharedPreferences = null;
     private LinearLayout        mOsdLayout         = null;
     private ImageView           mOsdLoginBtn       = null;
-    private EditText            mEnterPwd, mOldPwd, mNewPwd = null;
-    private CheckBox            mMemoryPwd         = null;
-    private ImageView           mResetPwd          = null;
-    private View                mResetView         = null;
+    private EditText            mEnterUn           = null;
+    private EditText            mEnterPwd          = null;
     private int                 mOsdMenuId         = 0;
     
     @Override
@@ -129,35 +123,30 @@ public class OsdLoginFragment extends Fragment
 		    	getView().getViewTreeObserver().removeGlobalOnLayoutListener(this);
 		    	if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
 			    	RelativeLayout.LayoutParams osdLayoutParams = new RelativeLayout.LayoutParams(
-							(int)(getView().getWidth()*(9.9f/25)), (int)(getView().getHeight()*(0.56f/14)));
+							(int)(getView().getWidth()*(15.6f/47.8f)), (int)(getView().getHeight()*(8f/27f)));
 			    	mOsdLayout.setLayoutParams(osdLayoutParams);
-			    	mOsdLayout.setX(getView().getWidth()*(7.71f/25));
-			    	mOsdLayout.setY(getView().getHeight()*(7.82f/14));
+			    	mOsdLayout.setX(getView().getWidth()*(16.1f/47.8f));
+			    	mOsdLayout.setY(getView().getHeight()*(14.2f/27f));
 		    	} else {
 		    		RelativeLayout.LayoutParams osdLayoutParams = new RelativeLayout.LayoutParams(
-							(int)(getView().getWidth()*(5.6f/8)), (int)(getView().getHeight()*(0.33f/14)));
+							(int)(getView().getWidth()*(17.3f/27f)), (int)(getView().getHeight()*(9.3f/47.8f)));
 			    	mOsdLayout.setLayoutParams(osdLayoutParams);
-			    	mOsdLayout.setX(getView().getWidth()*(1.47f/8));
-			    	mOsdLayout.setY(getView().getHeight()*(6.88f/14));
+			    	mOsdLayout.setX(getView().getWidth()*(4.85f/27f));
+			    	mOsdLayout.setY(getView().getHeight()*(20.2f/47.8f));
 		    	}
 		    }  
 		});
         
         mOsdLoginBtn = (ImageView) getActivity().findViewById(R.id.osd_login);
         mEnterPwd = (EditText) getActivity().findViewById(R.id.osd_password);
-        mMemoryPwd = (CheckBox) getActivity().findViewById(R.id.memory_password);
-        mResetPwd = (ImageView) getActivity().findViewById(R.id.reset_password);
-        
-        mResetView = LayoutInflater.from(getActivity()).inflate(R.layout.osd_reset_pwd, null);
-        mOldPwd = (EditText) mResetView.findViewById(R.id.old_password);
-        mNewPwd = (EditText) mResetView.findViewById(R.id.new_password);
+        mEnterUn = (EditText) getActivity().findViewById(R.id.osd_username);
         
         mOsdLoginBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v)
             {
-                if (mSharedPreferences.getString(PosterOsdActivity.OSD_PASSWORD, OSD_DEFAULT_PWD).equals(mEnterPwd.getText().toString())
-                    || mEnterPwd.getText().toString().equals("admin"))
+            	if (mSharedPreferences.getString(PosterOsdActivity.OSD_USERNAME, OSD_DEFAULT_UN).equals(mEnterUn.getText().toString())
+                		&& mSharedPreferences.getString(PosterOsdActivity.OSD_PASSWORD, OSD_DEFAULT_PWD).equals(mEnterPwd.getText().toString()))
                 {
                     InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
                     if (imm.isActive())
@@ -170,88 +159,17 @@ public class OsdLoginFragment extends Fragment
                         ((PosterOsdActivity) getActivity()).startOsdMenuFragment(mOsdMenuId);
                     }
                 }
-                else if (mEnterPwd.getText().toString().trim().equals(""))
+                else if (mEnterUn.getText().toString().trim().equals("")
+                		|| mEnterPwd.getText().toString().trim().equals(""))
                 {
-                    Toast.makeText(getActivity(), R.string.login_dialog_nullmsg, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), R.string.login_dialog_unnullmsg, Toast.LENGTH_SHORT).show();
                 }
                 else
                 {
-                    Toast.makeText(getActivity(), R.string.login_dialog_msgerror, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), R.string.login_dialog_unmsgerror, Toast.LENGTH_SHORT).show();
                 }
-            }
-        });
-        
-        mMemoryPwd.setOnCheckedChangeListener(new OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
-            {
-                if (mSharedPreferences.getString(PosterOsdActivity.OSD_PASSWORD, OSD_DEFAULT_PWD).equals(
-                        mEnterPwd.getText().toString()))
-                {
-                    if (isChecked)
-                    {
-                        mEditor.putBoolean(PosterOsdActivity.OSD_ISMEMORY, true);
-                        mEditor.commit();
-                    }
-                    else
-                    {
-                        mEditor.putBoolean(PosterOsdActivity.OSD_ISMEMORY, false);
-                        mEditor.commit();
-                    }
-                }
-                else
-                {
-                    Toast.makeText(getActivity(), R.string.login_dialog_writetruemsg, Toast.LENGTH_LONG).show();
-                    mMemoryPwd.setChecked(false);
-                }
-            }
-        });
-        
-        mResetPwd.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v)
-            {
-                resetPassword();
             }
         });
     }
-    
-    /*
-     * Reset the password
-     */
-    private void resetPassword()
-    {
-        ViewGroup vg = (ViewGroup) mResetView.getParent();
-        if (vg != null)
-        {
-            vg.removeAllViewsInLayout();
-        }
-        new AlertDialog.Builder(getActivity()).setTitle(R.string.login_modifyrmsg).setView(mResetView)
-                .setPositiveButton(R.string.enter, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                        String old_Str = mSharedPreferences.getString(PosterOsdActivity.OSD_PASSWORD, OSD_DEFAULT_PWD);
-                        if (mOldPwd.getText().toString().equals(old_Str) && 
-                           !mOldPwd.getText().toString().equals(mNewPwd.getText().toString()))
-                        {
-                            mEditor.putString(PosterOsdActivity.OSD_PASSWORD, mNewPwd.getText().toString());
-                            mEditor.commit();
-                            Toast.makeText(getActivity(), R.string.login_dialog_msgmodifysuccess, Toast.LENGTH_SHORT).show();
-                        }
-                        else if(mOldPwd.getText().toString().equals(mNewPwd.getText().toString()))
-                        {
-                            Toast.makeText(getActivity(), R.string.login_dialog_newpwddifferent, Toast.LENGTH_SHORT).show();
-                        }
-                        else
-                        {
-                            Toast.makeText(getActivity(), R.string.login_dialog_retrywrite, Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                }).setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                        
-                    }
-                }).create().show();
-    }
+
 }

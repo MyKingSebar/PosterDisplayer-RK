@@ -34,6 +34,7 @@
     <string name="tools_check_conn">Detect network</string>
     <string name="tools_log_manager">Log management</string>
     <string name="tools_cancel_savepwd">Clear record password</string>
+    <string name="tools_modify_passwd">Modify login password</string>
 
     <!-- about our product -->
     <string name="about_cfe">Android version number:</string>
@@ -136,10 +137,13 @@
 	<string name="tools_dialog_apkupdate_failure_detectfailure">Failed to detect new SW</string>
 	
     <!-- osd login -->
+    <string name="login_un_hint">Please enter username</string>
     <string name="login_hint">Please enter password</string>
     <string name="login_come">enter</string>
     <string name="login_remembermsg">remember me</string>
     <string name="login_modifyrmsg">change password</string>
+    <string name="login_dialog_unnullmsg">Username or password cannot be empty</string>
+    <string name="login_dialog_unmsgerror">Username or password is not correct, please enter again.</string>
     <string name="login_dialog_nullmsg">Password cannot be empty</string>
     <string name="login_dialog_msgerror">Password is not correct, please enter again.</string>
     <string name="login_dialog_writetruemsg">Please enter the correct password</string>

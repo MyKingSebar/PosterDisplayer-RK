@@ -499,12 +499,12 @@ public class PosterApplication extends Application
         sysParam.netConn.put("ip", "0.0.0.0");
         
         sysParam.serverSet = new ConcurrentHashMap<String, String>();
-        sysParam.serverSet.put("weburl", "http://123.56.146.48/dn2/services/Heart.asmx");
-        sysParam.serverSet.put("ftpip", "123.56.146.48");
+        sysParam.serverSet.put("weburl", "http://server.xuanchuanyun.com/dn2/services/Heart.asmx");
+        sysParam.serverSet.put("ftpip", "ftp.xuanchuanyun.com");
         sysParam.serverSet.put("ftpport", "21");
-        sysParam.serverSet.put("ftpname", "dn4");
-        sysParam.serverSet.put("ftppasswd", "dn4");
-        sysParam.serverSet.put("ntpip", "123.56.146.48");
+        sysParam.serverSet.put("ftpname", "ehualu");
+        sysParam.serverSet.put("ftppasswd", "ehualu$888");
+        sysParam.serverSet.put("ntpip", "server.xuanchuanyun.com");
         sysParam.serverSet.put("ntpport", "123");
         
         sysParam.sigOutSet = new ConcurrentHashMap<String, String>();

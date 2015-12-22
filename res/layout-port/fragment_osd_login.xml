@@ -1,0 +1,96 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/RLLoginRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/welcome1" >
+
+    <LinearLayout
+        android:id="@+id/osd_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical" >
+
+        <LinearLayout
+	        android:layout_width="match_parent"
+	        android:layout_height="0dp"
+	        android:layout_weight="0.9"
+	        android:orientation="horizontal" >
+
+			<ImageView
+	            android:layout_width="0dp"
+	            android:layout_height="match_parent"
+	            android:layout_weight="1.2"
+	            android:background="@android:color/transparent" />
+
+	        <EditText
+	            android:id="@+id/osd_username"
+	            android:layout_width="0dp"
+	            android:layout_height="match_parent"
+	            android:layout_weight="3"
+	            android:gravity="center"
+	            android:hint="@string/login_un_hint"
+	            android:textColor="@color/black"
+	            android:textSize="20sp" />
+
+	        <ImageView
+	            android:layout_width="0dp"
+	            android:layout_height="match_parent"
+	            android:layout_weight="0.7"
+	            android:background="@android:color/transparent" />
+
+	    </LinearLayout>
+        
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0.6"
+            android:background="@android:color/transparent" />
+
+        <LinearLayout
+	        android:layout_width="match_parent"
+	        android:layout_height="0dp"
+	        android:layout_weight="0.9"
+	        android:orientation="horizontal" >
+
+            <ImageView
+	            android:layout_width="0dp"
+	            android:layout_height="match_parent"
+	            android:layout_weight="1.2"
+	            android:background="@android:color/transparent" />
+
+	        <EditText
+	            android:id="@+id/osd_password"
+	            android:layout_width="0dp"
+	            android:layout_height="match_parent"
+	            android:layout_weight="3"
+	            android:hint="@string/login_hint"
+	            android:inputType="textPassword"
+	            android:gravity="center"
+	            android:textColor="@color/black"
+	            android:textSize="20sp" />
+
+	        <ImageView
+	            android:layout_width="0dp"
+	            android:layout_height="match_parent"
+	            android:layout_weight="0.7"
+	            android:background="@android:color/transparent" />
+
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0.6"
+            android:background="@android:color/transparent" />
+
+        <ImageView
+            android:id="@+id/osd_login"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="0.9"
+            android:background="@drawable/osd_login_sel" />
+
+    </LinearLayout>
+
+</RelativeLayout>

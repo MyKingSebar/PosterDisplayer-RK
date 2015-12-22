@@ -33,6 +33,7 @@ public class PosterOsdActivity extends Activity
 {
 	public static PosterOsdActivity INSTANCE = null;
     public static final String  OSD_CONFIG            = "osd_config";
+    public static final String  OSD_USERNAME          = "username";
     public static final String  OSD_PASSWORD          = "password";
     public static final String  OSD_ISMEMORY          = "isMemory";
     

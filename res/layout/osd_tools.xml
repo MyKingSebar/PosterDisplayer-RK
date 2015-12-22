@@ -79,13 +79,13 @@
                     android:layout_width="200dp"
                     android:layout_height="70dp"
                     android:text="@string/tools_boot_screen_update" /> -->
-		    
+
                 <Button
-                    android:id="@+id/tools_cancel_savepwd"
+                    android:id="@+id/tools_modify_passwd"
                     style="@style/osd_tools_text"
                     android:layout_width="200dp"
                     android:layout_height="70dp"
-                    android:text="@string/tools_cancel_savepwd" />
+                    android:text="@string/tools_modify_passwd" />
             </TableRow>
 
             <TableRow>

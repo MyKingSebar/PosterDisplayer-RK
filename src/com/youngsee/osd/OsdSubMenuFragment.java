@@ -20,6 +20,7 @@ import android.app.Fragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.view.PagerAdapter;
@@ -964,15 +965,43 @@ public class OsdSubMenuFragment extends Fragment
                         logManager();
                     }
                 });
-        // 取消密码记录
-        ((Button) mMenus[PosterOsdActivity.OSD_TOOL_ID].findViewById(R.id.tools_cancel_savepwd))
-                .setOnClickListener(new OnClickListener() {
-                    @Override
-                    public void onClick(View v)
-                    {
-                        cancelSavePwd();
-                    }
-                });
+
+        // 修改登录密码
+    	final View view_reset = LayoutInflater.from(getActivity()).inflate(R.layout.osd_reset_pwd, null);
+    	final EditText etxt_oldpwd = (EditText) view_reset.findViewById(R.id.old_password);
+    	final EditText etxt_newpwd = (EditText) view_reset.findViewById(R.id.new_password);
+    	((Button) mMenus[PosterOsdActivity.OSD_TOOL_ID].findViewById(R.id.tools_modify_passwd))
+    			.setOnClickListener(new OnClickListener() {
+    				@Override
+    				public void onClick(View v) {
+    					ViewGroup vg = (ViewGroup) view_reset.getParent();
+    			        if (vg != null) {
+    			            vg.removeAllViewsInLayout();
+    			        }
+    			        new AlertDialog.Builder(getActivity()).setTitle(R.string.login_modifyrmsg).setView(view_reset)
+    	                		.setPositiveButton(R.string.enter, new DialogInterface.OnClickListener() {
+    	                			public void onClick(DialogInterface dialog, int which) {
+    	                				SharedPreferences sharedpref = getActivity().getSharedPreferences(PosterOsdActivity.OSD_CONFIG, Context.MODE_PRIVATE);
+    	                				String old_Str = sharedpref.getString(PosterOsdActivity.OSD_PASSWORD, OsdLoginFragment.OSD_DEFAULT_PWD);
+    	                				if (etxt_oldpwd.getText().toString().equals(old_Str) && 
+    	                						!etxt_oldpwd.getText().toString().equals(etxt_newpwd.getText().toString())) {
+    	                					Editor editor = sharedpref.edit();
+    	                					editor.putString(PosterOsdActivity.OSD_PASSWORD, etxt_newpwd.getText().toString());
+    	                					editor.commit();
+    	                					Toast.makeText(getActivity(), R.string.login_dialog_msgmodifysuccess, Toast.LENGTH_SHORT).show();
+    	                				} else if(etxt_oldpwd.getText().toString().equals(etxt_newpwd.getText().toString())) {
+    	                					Toast.makeText(getActivity(), R.string.login_dialog_newpwddifferent, Toast.LENGTH_SHORT).show();
+    	                				} else {
+    	                					Toast.makeText(getActivity(), R.string.login_dialog_retrywrite, Toast.LENGTH_SHORT).show();
+    	                				}
+    	                			}
+    	                		}).setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+    	                			public void onClick(DialogInterface dialog, int which) {
+    	                        
+    	                			}
+    	                		}).create().show();
+    				}
+    			});
     }
 
     private void saveServerParam()
@@ -1088,31 +1117,7 @@ public class OsdSubMenuFragment extends Fragment
         ldlg.setCanceledOnTouchOutside(false);
         ldlg.show();
     }
-    
-    private void cancelSavePwd()
-    {
-        new AlertDialog.Builder(getActivity()).setTitle(R.string.tools_dialog_cancel_title)
-                .setPositiveButton(R.string.enter, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                       
-                        SharedPreferences mSharedPreferences = getActivity().getSharedPreferences(PosterOsdActivity.OSD_CONFIG,
-                                Context.MODE_PRIVATE);
-                        SharedPreferences.Editor mEditor = mSharedPreferences.edit();
-                        mEditor.putBoolean(PosterOsdActivity.OSD_ISMEMORY, false);
-                        mEditor.commit();
-                        Toast.makeText(getActivity(), getResources().getText(R.string.tools_dialog_cancel_success), Toast.LENGTH_LONG).show();
-                        
-                    }
-                }).setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                    }
-                }).show();
-    }
-    
+
     /*
     private void recoverConfigfile()
     {
