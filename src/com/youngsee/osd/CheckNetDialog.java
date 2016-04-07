@@ -10,15 +10,18 @@ package com.youngsee.osd;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.youngsee.common.SysParamManager;
+import com.youngsee.posterdisplayer.PosterOsdActivity;
 import com.youngsee.posterdisplayer.R;
 import com.youngsee.posterdisplayer.PosterApplication;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -72,6 +75,8 @@ public class CheckNetDialog extends Dialog
             @Override
             public void onClick(View v) 
             {
+                PosterOsdActivity.INSTANCE.cancelDismissTime();
+                
                 new Thread()
                 {
                     @Override
@@ -104,6 +109,8 @@ public class CheckNetDialog extends Dialog
             @Override
             public void onClick(View v) 
             {
+                PosterOsdActivity.INSTANCE.cancelDismissTime();
+                
                 new Thread()
                 {
                     @Override
@@ -137,7 +144,17 @@ public class CheckNetDialog extends Dialog
             @Override
             public void onClick(View v) 
             {
+                InputMethodManager imm = (InputMethodManager) mContext.getSystemService(Activity.INPUT_METHOD_SERVICE);
+                if (imm.isActive())
+                {
+                    if (mChecknet_editText != null)
+                    {
+                        imm.hideSoftInputFromWindow(mChecknet_editText.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+                    }
+                }
+                
                 CheckNetDialog.this.dismiss();
+                PosterOsdActivity.INSTANCE.setDismissTime();
             }
         });
     }
@@ -170,6 +187,7 @@ public class CheckNetDialog extends Dialog
                     mProgressDlg.dismiss();
                 }
                 mConnStatus_textView.setText(R.string.tools_dialog_checknet_ipfailure);
+                return;
             
             case SERVER_CONNECT_FAILED:
                 if (mProgressDlg != null && mProgressDlg.isShowing())

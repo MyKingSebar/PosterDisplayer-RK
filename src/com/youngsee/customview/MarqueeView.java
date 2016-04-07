@@ -11,9 +11,9 @@ import java.util.ArrayList;
 
 import com.youngsee.common.Contants;
 import com.youngsee.common.FileUtils;
-import com.youngsee.common.LogUtils;
-import com.youngsee.common.Logger;
 import com.youngsee.common.MediaInfoRef;
+import com.youngsee.logmanager.LogUtils;
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.R;
 
 import android.annotation.SuppressLint;
@@ -110,6 +110,17 @@ public class MarqueeView extends PosterBaseView
     @Override
     public void startWork()
     {
+    	if (mMediaList == null)
+        {
+            Logger.i("Media list is null.");
+            return;
+        }
+        else if (mMediaList.isEmpty())
+        {
+            Logger.i("No media in the list.");
+            return;
+        }
+    	
         startUpdateThread();
     }
 

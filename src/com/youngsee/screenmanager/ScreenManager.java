@@ -28,15 +28,14 @@ import android.text.format.Time;
 import com.youngsee.authorization.AuthorizationActivity;
 import com.youngsee.authorization.AuthorizationManager;
 import com.youngsee.common.FileUtils;
-import com.youngsee.common.Logger;
 import com.youngsee.common.Md5;
 import com.youngsee.common.MediaInfoRef;
 import com.youngsee.common.SubWindowInfoRef;
 import com.youngsee.ftpoperation.FtpFileInfo;
 import com.youngsee.ftpoperation.FtpHelper;
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.posterdisplayer.PosterMainActivity;
-import com.youngsee.posterdisplayer.UrgentPlayerActivity;
 import com.youngsee.webservices.XmlParser;
 
 @SuppressLint("DefaultLocale")
@@ -83,6 +82,7 @@ public class ScreenManager
         public String       playbillId    = null;
         public String       programId     = null;
         public String       programName   = null;
+        public String       pgmFileName   = null;
         public String       pgmPri        = null;
         public String       verifyCode    = null;
         public long         termTimePoint = 0;
@@ -98,8 +98,7 @@ public class ScreenManager
     private ProgramInfo            mUrgentProgram         = null;
     private ArrayList<ProgramInfo> mNormalProgramInfoList = null;
     private ArrayList<ProgramInfo> mUrgentProgramInfoList = null;
-    private String                 mCurrentNormalPgmVerifyCode = null;
-    private String                 mCurrentUrgentPgmVerifyCode = null;
+    private String                 mCurrentPgmVerifyCode = null;
     
     private ScreenManager(Context context)
     {
@@ -299,13 +298,6 @@ public class ScreenManager
         mHandler.removeMessages(EVENT_SHOW_IDLE_PROGRAM);
         mHandler.removeMessages(EVENT_SHOW_NORMAL_PROGRAM);
         mHandler.removeMessages(EVENT_SHOW_URGENT_PROGRAM);
-        //destroyProgressBar();
-        
-        // 如果Activity已存在，则关闭
-        if (UrgentPlayerActivity.INSTANCE != null)
-        {
-            UrgentPlayerActivity.INSTANCE.finish();
-        }
     }
     
     public boolean isRuning()
@@ -387,8 +379,7 @@ public class ScreenManager
             mNormalProgram = null;
             mUrgentProgramInfoList = null;
             mNormalProgramInfoList = null;
-            mCurrentUrgentPgmVerifyCode = null;
-            mCurrentNormalPgmVerifyCode = null;
+            mCurrentPgmVerifyCode = null;
             mStatus = IDLE_STATE;
         }
         
@@ -404,8 +395,7 @@ public class ScreenManager
         private boolean normalPgmIsValid()
         {
             /* 若节目超时, 则该节目失效 */
-            return ((mNormalProgram != null)
-            		&& (mNormalProgram.termTimePoint >= System.currentTimeMillis()));
+            return ((mNormalProgram != null) && (mNormalProgram.termTimePoint >= System.currentTimeMillis()));
         }
         
         private boolean urgentPgmIsValid()
@@ -462,28 +452,27 @@ public class ScreenManager
             {
                 try
                 {
-                	if (AuthorizationManager.getInstance().getStatus()
-                			== AuthorizationManager.STATUS_AUTHORIZED) {
-                		if (AuthorizationActivity.INSTANCE != null) {
-                			AuthorizationActivity.INSTANCE.finish();
-                            while (AuthorizationActivity.INSTANCE != null) {
-                                Thread.sleep(100);
-                            }
-                		}
-                	} else {
-                		if (AuthorizationActivity.INSTANCE == null) {
-                            Logger.i("start AuthorizationActivity ....");
-                            if (mContext != null){
+					if (AuthorizationManager.getInstance().getStatus() == AuthorizationManager.STATUS_AUTHORIZED) {
+						if (AuthorizationActivity.INSTANCE != null) {
+							AuthorizationActivity.INSTANCE.finish();
+							while (AuthorizationActivity.INSTANCE != null) {
+								Thread.sleep(100);
+							}
+						}
+					} else {
+						if (AuthorizationActivity.INSTANCE == null) {
+							Logger.i("start AuthorizationActivity ....");
+							if (mContext != null) {
 								((Activity) mContext).startActivity(new Intent(
 										mContext, AuthorizationActivity.class));
-	                            while (AuthorizationActivity.INSTANCE == null) {
-	                                Thread.sleep(100);
-	                            }
-                            }
-                        }
-                		Thread.sleep(1000);
-                        continue;
-                	}
+								while (AuthorizationActivity.INSTANCE == null) {
+									Thread.sleep(100);
+								}
+							}
+						}
+						Thread.sleep(1000);
+						continue;
+					}
                 	
                     if (mOsdIsOpen)
                     {
@@ -501,7 +490,7 @@ public class ScreenManager
                         
                         if (mUrgentProgram != null)
                         {
-                            Logger.i("Update urgent program name is: " + mUrgentProgram.programName);
+                            Logger.i("Update urgent program is: " + mUrgentProgram.programName + " File name is: " + mUrgentProgram.pgmFileName);
                             if (loadProgramContent(EVENT_SHOW_URGENT_PROGRAM, mUrgentProgram))
                             {
                                 mStatus = PLAYING_EMERGENCE_PROGRAM;
@@ -523,7 +512,7 @@ public class ScreenManager
                         
                         if (mNormalProgram != null && mStatus != PLAYING_EMERGENCE_PROGRAM)
                         {
-                            Logger.i("Update normal program name is: " + mNormalProgram.programName);
+                            Logger.i("Update normal program is: " + mNormalProgram.programName + " File name is: " + mNormalProgram.pgmFileName);
                             if (loadProgramContent(EVENT_SHOW_NORMAL_PROGRAM, mNormalProgram))
                             {
                                 mStatus = PLAYING_NORMAL_PROGRAM;
@@ -543,7 +532,7 @@ public class ScreenManager
                         /* check whether has emergence program to play */
                         if ((mUrgentProgram = obtainUrgentProgram()) != null)
                         {
-                            Logger.i("change program name is: " + mUrgentProgram.programName);
+                            Logger.i("change urgent program is: " + mUrgentProgram.programName + " File name is: " + mUrgentProgram.pgmFileName);
                             if (loadProgramContent(EVENT_SHOW_URGENT_PROGRAM, mUrgentProgram))
                             {
                                 // 节目加载成功
@@ -559,7 +548,7 @@ public class ScreenManager
                         /* check whether has emergence program to play */
                         if ((mUrgentProgram = obtainUrgentProgram()) != null)
                         {
-                            Logger.i("change urgent program name is: " + mUrgentProgram.programName);
+                            Logger.i("change urgent program is: " + mUrgentProgram.programName + " File name is: " + mUrgentProgram.pgmFileName);
                             if (loadProgramContent(EVENT_SHOW_URGENT_PROGRAM, mUrgentProgram))
                             {
                                 // 节目加载成功
@@ -569,7 +558,7 @@ public class ScreenManager
                         else if ((mNormalProgram = obtainNormalProgram()) != null)
                         {
                             /* check whether has Normal program to play */
-                            Logger.i("change normal program name is: " + mNormalProgram.programName);
+                            Logger.i("change normal program is: " + mNormalProgram.programName + " File name is: " + mNormalProgram.pgmFileName);
                             if (loadProgramContent(EVENT_SHOW_NORMAL_PROGRAM, mNormalProgram))
                             {
                                 // 节目加载成功
@@ -585,12 +574,11 @@ public class ScreenManager
                         
                         mNormalProgram = null;
                         mUrgentProgram = null;
-                        mCurrentUrgentPgmVerifyCode = null;
-                        mCurrentNormalPgmVerifyCode = null;
+                        mCurrentPgmVerifyCode = null;
                         if ((mUrgentProgram = obtainUrgentProgram()) != null)
                         {
                             /* check whether has emergence program to play */
-                            Logger.i("Start urgent program name is: " + mUrgentProgram.programName);
+                            Logger.i("Start urgent program is: " + mUrgentProgram.programName + " File name is: " + mUrgentProgram.pgmFileName);
                             if (loadProgramContent(EVENT_SHOW_URGENT_PROGRAM, mUrgentProgram))
                             {
                                 // 节目加载成功
@@ -601,7 +589,7 @@ public class ScreenManager
                         else if ((mNormalProgram = obtainNormalProgram()) != null)
                         {
                             /* check whether has Normal program to play */
-                            Logger.i("Start normal program name is: " + mNormalProgram.programName);
+                            Logger.i("Start normal program name is: " + mNormalProgram.programName + " File name is: " + mNormalProgram.pgmFileName);
                             if (loadProgramContent(EVENT_SHOW_NORMAL_PROGRAM, mNormalProgram))
                             {
                                 // 节目加载成功
@@ -622,8 +610,7 @@ public class ScreenManager
                         
                         mNormalProgram = null;
                         mUrgentProgram = null;
-                        mCurrentUrgentPgmVerifyCode = null;
-                        mCurrentNormalPgmVerifyCode = null;
+                        mCurrentPgmVerifyCode = null;
                         
                         if (!mStandbyScreenIsShow)
                         {
@@ -655,13 +642,14 @@ public class ScreenManager
                                     mSamePriNormalPgmListIdx = 0;
                                 }
                                 mNormalProgram = mSamePriNormalPgmList.get(mSamePriNormalPgmListIdx);
+                                Logger.i("change normal program is: " + mNormalProgram.programName + " File name is: " + mNormalProgram.pgmFileName);
                                 loadProgramContent(EVENT_SHOW_NORMAL_PROGRAM, mNormalProgram);
                             }
                         }
                         else
                         {
                             mNormalProgram = null;
-                            mCurrentNormalPgmVerifyCode = null;
+                            mCurrentPgmVerifyCode = null;
                             mStatus = IDLE_STATE;
                             Logger.i("Normal program is invalid, go to IDLE status.");
                             continue;
@@ -681,65 +669,42 @@ public class ScreenManager
                                     mSamePriUrgentPgmListIdx = 0;
                                 }
                                 mUrgentProgram = mSamePriUrgentPgmList.get(mSamePriUrgentPgmListIdx);
+                                Logger.i("change urgent program is: " + mUrgentProgram.programName + " File name is: " + mUrgentProgram.pgmFileName);
                                 loadProgramContent(EVENT_SHOW_URGENT_PROGRAM, mUrgentProgram);
-                            }
-                            else
-                            {
-                                // 异常关闭，重新启动窗口
-                                if (UrgentPlayerActivity.INSTANCE == null)
-                                {
-                                    loadProgramContent(EVENT_SHOW_URGENT_PROGRAM, mUrgentProgram);
-                                }
                             }
                         }
                         else if ((mUrgentProgram = obtainUrgentProgram()) != null)
                         {
                             // 换插播节目
                             Logger.i("Urgent program has been changed....");
+                            Logger.i("Urgent program is: " + mUrgentProgram.programName + " File name is: " + mUrgentProgram.pgmFileName);
                             loadProgramContent(EVENT_SHOW_URGENT_PROGRAM, mUrgentProgram);
                         }
                         else if (normalPgmIsValid())
                         {
+                        	Logger.i("Urgent program is invalid, and normal program is valid, go to PLAYING_NORMAL_PROGRAM status.");
+                        	
+                        	// Clean urgent program's flag
                             mUrgentProgram = null;
-                            mCurrentUrgentPgmVerifyCode = null;
 
-                            Logger.i("Urgent program is invalid, and normal program is valid, go to PLAYING_NORMAL_PROGRAM status.");
-
-                            if (mCurrentNormalPgmVerifyCode != null &&
-                                mCurrentNormalPgmVerifyCode.equals(mNormalProgram.verifyCode))
+                            Logger.i("Normal program is: " + mNormalProgram.programName + " File name is: " + mNormalProgram.pgmFileName);
+                            
+                            // Re-start play normal program
+                            if (loadProgramContent(EVENT_SHOW_NORMAL_PROGRAM, mNormalProgram))
                             {
-                                // Stop the FTP download of the urgent program
-                                stopFtpDownloadMaterials();
-                                
-                                // Close urgent player.
-                                if (UrgentPlayerActivity.INSTANCE != null)
-                                {
-                                    UrgentPlayerActivity.INSTANCE.finish();
-                                    while (UrgentPlayerActivity.INSTANCE != null)
-                                    {
-                                        Thread.sleep(100);
-                                    }
-                                }
-                                
+                                // 节目加载成功
                                 mStatus = PLAYING_NORMAL_PROGRAM;
                             }
-                            else
-                            {
-                                if (loadProgramContent(EVENT_SHOW_NORMAL_PROGRAM, mNormalProgram))
-                                {
-                                    mStatus = PLAYING_NORMAL_PROGRAM;
-                                }
-                            }
+                            
                             continue;
                         }
                         else
                         {
                             mNormalProgram = null;
                             mUrgentProgram = null;
-                            mCurrentUrgentPgmVerifyCode = null;
-                            mCurrentNormalPgmVerifyCode = null;
-                            Logger.i("Urgent and normal program both invalid, go to IDLE status.");
+                            mCurrentPgmVerifyCode = null;
                             mStatus = IDLE_STATE;
+                            Logger.i("Urgent and normal program both invalid, go to IDLE status.");
                             continue;
                         }
                         
@@ -797,11 +762,11 @@ public class ScreenManager
         {
             if (mOsdIsOpen)
             {
-                Logger.e("loadProgramContent(): Osd already open, can't load.");
+                Logger.e("loadProgramContent(): Osd already open, can't load program.");
                 return false;
             }
-            else if (msgId == EVENT_SHOW_URGENT_PROGRAM &&
-                     pgmInfo.verifyCode.equals(mCurrentUrgentPgmVerifyCode))
+            else if ((msgId == EVENT_SHOW_URGENT_PROGRAM || msgId == EVENT_SHOW_NORMAL_PROGRAM) &&
+                     pgmInfo.verifyCode.equals(mCurrentPgmVerifyCode))
             {
                 /*
                  * 服务器通知节目改变的原因之一
@@ -812,22 +777,14 @@ public class ScreenManager
                     mStatus = NO_STORAGE_STATE;
                 }
                 
-                Logger.i("loadProgramContent(): urgent program is playing.");
-                return true;
-            }
-            else if (msgId == EVENT_SHOW_NORMAL_PROGRAM &&
-                     pgmInfo.verifyCode.equals(mCurrentNormalPgmVerifyCode))
-            {
-                /*
-                 * 服务器通知节目改变的原因之一
-                 * 有可能是因为本地的节目列表丢失了，所以需要检查外部存储是否被拔走
-                 */
-                if (!PosterApplication.strogeIsAvailable())
+                if (msgId == EVENT_SHOW_URGENT_PROGRAM)
                 {
-                    mStatus = NO_STORAGE_STATE;
+                    Logger.i("loadProgramContent(): urgent program is playing.");
                 }
-                
-                Logger.i("loadProgramContent(): normal program is playing.");
+                else if (msgId == EVENT_SHOW_NORMAL_PROGRAM)
+                {
+                	Logger.i("loadProgramContent(): normal program is playing.");
+                }
                 return true;
             }  
 
@@ -850,44 +807,7 @@ public class ScreenManager
                 Logger.e("loadProgramContent(): No subwindow info.");
                 return false;
             }
-            
-            if (msgId == EVENT_SHOW_URGENT_PROGRAM)
-            {
-                // 如果Urgent Activity不存在，则创建新的Activity
-                if (UrgentPlayerActivity.INSTANCE == null)
-                {
-                    Logger.i("start a new urgent activity....");
-                    
-                    if (mContext == null || !(mContext instanceof Activity))
-                    {
-                        Logger.e("startUrgentActivity: context has error");
-                        return false;
-                    }
-                    
-                    // 启动新的Activity
-                    Intent intent = new Intent(mContext, UrgentPlayerActivity.class);
-                    ((Activity) mContext).startActivity(intent);
-                    
-                    // wait for Activity start up
-                    while (UrgentPlayerActivity.INSTANCE == null)
-                    {
-                        Thread.sleep(100);
-                    }
-                }
-            }
-            else
-            {
-                // 非紧急节目，则销毁紧急节目Activity
-                if (UrgentPlayerActivity.INSTANCE != null)
-                {
-                    UrgentPlayerActivity.INSTANCE.finish();
-                    while (UrgentPlayerActivity.INSTANCE != null)
-                    {
-                        Thread.sleep(100);
-                    }
-                }
-            }
-            
+
             // 清空标志
             mLoadProgramDone = false;
             if (pgmInfo != null)
@@ -912,13 +832,16 @@ public class ScreenManager
             }
 
             // 更新当前节目的VerifyCode
-            if (msgId == EVENT_SHOW_URGENT_PROGRAM)
+            if (msgId == EVENT_SHOW_NORMAL_PROGRAM || 
+            	msgId == EVENT_SHOW_URGENT_PROGRAM)
             {
-                mCurrentUrgentPgmVerifyCode = pgmInfo.verifyCode;
+            	mStandbyScreenIsShow = false;
+                mCurrentPgmVerifyCode = pgmInfo.verifyCode;
             }
-            else if (msgId == EVENT_SHOW_NORMAL_PROGRAM)
+            else if (msgId == EVENT_SHOW_IDLE_PROGRAM)
             {
-                mCurrentNormalPgmVerifyCode = pgmInfo.verifyCode;
+            	mStandbyScreenIsShow = true;
+                mCurrentPgmVerifyCode = null;
             }
             
             return true;
@@ -1791,7 +1714,8 @@ public class ScreenManager
                             programInfo.endTime = playbill.EndTime;
                             programInfo.pgmPri = playbill.PRI;
                             programInfo.programId = program.Program.get("id");
-                            programInfo.programName = program.Program.get("name");
+                            programInfo.pgmFileName = program.Program.get("name");
+                            programInfo.programName = program.Program.get("displayName");
                             programInfo.verifyCode = program.Program.get("verify");
                             programInfo.programList = tmpPgmList;
                             programInfo.ignoreDLLimit = "0".equals(schedule.DLASAP) ? false : true;
@@ -1859,12 +1783,40 @@ public class ScreenManager
         private ArrayList<SubWindowInfoRef> getStandbyWndInfoList()
         {
             ArrayList<SubWindowInfoRef> subWndInfoList = new ArrayList<SubWindowInfoRef>();
+            List<MediaInfoRef> mediaList = new ArrayList<MediaInfoRef>();
+            
+            // 创建新的playMediaInfo
+            MediaInfoRef playMediaInfo = new MediaInfoRef();
+            playMediaInfo.filePath = PosterApplication.getInstance().getStandbyScreenImgPath();
+            playMediaInfo.md5Key = 0;
+            playMediaInfo.verifyCode = "";
+            playMediaInfo.remotePath = "";
+            playMediaInfo.mid = "0";
+            playMediaInfo.vType = "Image";
+            playMediaInfo.mediaType = "Image";
+            playMediaInfo.source = "File";
+            playMediaInfo.duration = 60 * 1000;
+            playMediaInfo.times = 0;
+            playMediaInfo.mode = 0;
+            playMediaInfo.aspect = 0;
+            playMediaInfo.speed = 0;
+            playMediaInfo.vol = 0;
+            playMediaInfo.durationPerPage = 60 * 1000;
+            playMediaInfo.playlistmode = "loop";
+            playMediaInfo.timetype = "absolute";
+            playMediaInfo.starttime = null;
+            playMediaInfo.endtime = null;
+            playMediaInfo.containerwidth = PosterApplication.getScreenWidth();
+            playMediaInfo.containerheight = PosterApplication.getScreenHeigth();
+            playMediaInfo.isIgnoreDlLimit = false;
+            mediaList.add(playMediaInfo);
             
             SubWindowInfoRef subWndInfo = new SubWindowInfoRef();
             subWndInfo.setSubWindowType("StandbyScreen");
             subWndInfo.setSubWindowName("StandbyScreenImage");
             subWndInfo.setWidth(PosterApplication.getScreenWidth());
             subWndInfo.setHeight(PosterApplication.getScreenHeigth());
+            subWndInfo.setSubWndMediaList(mediaList);
             subWndInfoList.add(subWndInfo);
             
             return subWndInfoList;
@@ -1911,28 +1863,11 @@ public class ScreenManager
             switch (msg.what)
             {
             case EVENT_SHOW_NORMAL_PROGRAM:
-                if (mContext instanceof PosterMainActivity)
-                {
-                    ((PosterMainActivity) mContext).loadProgram((ArrayList<SubWindowInfoRef>) msg.getData().getSerializable("subwindowlist"));
-                    mStandbyScreenIsShow = false;
-                }
-                mLoadProgramDone = true;
-                return;
-                                       
             case EVENT_SHOW_URGENT_PROGRAM:
-                if (UrgentPlayerActivity.INSTANCE != null)
-                {
-                    UrgentPlayerActivity.INSTANCE.loadProgram((ArrayList<SubWindowInfoRef>) msg.getData().getSerializable("subwindowlist"));
-                    mStandbyScreenIsShow = false;
-                }
-                mLoadProgramDone = true;
-                return;
-                                       
             case EVENT_SHOW_IDLE_PROGRAM:
                 if (mContext instanceof PosterMainActivity)
                 {
-                    ((PosterMainActivity) mContext).loadProgram((ArrayList<SubWindowInfoRef>) msg.getData().getSerializable("subwindowlist"));
-                    mStandbyScreenIsShow = true;
+                    ((PosterMainActivity) mContext).loadNewProgram((ArrayList<SubWindowInfoRef>) msg.getData().getSerializable("subwindowlist"));
                 }
                 mLoadProgramDone = true;
                 return; 

@@ -11,9 +11,12 @@ import android.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.View.OnClickListener;
+import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 
 import com.youngsee.common.Contants;
 import com.youngsee.posterdisplayer.R;
@@ -23,6 +26,7 @@ import com.youngsee.posterdisplayer.PosterOsdActivity;
 
 public class OsdMainMenuFragment extends Fragment
 {
+    private LinearLayout        mOsdMainExit = null;
     @Override 
     public void onCreate(Bundle savedInstanceState) 
     {
@@ -70,6 +74,26 @@ public class OsdMainMenuFragment extends Fragment
      */
     private void initOsdMainMenuFragment()
     {
+        mOsdMainExit = (LinearLayout) getActivity().findViewById(R.id.osd_main_exit);
+        ViewTreeObserver vto = getView().getViewTreeObserver();  
+        vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener(){ 
+            @SuppressWarnings("deprecation")
+            @Override 
+            public void onGlobalLayout() { 
+                getView().getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                mOsdMainExit.setX(getView().getWidth() - 65);
+                mOsdMainExit.setY(5);
+            }  
+        });
+        
+        mOsdMainExit.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                getActivity().finish();
+            }
+        });
+        
         ((ImageView)getActivity().findViewById(R.id.menu_server)).setOnClickListener(new OnClickListener()
         {
             @Override
@@ -102,7 +126,7 @@ public class OsdMainMenuFragment extends Fragment
             @Override
             public void onClick(View v)
             {
-                PosterApplication.startApplication(getActivity(), "com.android.settings");
+                PosterApplication.startApplication(getActivity(), Contants.SETTING_PACKAGENAME);
             }
         });
         

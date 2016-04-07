@@ -7,9 +7,7 @@
 
 package com.youngsee.customview;
 
-import com.youngsee.common.Logger;
-
-
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.R;
 
 import android.content.Context;

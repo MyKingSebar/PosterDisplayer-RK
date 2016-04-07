@@ -16,6 +16,7 @@ public class DbConstants {
     public static final String TABLE_OFFDLTIME     = "offdltime";
     public static final String TABLE_AUTHINFO      = "authinfo";
     public static final String TABLE_PGM_PATH      = "pgmpath";
+    public static final String TABLE_ELECTRI_PATH  = "electricpath";
     
     public static final String _ID                 = "_id";
     
@@ -58,6 +59,8 @@ public class DbConstants {
     public static final String AIT_AUTHCODE           = "code";
     
     public static final String PGM_PATH           = "path";
+    
+    public static final String ELECTRIC           = "electric";
 
 	public static final Uri CONTENTURI_SYSPARAM = Uri.parse("content://"
 			+ AUTHORITY + "/sysparam");
@@ -77,6 +80,8 @@ public class DbConstants {
 			+ AUTHORITY + "/authinfo");
 	public static final Uri CONTENTURI_PGMPATH = Uri.parse("content://"
 	        + AUTHORITY + "/pgmpath");
+	public static final Uri CONTENTURI_ELECTRIC = Uri.parse("content://"
+			+ AUTHORITY + "/electric");
 
 	public static final String CONTENT_TYPE = "vnd.android.cursor.dir/"
 			+ AUTHORITY + ".type";

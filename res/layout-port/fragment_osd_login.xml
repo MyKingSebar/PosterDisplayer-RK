@@ -6,6 +6,20 @@
     android:background="@drawable/welcome1" >
 
     <LinearLayout
+        android:id="@+id/osd_login_exit"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+        
+        <ImageView
+            android:id="@+id/osd_exit"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:background="@drawable/exit" />
+        
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/osd_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

@@ -14,8 +14,6 @@ public class YSHorizontalScrollView extends HorizontalScrollView {
     private int mItemWidth;
     private int mItemNumber;
 
-    private int mLastOffset = 0;
-
     private boolean isTouching = false;
     private boolean mScollable = true;
 

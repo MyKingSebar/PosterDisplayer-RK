@@ -12,6 +12,7 @@ import android.app.Activity;
 import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.PixelFormat;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -60,7 +61,7 @@ public class PosterOsdActivity extends Activity
     private WakeLock            mWklk                 = null;
     private int                 mMenuId               = OSD_MAIN_ID;
     
-    private final long DEFAULT_OSD_TIMEOUT = 8*60*1000;
+    private final long DEFAULT_OSD_TIMEOUT = 3*60*1000;
     
     @SuppressWarnings("deprecation")
     @Override
@@ -69,6 +70,7 @@ public class PosterOsdActivity extends Activity
         super.onCreate(savedInstanceState);
         PosterApplication.setSystemBarVisible(this, false);
         setContentView(R.layout.activity_osd);
+        getWindow().setFormat(PixelFormat.TRANSLUCENT);
         
         INSTANCE = this;
         if (ScreenManager.getInstance() != null)
@@ -99,11 +101,10 @@ public class PosterOsdActivity extends Activity
     protected void onResume()
     {
         super.onResume();
-        if (PowerOnOffManager.getInstance().getCurrentStatus() ==
-        		PowerOnOffManager.STATUS_STANDBY) {
-        	PowerOnOffManager.getInstance().setCurrentStatus(PowerOnOffManager.STATUS_ONLINE);
-        	PowerOnOffManager.getInstance().checkAndSetOnOffTime(
-        			PowerOnOffManager.AUTOSCREENOFF_URGENT);
+        if (PowerOnOffManager.getInstance().getCurrentStatus() == PowerOnOffManager.STATUS_STANDBY)
+        {
+            PowerOnOffManager.getInstance().setCurrentStatus(PowerOnOffManager.STATUS_ONLINE);
+            PowerOnOffManager.getInstance().checkAndSetOnOffTime(PowerOnOffManager.AUTOSCREENOFF_URGENT);
         }
     }
     
@@ -117,6 +118,9 @@ public class PosterOsdActivity extends Activity
     @Override
     protected void onDestroy()
     {
+        mHandler.removeMessages(EVENT_OSD_DISMISS);
+        mHandler.removeMessages(EVENT_START_FRAGMENT);
+        
         // 恢复屏幕
         if (mWklk != null)
         {
@@ -212,8 +216,6 @@ public class PosterOsdActivity extends Activity
         switch (nMenuId)
         {
         case OSD_MAIN_ID:
-        case OSD_SYSTEM_ID:
-        case OSD_FILEMANAGER_ID:
         {
             // 启动Main menu Fragment
             OsdMainMenuFragment mainMenu = new OsdMainMenuFragment();
@@ -242,17 +244,16 @@ public class PosterOsdActivity extends Activity
             ft.replace(R.id.osdroot, subMenu, SUBMENU_FRAGMENT_TAG).commitAllowingStateLoss();
         }
             break;
-        }
         
-        if (nMenuId == OSD_SYSTEM_ID)
-        {
-            // 启动setting
+        case OSD_SYSTEM_ID:
             PosterApplication.startApplication(this, "com.android.settings");
-        }
-        else if (nMenuId == OSD_FILEMANAGER_ID)
-        {
-            // 启动filemanage
+            PosterOsdActivity.this.finish();
+            break;
+            
+        case OSD_FILEMANAGER_ID:
             PosterApplication.startApplication(this, Contants.FILEBROWSER_PACKAGENAME);
+            PosterOsdActivity.this.finish();
+            break;
         }
     }
     
@@ -271,8 +272,19 @@ public class PosterOsdActivity extends Activity
         
         // 启动Login Fragment
         FragmentTransaction ft = getFragmentManager().beginTransaction();
-        ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE); // 切换时有渐变效果
+        ft.setTransition(FragmentTransaction.TRANSIT_NONE); // 切换时无效果
         ft.replace(R.id.osdroot, login, LOGIN_FRAGMENT_TAG).commitAllowingStateLoss();
+    }
+    
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        if (hasFocus) {
+            setDismissTime();
+        } else {
+        	cancelDismissTime(); 
+        }
+        
+        super.onWindowFocusChanged(hasFocus);
     }
     
     @Override
@@ -282,12 +294,17 @@ public class PosterOsdActivity extends Activity
         return super.dispatchTouchEvent(event);
     }
     
-    private void setDismissTime()
+    public void setDismissTime()
     {
         mHandler.removeMessages(EVENT_OSD_DISMISS);
         Message message = mHandler.obtainMessage();
         message.what = EVENT_OSD_DISMISS;
         mHandler.sendMessageDelayed(message, DEFAULT_OSD_TIMEOUT);
+    }
+    
+    public void cancelDismissTime()
+    {
+        mHandler.removeMessages(EVENT_OSD_DISMISS);
     }
     
     private void startOsdFragment()

@@ -35,13 +35,12 @@ import android.util.Xml;
 import com.youngsee.common.Contants;
 import com.youngsee.common.DbHelper;
 import com.youngsee.common.FileUtils;
-import com.youngsee.common.LogUtils;
-import com.youngsee.common.Logger;
 import com.youngsee.common.Md5;
 import com.youngsee.common.RuntimeExec;
 import com.youngsee.common.SysParamManager;
-import com.youngsee.envmnt.EnvMntManager;
 import com.youngsee.ftpoperation.FtpHelper;
+import com.youngsee.logmanager.LogUtils;
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.posterdisplayer.PosterMainActivity;
 import com.youngsee.power.PowerOnOffManager;
@@ -69,7 +68,6 @@ public class WsClient
     private static WsClient     mWsClientInstance                        = null;
     private Context             mContext                                 = null;
     private final String        NAME_SPACE                               = "http://dare-tech.com/";
-    private static final String SERVICE_URL                              = "http://server.xuanchuanyun.com/dn2/services/Heart.asmx";
     public static final String  SERVICE_URL_SUFFIX                       = "/services/Heart.asmx";
     
     // Define action for SOAP
@@ -307,7 +305,7 @@ public class WsClient
         }
 
         if (PosterApplication.getInstance().getConfiguration().hasEnvironmentMonitor()) {
-        	EnvMntManager.getInstance().updateMonitorDevice();
+        	//EnvMntManager.getInstance().updateMonitorDevice();
         }
 
         // 重启设备，参数立即生效
@@ -1321,7 +1319,8 @@ public class WsClient
         		return weburl;
         	}
         }
-        return SERVICE_URL;
+        
+        return (PosterApplication.getInstance().getConfiguration().getDefualtServerUrl() + SERVICE_URL_SUFFIX);
     }
     
     public static String getServerURLPrefix()

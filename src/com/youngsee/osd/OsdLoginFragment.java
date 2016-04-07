@@ -9,11 +9,10 @@ package com.youngsee.osd;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.content.res.Configuration;
+import android.graphics.Rect;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,14 +36,15 @@ public class OsdLoginFragment extends Fragment
 {
 	static final String OSD_DEFAULT_UN    = "ehualu";
     static final String OSD_DEFAULT_PWD    = "ehualu$888";
+    private LinearLayout        mOsdExit        = null;
     
-    private Editor              mEditor            = null;
-    private SharedPreferences   mSharedPreferences = null;
     private LinearLayout        mOsdLayout         = null;
     private ImageView           mOsdLoginBtn       = null;
     private EditText            mEnterUn           = null;
     private EditText            mEnterPwd          = null;
     private int                 mOsdMenuId         = 0;
+    
+    private boolean             mIsInit         = false;
     
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -77,6 +77,7 @@ public class OsdLoginFragment extends Fragment
     @Override
     public void onActivityCreated(Bundle savedInstanceState)
     {
+        mIsInit = true;
         super.onActivityCreated(savedInstanceState);
         initLoginOsdFragment();
         
@@ -97,6 +98,11 @@ public class OsdLoginFragment extends Fragment
     @Override
     public void onDestroy()
     {
+        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
+        if (mEnterPwd != null && imm.isActive())
+        {
+            imm.hideSoftInputFromWindow(mEnterPwd.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+        }
         super.onDestroy();
     }
     
@@ -105,71 +111,116 @@ public class OsdLoginFragment extends Fragment
      */
     private void initLoginOsdFragment()
     {
-        mSharedPreferences = getActivity().getSharedPreferences(PosterOsdActivity.OSD_CONFIG, Context.MODE_PRIVATE);
-        mEditor = mSharedPreferences.edit();
-        if (mSharedPreferences.getString(PosterOsdActivity.OSD_PASSWORD, null) == null)
-        {
-            String spwd = SysParamManager.getInstance().getSysPasswd();
-            mEditor.putString(OSD_DEFAULT_PWD, spwd);
-            mEditor.commit();
-        }
+        mOsdLoginBtn = (ImageView) getActivity().findViewById(R.id.osd_login);
+        mEnterPwd = (EditText) getActivity().findViewById(R.id.osd_password);
+        mEnterUn = (EditText) getActivity().findViewById(R.id.osd_username);
+        mOsdExit = (LinearLayout) getActivity().findViewById(R.id.osd_login_exit);
         
         mOsdLayout = (LinearLayout) getActivity().findViewById(R.id.osd_layout);
         ViewTreeObserver vto = getView().getViewTreeObserver();  
 		vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener(){ 
-            @SuppressWarnings("deprecation")
             @Override 
-		    public void onGlobalLayout() { 
-		    	getView().getViewTreeObserver().removeGlobalOnLayoutListener(this);
-		    	if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-			    	RelativeLayout.LayoutParams osdLayoutParams = new RelativeLayout.LayoutParams(
-							(int)(getView().getWidth()*(15.6f/47.8f)), (int)(getView().getHeight()*(8f/27f)));
-			    	mOsdLayout.setLayoutParams(osdLayoutParams);
-			    	mOsdLayout.setX(getView().getWidth()*(16.1f/47.8f));
-			    	mOsdLayout.setY(getView().getHeight()*(14.2f/27f));
-		    	} else {
-		    		RelativeLayout.LayoutParams osdLayoutParams = new RelativeLayout.LayoutParams(
-							(int)(getView().getWidth()*(17.3f/27f)), (int)(getView().getHeight()*(9.3f/47.8f)));
-			    	mOsdLayout.setLayoutParams(osdLayoutParams);
-			    	mOsdLayout.setX(getView().getWidth()*(4.85f/27f));
-			    	mOsdLayout.setY(getView().getHeight()*(20.2f/47.8f));
-		    	}
+		    public void onGlobalLayout() {
+            	if (mIsInit)
+            	{	
+					if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+						RelativeLayout.LayoutParams osdLayoutParams = new RelativeLayout.LayoutParams(
+								(int) (getView().getWidth() * (15.6f / 47.8f)),
+								(int) (getView().getHeight() * (8f / 27f)));
+						mOsdLayout.setLayoutParams(osdLayoutParams);
+						mOsdLayout.setX(getView().getWidth() * (16.1f / 47.8f));
+						mOsdLayout.setY(getView().getHeight() * (14.2f / 27f));
+					} else {
+						RelativeLayout.LayoutParams osdLayoutParams = new RelativeLayout.LayoutParams(
+								(int) (getView().getWidth() * (17.3f / 27f)),
+								(int) (getView().getHeight() * (9.3f / 47.8f)));
+						mOsdLayout.setLayoutParams(osdLayoutParams);
+						mOsdLayout.setX(getView().getWidth() * (4.85f / 27f));
+						mOsdLayout.setY(getView().getHeight() * (20.2f / 47.8f));
+					}
+                    mOsdExit.setX(getView().getWidth() - 65);
+                    mOsdExit.setY(5);
+                    mIsInit = false;
+            	}
+            	else
+            	{
+                    // 检查软键盘是否弹出
+                    if (getActivity() != null && 
+                        getActivity().getWindow() != null && 
+                        getActivity().getWindow().peekDecorView() != null)
+                    {
+                        View decorView = getActivity().getWindow().peekDecorView();
+                        Rect rect = new Rect();
+                        decorView.getWindowVisibleDisplayFrame(rect);
+                        int displayHight = rect.bottom - rect.top;
+                        int hight = decorView.getHeight();
+                        boolean softInputIsVisible = (double) displayHight / hight < 0.8;
+                        if (softInputIsVisible) // 如果软件键盘弹出，则等待输入，不能关闭界面
+                        {
+                            PosterOsdActivity.INSTANCE.cancelDismissTime();
+                        }
+                        else   
+                        {
+                            PosterOsdActivity.INSTANCE.setDismissTime();
+                        }
+                    }
+            	}       	
 		    }  
 		});
-        
-        mOsdLoginBtn = (ImageView) getActivity().findViewById(R.id.osd_login);
-        mEnterPwd = (EditText) getActivity().findViewById(R.id.osd_password);
-        mEnterUn = (EditText) getActivity().findViewById(R.id.osd_username);
-        
+
         mOsdLoginBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v)
             {
-            	if (mSharedPreferences.getString(PosterOsdActivity.OSD_USERNAME, OSD_DEFAULT_UN).equals(mEnterUn.getText().toString())
-                		&& mSharedPreferences.getString(PosterOsdActivity.OSD_PASSWORD, OSD_DEFAULT_PWD).equals(mEnterPwd.getText().toString()))
-                {
-                    InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
-                    if (imm.isActive())
-                    {
-                        imm.hideSoftInputFromWindow(v.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
-                    }
-                    
-                    if (getActivity() instanceof PosterOsdActivity)
-                    {
-                        ((PosterOsdActivity) getActivity()).startOsdMenuFragment(mOsdMenuId);
-                    }
-                }
-                else if (mEnterUn.getText().toString().trim().equals("")
-                		|| mEnterPwd.getText().toString().trim().equals(""))
+            	boolean virefyIsOk = false;
+                if (mEnterUn.getText().toString().trim().equals("") ||
+                	mEnterPwd.getText().toString().trim().equals(""))
                 {
                     Toast.makeText(getActivity(), R.string.login_dialog_unnullmsg, Toast.LENGTH_SHORT).show();
                 }
-                else
+                else if (OSD_DEFAULT_UN.equals(mEnterUn.getText().toString()))
                 {
-                    Toast.makeText(getActivity(), R.string.login_dialog_unmsgerror, Toast.LENGTH_SHORT).show();
+                	String strPwd = SysParamManager.getInstance().getSysPasswd();
+                	if (TextUtils.isEmpty(strPwd))
+                	{
+                		SysParamManager.getInstance().setSysPasswd(OSD_DEFAULT_PWD);
+                		virefyIsOk = OSD_DEFAULT_PWD.equals(mEnterPwd.getText().toString());
+                	}
+                	else
+                	{
+                		virefyIsOk = strPwd.equals(mEnterPwd.getText().toString());
+                	}
                 }
+                
+				if (virefyIsOk) 
+				{
+					InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
+					if (imm.isActive()) {
+						imm.hideSoftInputFromWindow(
+								v.getApplicationWindowToken(),
+								InputMethodManager.HIDE_NOT_ALWAYS);
+					}
+
+					if (getActivity() instanceof PosterOsdActivity) {
+						((PosterOsdActivity) getActivity()).startOsdMenuFragment(mOsdMenuId);
+					}
+				} 
+				else 
+				{
+					Toast.makeText(getActivity(),
+							R.string.login_dialog_unmsgerror,
+							Toast.LENGTH_SHORT).show();
+				}
             }
         });
-    }
+        
+        mOsdExit.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                getActivity().finish();
+            }
+        });
 
+    }
 }

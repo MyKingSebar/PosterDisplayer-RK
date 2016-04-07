@@ -15,8 +15,6 @@ import java.util.Random;
 
 import com.youngsee.common.Contants;
 import com.youngsee.common.FileUtils;
-import com.youngsee.common.LogUtils;
-import com.youngsee.common.Logger;
 import com.youngsee.common.MediaInfoRef;
 import com.youngsee.customview.ControlView.OnControlChangedListener;
 import com.youngsee.customview.SoundView.OnVolumeChangedListener;
@@ -24,10 +22,11 @@ import com.youngsee.gifdecode.GifAction;
 import com.youngsee.gifdecode.GifDecodeInfo;
 import com.youngsee.gifdecode.GifDecoder;
 import com.youngsee.gifdecode.GifFrame;
+import com.youngsee.logmanager.LogUtils;
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.posterdisplayer.PosterMainActivity;
 import com.youngsee.posterdisplayer.R;
-import com.youngsee.posterdisplayer.UrgentPlayerActivity;
 import com.youngsee.screenmanager.ScreenManager;
 
 import android.annotation.SuppressLint;
@@ -136,22 +135,28 @@ public class MultiMediaView extends PosterBaseView
     public MultiMediaView(Context context)
     {
         super(context);
-        initView(context);
+        initView(context, false);
     }
     
     public MultiMediaView(Context context, AttributeSet attrs)
     {
         super(context, attrs);
-        initView(context);
+        initView(context, false);
     }
     
     public MultiMediaView(Context context, AttributeSet attrs, int defStyle)
     {
         super(context, attrs, defStyle);
-        initView(context);
+        initView(context, false);
     }
     
-    private void initView(Context context)
+    public MultiMediaView(Context context, boolean hasSurface)
+    {
+        super(context);
+        initView(context, hasSurface);
+    }
+    
+    private void initView(Context context, boolean isShowSurface)
     {
         Logger.d("[" + mViewName + "] MultiMedia View initialize......");
         
@@ -171,7 +176,10 @@ public class MultiMediaView extends PosterBaseView
         mSurfaceHolder.addCallback(new SurfaceHolderCallBack());
         //mSurfaceView.setFocusable(true);
         mSurfaceView.setFocusableInTouchMode(true);
-        
+		if (isShowSurface) {
+			doShowSurfaceView();
+		}
+        	
         // Init imageswithcher parameters
         ViewFactory factory = new ViewFactory()
         {
@@ -511,10 +519,16 @@ public class MultiMediaView extends PosterBaseView
         cancelUpdateThread();
         cleanupMsg();
         releaseMediaPlayer();
-        mMediaPosition = -1;
+        doHideAllViews();
+        
+        mMediaList.clear();
+        mMediaList = null;
         mCurrentIdx   = -1;
         mCurrentMedia = null;
+        
+        mMediaPosition = -1;
         mIsPlayingVideo = false;
+        mSurfaceIsReady = false;
     }
 
     private void startUpdateThread()
@@ -899,7 +913,7 @@ public class MultiMediaView extends PosterBaseView
                             {
                                 informStopAudio();
                             }
-                            if (!mSurfaceIsReady)
+                            if (mCurrentShowType != SHOWTYPE_VIDEO)
                             {
                                 showSurfaceView();
                                 while (!mSurfaceIsReady)
@@ -1005,10 +1019,6 @@ public class MultiMediaView extends PosterBaseView
         {
             ((PosterMainActivity) mContext).startAudio();
         }
-        else if (mContext instanceof UrgentPlayerActivity)
-        {
-            ((UrgentPlayerActivity) mContext).startAudio();
-        }
     }
     
     private void informStopAudio()
@@ -1016,10 +1026,6 @@ public class MultiMediaView extends PosterBaseView
         if (mContext instanceof PosterMainActivity)
         {
             ((PosterMainActivity) mContext).stopAudio();
-        }
-        else if (mContext instanceof UrgentPlayerActivity)
-        {
-            ((UrgentPlayerActivity) mContext).stopAudio();
         }
     }
     

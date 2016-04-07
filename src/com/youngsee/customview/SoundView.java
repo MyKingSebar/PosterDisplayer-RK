@@ -10,7 +10,7 @@ package com.youngsee.customview;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.youngsee.common.Logger;
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.R;
 
 import android.annotation.SuppressLint;

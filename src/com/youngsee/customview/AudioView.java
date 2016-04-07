@@ -11,9 +11,9 @@ import java.io.IOException;
 
 import com.youngsee.common.Contants;
 import com.youngsee.common.FileUtils;
-import com.youngsee.common.LogUtils;
-import com.youngsee.common.Logger;
 import com.youngsee.common.MediaInfoRef;
+import com.youngsee.logmanager.LogUtils;
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.R;
 
 import android.content.Context;

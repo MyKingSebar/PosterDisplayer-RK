@@ -47,6 +47,7 @@
     <string name="about_certNum">入 网 许 可 证 号:</string>
     <string name="about_termGrp">终 端 所 属 群 组:</string>
     <string name="about_diskStatus">磁 盘 状 态:</string>
+    <string name="about_electric">设 备 用 电 量:</string>
     <string name="title_activity_normal_displayer">NormalDisplayerActivity</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>

@@ -18,9 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.xmlpull.v1.XmlPullParser;
 
-import android.app.Activity;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -29,7 +26,6 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Xml;
 
-import com.youngsee.envmnt.EnvMntManager;
 import com.youngsee.ftpoperation.FtpFileInfo;
 import com.youngsee.ftpoperation.FtpHelper;
 import com.youngsee.ftpoperation.FtpOperationInterface;
@@ -38,10 +34,9 @@ import com.youngsee.common.FileUtils;
 import com.youngsee.common.Md5;
 import com.youngsee.common.RuntimeExec;
 import com.youngsee.common.SysParamManager;
+import com.youngsee.logmanager.LogManager;
 import com.youngsee.osd.OsdSubMenuFragment;
-import com.youngsee.posterdisplayer.LogManager;
 import com.youngsee.posterdisplayer.PosterApplication;
-import com.youngsee.posterdisplayer.PosterOsdActivity;
 import com.youngsee.power.PowerOnOffManager;
 import com.youngsee.screenmanager.ScreenManager;
 import com.youngsee.update.APKUpdateManager;
@@ -124,7 +119,7 @@ public class XmlCmdParse
                 }
 
                 if (PosterApplication.getInstance().getConfiguration().hasEnvironmentMonitor()) {
-                	EnvMntManager.getInstance().updateMonitorDevice();
+                	//EnvMntManager.getInstance().updateMonitorDevice();
                 }
 
                 break;
@@ -664,11 +659,11 @@ public class XmlCmdParse
                                 StringBuilder sb = new StringBuilder();
                                 sb.append(PosterApplication.getTempFolderPath());
                                 sb.append(FileUtils.getFilename("background.jpg"));
-                                FileUtils.delFile(new File(PosterApplication.getStandbyScreenImgPath()));
+                                FileUtils.delFile(new File(PosterApplication.getInstance().getStandbyScreenImgPath()));
                                 try
                                 {
                                     FileUtils.moveFileTo(
-                                            new File(sb.toString()), new File(PosterApplication.getStandbyScreenImgPath()));
+                                            new File(sb.toString()), new File(PosterApplication.getInstance().getStandbyScreenImgPath()));
                                     WsClient.getInstance().postResultBack(XmlCmdInfoRef.CMD_PTL_SYSUPDATE, nSysUpdateRegCode, 0, "");
                                 }
                                 catch (IOException e)
@@ -708,12 +703,6 @@ public class XmlCmdParse
                     if (!strValue.equals(SysParamManager.getInstance().getSysPasswd()))
                     {
                         SysParamManager.getInstance().setSysPasswd(strValue);
-                        
-                        SharedPreferences spf = PosterApplication.getInstance().getSharedPreferences(
-                                PosterOsdActivity.OSD_CONFIG, Activity.MODE_PRIVATE);
-                        Editor edi = spf.edit();
-                        edi.putString(PosterOsdActivity.OSD_PASSWORD, strValue);
-                        edi.commit();
                     }
                 }
                 break;

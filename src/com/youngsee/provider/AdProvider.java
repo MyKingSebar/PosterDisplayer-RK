@@ -31,7 +31,8 @@ public class AdProvider extends ContentProvider {
     private static final int        URL_AUTHINFO_ID  = 16;
     private static final int        URL_PGMPATH      = 17;
     private static final int        URL_PGMPATH_ID   = 18;
-    
+    private static final int        URL_ELECTRIC   = 19;
+    private static final int        URL_ELECTRIC_ID   = 20;
     private AdDbHelper              mDbHelper       = null;
 
 	private static final UriMatcher s_urlMatcher = new UriMatcher(
@@ -56,6 +57,8 @@ public class AdProvider extends ContentProvider {
 		s_urlMatcher.addURI(DbConstants.AUTHORITY, "authinfo/#", URL_AUTHINFO_ID);
 		s_urlMatcher.addURI(DbConstants.AUTHORITY, "pgmpath", URL_PGMPATH);
 		s_urlMatcher.addURI(DbConstants.AUTHORITY, "pgmpath/#", URL_PGMPATH_ID);
+		s_urlMatcher.addURI(DbConstants.AUTHORITY, "electric", URL_ELECTRIC);
+		s_urlMatcher.addURI(DbConstants.AUTHORITY, "electric/#", URL_ELECTRIC_ID);
 	}
 	
 	@Override
@@ -171,7 +174,16 @@ public class AdProvider extends ContentProvider {
 		            + (!TextUtils.isEmpty(where) ? " AND " + where : ""), whereArgs);
 		    deleteUri = DbConstants.CONTENTURI_PGMPATH;
 		    break;
-
+		    
+		case URL_ELECTRIC:
+		    count = db.delete(DbConstants.TABLE_ELECTRI_PATH, where, whereArgs);
+		    deleteUri = DbConstants.CONTENTURI_ELECTRIC;
+		    break;
+		    
+		case URL_ELECTRIC_ID:
+			count = db.delete(DbConstants.TABLE_SYSPARAM, where, whereArgs);
+			deleteUri = DbConstants.CONTENTURI_ELECTRIC;
+			break;
 		default:
 			throw new IllegalArgumentException("Unknown URI " + uri);
 		}
@@ -289,7 +301,14 @@ public class AdProvider extends ContentProvider {
 		        insertUri = ContentUris.withAppendedId(DbConstants.CONTENTURI_PGMPATH, rowId);
 		    }
 		    break;
-
+		    
+		case URL_ELECTRIC:
+		    rowId = db.insert(DbConstants.TABLE_ELECTRI_PATH, null, values);
+		    if (rowId > 0) {
+		        insertUri = ContentUris.withAppendedId(DbConstants.CONTENTURI_ELECTRIC, rowId);
+		    }
+		    break;
+		    
 		default:
 			throw new IllegalArgumentException("Unknown URI " + uri);
 		}
@@ -394,7 +413,16 @@ public class AdProvider extends ContentProvider {
 		    qb.setTables(DbConstants.TABLE_PGM_PATH);
 		    qb.appendWhere(DbConstants._ID + "=" + uri.getPathSegments().get(1));
 		    break;
-
+		    
+		case URL_ELECTRIC:
+		    qb.setTables(DbConstants.TABLE_ELECTRI_PATH);
+		    break;
+		    
+		case URL_ELECTRIC_ID:
+		    qb.setTables(DbConstants.TABLE_ELECTRI_PATH);
+		    qb.appendWhere(DbConstants._ID + "=" + uri.getPathSegments().get(1));
+		    break;
+		    
 		default:
 			throw new IllegalArgumentException("Unknown URI " + uri);
 		}
@@ -529,7 +557,18 @@ public class AdProvider extends ContentProvider {
 		    updateUri = ContentUris.withAppendedId(DbConstants.CONTENTURI_PGMPATH,
 		            Long.parseLong(uri.getPathSegments().get(1)));
 		    break;
-
+		case URL_ELECTRIC:
+		    count = db.update(DbConstants.TABLE_ELECTRI_PATH, values, where, whereArgs);
+		    updateUri = DbConstants.CONTENTURI_ELECTRIC;
+		    break;
+		    
+		case URL_ELECTRIC_ID:
+		    count = db.update(DbConstants.TABLE_ELECTRI_PATH, values,
+		            DbConstants._ID + "=" + uri.getPathSegments().get(1)
+		            + (!TextUtils.isEmpty(where) ? " AND " + where : ""), whereArgs);
+		    updateUri = ContentUris.withAppendedId(DbConstants.CONTENTURI_ELECTRIC,
+		            Long.parseLong(uri.getPathSegments().get(1)));
+		    break;
 		default:
 			throw new IllegalArgumentException("Unknown URI " + uri);
 		}

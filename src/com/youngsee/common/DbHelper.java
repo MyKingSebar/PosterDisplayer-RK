@@ -1,27 +1,9 @@
 package com.youngsee.common;
 
 import java.io.UnsupportedEncodingException;
-
-
-/*
-import com.youngsee.adplayer.AdApplication;
-import com.youngsee.adplayer.bean.FtpParam;
-import com.youngsee.adplayer.bean.ServerInfoResp;
-import com.youngsee.adplayer.bean.SysInfoResp;
-import com.youngsee.adplayer.common.Constants;
-import com.youngsee.adplayer.provider.DbConstants;
-import com.youngsee.adplayer.system.DbChargeInfo;
-import com.youngsee.adplayer.system.DbSysParam;
-import com.youngsee.adplayer.system.XmlSysParam;
-*/
-
-
-
-
-
-
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.provider.DbConstants;
 import com.youngsee.webservices.SysParam;
@@ -496,6 +478,54 @@ public class DbHelper {
         }
         c.close();
     }
+    
+    public String getElectricFromDB()
+    {
+        String strElec = null;
+        Cursor c = mContentResolver.query(DbConstants.CONTENTURI_ELECTRIC, null, null, null, null);
+        if (c.moveToFirst())
+        {
+           strElec = c.getString(c.getColumnIndex(DbConstants.ELECTRIC));
+           
+        }
+        c.close();
+        
+        return strElec;
+    }
+    
+    public void setrElectricToDB(String elec)
+    {
+        if (TextUtils.isEmpty(elec))
+        {
+            Logger.i("Electric Code is null.");
+            return;
+        }
+        
+      
+       
+        if (elec == null)
+        {
+            Logger.i("Electric code is null.");
+            return;
+        }
+        
+        Cursor c = mContentResolver.query(DbConstants.CONTENTURI_ELECTRIC, null, null, null, null);
+        if (c.moveToFirst())
+        {
+            long id = c.getLong(c.getColumnIndex(DbConstants._ID));
+            ContentValues cv = new ContentValues();
+            cv.put(DbConstants.ELECTRIC, elec);
+            mContentResolver.update(ContentUris.withAppendedId(DbConstants.CONTENTURI_ELECTRIC, id), cv, null, null);
+        }
+        else
+        {
+            ContentValues cv = new ContentValues();
+            cv.put(DbConstants.ELECTRIC, elec);
+            mContentResolver.insert(DbConstants.CONTENTURI_ELECTRIC, cv);
+        }
+        c.close();
+    }
+    
     
     
     public void saveSysParamToDB(final SysParam sysParam)

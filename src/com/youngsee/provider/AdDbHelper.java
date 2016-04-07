@@ -23,6 +23,7 @@ public class AdDbHelper extends SQLiteOpenHelper {
 		createOffDLTable(db);
 		createAuthInfoTable(db);
 		createPgmPathTable(db);
+		createElectricParamTable(db);
 	}
 
 	@Override
@@ -36,7 +37,7 @@ public class AdDbHelper extends SQLiteOpenHelper {
 	    db.execSQL("DROP TABLE IF EXISTS " + DbConstants.TABLE_OFFDLTIME);
 	    db.execSQL("DROP TABLE IF EXISTS " + DbConstants.TABLE_AUTHINFO);
 	    db.execSQL("DROP TABLE IF EXISTS " + DbConstants.TABLE_PGM_PATH);
-	    
+	    db.execSQL("DROP TABLE IF EXISTS " + DbConstants.TABLE_ELECTRI_PATH);
 	    onCreate(db);
 	}
 
@@ -139,5 +140,11 @@ public class AdDbHelper extends SQLiteOpenHelper {
 	    db.execSQL("CREATE TABLE IF NOT EXISTS " + DbConstants.TABLE_PGM_PATH + " ("
 	            + DbConstants._ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
 	            + DbConstants.PGM_PATH + " BLOB DEFAULT NULL);");
+	}
+	private void createElectricParamTable(SQLiteDatabase db) {
+		db.execSQL("CREATE TABLE IF NOT EXISTS " + DbConstants.TABLE_ELECTRI_PATH + " ("
+	            + DbConstants._ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+	            + DbConstants.ELECTRIC + " TEXT DEFAULT NULL);");
+		
 	}
 }

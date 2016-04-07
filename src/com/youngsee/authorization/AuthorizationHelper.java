@@ -2,24 +2,15 @@ package com.youngsee.authorization;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import com.youngsee.common.FileUtils;
-import com.youngsee.network.JSONUtil;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.posterdisplayer.R;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -247,6 +238,7 @@ public class AuthorizationHelper {
         msg.sendToTarget();
 	}
 	
+	@SuppressLint("HandlerLeak")
 	private Handler mHandler = new Handler() {
 		@Override
         public void handleMessage(Message msg) {
