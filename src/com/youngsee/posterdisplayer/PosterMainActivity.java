@@ -46,7 +46,6 @@ import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
 import android.text.TextUtils;
-import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -179,16 +178,6 @@ public class PosterMainActivity extends Activity
 		// 初始化系统参数
 		PosterApplication.getInstance().initAppParam();
 
-		// 获取状态栏的高度
-	    int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
-	    int height = getResources().getDimensionPixelSize(resourceId);
-	    
-		// 获取屏幕实际大小(以像素为单位)
-		DisplayMetrics metric = new DisplayMetrics();
-		getWindowManager().getDefaultDisplay().getMetrics(metric);
-		PosterApplication.setScreenWidth(metric.widthPixels); // 屏幕宽度（像素）
-		PosterApplication.setScreenHeight(metric.heightPixels + height); // 屏幕高度（像素）
-		
 		// 检测是否鉴权
         if (!AuthorizationManager.getInstance().checkAuthStatus(AuthorizationManager.MODE_IMMEDIATE))
         {
