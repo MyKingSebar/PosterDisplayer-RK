@@ -20,6 +20,7 @@ import android.app.Fragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.view.PagerAdapter;
@@ -33,8 +34,10 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.View.OnClickListener;
 import android.view.View.OnFocusChangeListener;
+import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 import android.view.inputmethod.InputMethodManager;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -49,15 +52,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.youngsee.common.FileUtils;
-import com.youngsee.common.Logger;
 import com.youngsee.common.RuntimeExec;
 import com.youngsee.common.SysOnOffTimeInfo;
 import com.youngsee.common.SysParamManager;
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterMainActivity;
 import com.youngsee.posterdisplayer.R;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.posterdisplayer.PosterOsdActivity;
-import com.youngsee.posterdisplayer.UrgentPlayerActivity;
 import com.youngsee.power.PowerOnOffManager;
 import com.youngsee.screenmanager.ScreenManager;
 import com.youngsee.webservices.WsClient;
@@ -133,6 +135,8 @@ public class OsdSubMenuFragment extends Fragment
     private AlertDialog mOnOffAlertDialog = null;
     private boolean mIsKeptAlertDialog = false;
     
+    private boolean             mIsInit         = false;
+    
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
@@ -160,6 +164,7 @@ public class OsdSubMenuFragment extends Fragment
     @Override
     public void onActivityCreated(Bundle savedInstanceState)
     {
+        mIsInit = true;
         super.onActivityCreated(savedInstanceState);
         initOsdSubMenuFragment();
     }
@@ -215,11 +220,7 @@ public class OsdSubMenuFragment extends Fragment
                 }
             }).start();
             
-            if (UrgentPlayerActivity.INSTANCE != null) {
-            	UrgentPlayerActivity.INSTANCE.checkAndSetOnOffTime(PowerOnOffManager.AUTOSCREENOFF_COMMON);
-            } else {
-            	PosterMainActivity.INSTANCE.checkAndSetOnOffTime(PowerOnOffManager.AUTOSCREENOFF_COMMON);
-            }
+            PosterMainActivity.INSTANCE.checkAndSetOnOffTime(PowerOnOffManager.AUTOSCREENOFF_COMMON);
         }
     }
     
@@ -233,6 +234,40 @@ public class OsdSubMenuFragment extends Fragment
         initToolsView();
         initAboutView();
         mViewPager.setCurrentItem(mCurrentPage);
+        
+        ViewTreeObserver vto = getView().getViewTreeObserver();  
+        vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener(){ 
+            @Override 
+            public void onGlobalLayout() {
+                if (!mIsInit)
+                {
+                    // 检查软键盘是否弹出
+                    if (getActivity() != null && 
+                        getActivity().getWindow() != null && 
+                        getActivity().getWindow().peekDecorView() != null)
+                    {
+                        View decorView = getActivity().getWindow().peekDecorView();
+                        Rect rect = new Rect();
+                        decorView.getWindowVisibleDisplayFrame(rect);
+                        int displayHight = rect.bottom - rect.top;
+                        int hight = decorView.getHeight();
+                        boolean softInputIsVisible = (double) displayHight / hight < 0.8;
+                        if (softInputIsVisible)
+                        {
+                            PosterOsdActivity.INSTANCE.cancelDismissTime();
+                        }
+                        else
+                        {
+                            PosterOsdActivity.INSTANCE.setDismissTime();
+                        }
+                    }
+                }
+                else
+                {
+                    mIsInit = false;
+                }
+            }  
+        });
     }
     
     private void initDot()
@@ -786,6 +821,7 @@ public class OsdSubMenuFragment extends Fragment
                     @Override
                     public void onClick(View v)
                     {
+                        PosterOsdActivity.INSTANCE.cancelDismissTime();
                         new AlertDialog.Builder(getActivity()).setTitle(R.string.tools_dialog_clearallporgram)
                         .setPositiveButton(R.string.enter, new DialogInterface.OnClickListener() {
                             @Override
@@ -798,6 +834,7 @@ public class OsdSubMenuFragment extends Fragment
                             @Override
                             public void onClick(DialogInterface dialog, int which)
                             {
+                                PosterOsdActivity.INSTANCE.setDismissTime();
                             }
                         }).show();
                     }
@@ -809,6 +846,7 @@ public class OsdSubMenuFragment extends Fragment
                     @Override
                     public void onClick(View v)
                     {
+                        PosterOsdActivity.INSTANCE.cancelDismissTime();
                         new AlertDialog.Builder(getActivity()).setTitle(R.string.tools_dialog_u_disk_update_header)
                         .setPositiveButton(R.string.enter, new DialogInterface.OnClickListener() {
                             @Override
@@ -821,6 +859,7 @@ public class OsdSubMenuFragment extends Fragment
                             @Override
                             public void onClick(DialogInterface dialog, int which)
                             {
+                                PosterOsdActivity.INSTANCE.setDismissTime();
                             }
                         }).show();
                     }
@@ -879,6 +918,7 @@ public class OsdSubMenuFragment extends Fragment
                     @Override
                     public void onClick(View v)
                     {
+                        PosterOsdActivity.INSTANCE.cancelDismissTime();
                         new AlertDialog.Builder(getActivity()).setTitle(R.string.tools_dialog_u_disk_update_header)
                                 .setPositiveButton(R.string.enter, new DialogInterface.OnClickListener() {
                                     @Override
@@ -892,6 +932,7 @@ public class OsdSubMenuFragment extends Fragment
                                     @Override
                                     public void onClick(DialogInterface dialog, int which)
                                     {
+                                        PosterOsdActivity.INSTANCE.setDismissTime();
                                     }
                                 }).show();
                     }
@@ -903,6 +944,7 @@ public class OsdSubMenuFragment extends Fragment
                     @Override
                     public void onClick(View v)
                     {
+                        PosterOsdActivity.INSTANCE.cancelDismissTime();
                     	new AlertDialog.Builder(getActivity()).setTitle(R.string.tools_dialog_u_disk_update_header)
                         .setPositiveButton(R.string.enter, new DialogInterface.OnClickListener() {
                             @Override
@@ -915,6 +957,7 @@ public class OsdSubMenuFragment extends Fragment
                             @Override
                             public void onClick(DialogInterface dialog, int which)
                             {
+                                PosterOsdActivity.INSTANCE.setDismissTime();
                             }
                         }).show();
                     }
@@ -926,6 +969,7 @@ public class OsdSubMenuFragment extends Fragment
                     @Override
                     public void onClick(View v)
                     {
+                        PosterOsdActivity.INSTANCE.cancelDismissTime();
                         new AlertDialog.Builder(getActivity()).setTitle(R.string.tools_dialog_factory_header)
                                 .setPositiveButton(R.string.enter, new DialogInterface.OnClickListener() {
                                     @Override
@@ -940,6 +984,7 @@ public class OsdSubMenuFragment extends Fragment
                                     @Override
                                     public void onClick(DialogInterface dialog, int which)
                                     {
+                                        PosterOsdActivity.INSTANCE.setDismissTime();
                                     }
                                 }).show();
                     }
@@ -951,6 +996,7 @@ public class OsdSubMenuFragment extends Fragment
                     @Override
                     public void onClick(View v)
                     {
+                        PosterOsdActivity.INSTANCE.cancelDismissTime();
                         checkNet();
                     }
                 });
@@ -1371,6 +1417,20 @@ public class OsdSubMenuFragment extends Fragment
                         }
                         else
                         {
+                            InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
+                            if (imm.isActive())
+                            {
+                                if (mOnTimeEditText != null)
+                                {
+                                    imm.hideSoftInputFromWindow(mOnTimeEditText.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+                                }
+                                
+                                if (mOffTimeEditText != null)
+                                {
+                                    imm.hideSoftInputFromWindow(mOffTimeEditText.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+                                }
+                            }
+                            
                             ClockItem item = new ClockItem();
                             item.setOnTime(mOnTimeEditText.getText().toString());
                             item.setOffTime(mOffTimeEditText.getText().toString());
@@ -1382,6 +1442,20 @@ public class OsdSubMenuFragment extends Fragment
                 }).setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which)
                     {
+                    	InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
+                        if (imm.isActive())
+                        {
+                            if (mOnTimeEditText != null)
+                            {
+                                imm.hideSoftInputFromWindow(mOnTimeEditText.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+                            }
+                            
+                            if (mOffTimeEditText != null)
+                            {
+                                imm.hideSoftInputFromWindow(mOffTimeEditText.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+                            }
+                        }
+                        
                     	dismissDialog(dialog);
                     }
                 }).create();

@@ -130,6 +130,7 @@ public class Contants {
 	public static final String POSTER_PACKAGENAME = "com.youngsee.posterdisplayer";
 	
 	public static final String FILEBROWSER_PACKAGENAME = "com.android.rk";
+	public static final String SETTING_PACKAGENAME = "com.android.settings";
 
 	public static final String UDISK_NAME_PREFIX = "usbhost";
 }

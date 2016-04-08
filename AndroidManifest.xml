@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     coreApp="true"
     package="com.youngsee.posterdisplayer"
-    android:versionCode="4703"
-    android:versionName="4.7.0.3" >
+    android:versionCode="4705"
+    android:versionName="4.7.0.5" >
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -35,6 +35,7 @@
     <uses-permission android:name="android.permission.GET_TASKS" />
     <uses-permission android:name="android.permission.BROADCAST_STICKY" />
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <uses-permission android:name="android.permission.MOUNT_FORMAT_FILESYSTEMS" />
     <!-- <uses-permission android:name="android.permission.DEVICE_POWER"/> -->
     <!-- <uses-permission android:name="android.permission.SENSOR_INFO" /> -->
     <!-- <uses-permission android:name="android.permission.SENSOR_ENABLE" /> -->
@@ -49,13 +50,6 @@
         android:normalScreens="true"
         android:smallScreens="true"
         android:xlargeScreens="true" />
-    <supports-screens
-        android:anyDensity="true"
-        android:largeScreens="true"
-        android:normalScreens="true"
-        android:smallScreens="true" />
-
-    <uses-permission android:name="android.permission.MOUNT_FORMAT_FILESYSTEMS" />
 
     <application
         android:name="com.youngsee.posterdisplayer.PosterApplication"
@@ -66,11 +60,13 @@
         android:largeHeap="true"
         android:persistent="true"
         android:theme="@android:style/Theme.Black.NoTitleBar.Fullscreen" >
+        <!-- 
         <uses-library android:name="android.test.runner" />
+         -->
 
         <activity
             android:name="com.youngsee.posterdisplayer.PosterMainActivity"
-            android:configChanges="keyboardHidden|orientation|screenSize"
+            android:configChanges="keyboardHidden|orientation|screenSize|locale"
             android:label="@string/app_name"
             android:launchMode="singleTask" >
             <intent-filter>
@@ -79,32 +75,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name="com.youngsee.posterdisplayer.UrgentPlayerActivity"
-            android:launchMode="singleTask"
-            android:theme="@style/ContentOverlay" >
-        </activity>
+
         <activity
             android:name="com.youngsee.posterdisplayer.PosterOsdActivity"
-            android:configChanges="locale"
+            android:configChanges="keyboardHidden|orientation|screenSize|locale"
             android:launchMode="singleTask"
-            android:theme="@style/ContentOverlay" >
+            android:windowSoftInputMode = "stateHidden|adjustResize">
         </activity>
         <activity
             android:name="com.youngsee.authorization.AuthorizationActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize|locale"
             android:launchMode="singleTask"
-            android:theme="@style/ContentOverlay" >
+            android:windowSoftInputMode = "stateHidden|adjustResize">
         </activity>
-
-        <receiver
-            android:name="com.youngsee.posterdisplayer.BootBroadcastReceiver"
-            android:enabled="true"
-            android:exported="false"
-            android:label="SystemBootUpReceiver" >
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
-            </intent-filter>
-        </receiver>
 
         <service android:name="com.youngsee.posterdisplayer.PopSubService" />
 

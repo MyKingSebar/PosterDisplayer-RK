@@ -10,6 +10,7 @@ package com.youngsee.common;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import com.youngsee.logmanager.Logger;
 
 public class Md5
 {

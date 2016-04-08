@@ -8,10 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import com.youngsee.logmanager.Logger;
 public class SerialPort {
-
-	private Logger mLogger = new Logger();
-
 	/*
 	 * Do not remove or rename the field mFd: it is used by native method close();
 	 */
@@ -46,7 +44,7 @@ public class SerialPort {
 
 		mFd = open(device.getAbsolutePath(), baudrate, flags);
 		if (mFd == null) {
-			mLogger.e("native open returns null");
+			Logger.e("native open returns null");
 			throw new IOException();
 		}
 		mFileInputStream = new FileInputStream(mFd);

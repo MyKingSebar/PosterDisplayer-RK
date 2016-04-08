@@ -4,57 +4,54 @@
     android:layout_height="match_parent"
     android:orientation="vertical" >
     
-    <RelativeLayout
+    <FrameLayout
+        android:id="@+id/root"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="7">
+        android:layout_weight="14">
 
-        <LinearLayout
-            android:id="@+id/root"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical" />
-    </RelativeLayout>
-    
+    </FrameLayout>
+
     <LinearLayout
         android:id="@+id/LLDockBar"
 	    android:layout_width="match_parent"  
         android:layout_height="0dp"
         android:layout_weight="1"
         android:orientation="horizontal"
-        android:background="#3BA2F9"
-        android:visibility="gone" >
+        android:background="#3BA2F9" >
         
 		<com.youngsee.customview.YSHorizontalScrollView
 		    android:id="@+id/HSVDockBar"
 	        android:layout_width="0dp"  
+	        android:layout_weight="1"  
 	        android:layout_height="match_parent"
-	        android:layout_weight="1"
 	        android:scrollbars="none"
 	        android:descendantFocusability="beforeDescendants" >  
 	  
 	        <LinearLayout  
-	            android:layout_width="match_parent"  
-	            android:layout_height="match_parent"  
+	            android:layout_width="wrap_content"  
+	            android:layout_height="match_parent"
+	            android:layout_gravity="center_horizontal"  
 	            android:orientation="horizontal" >  
 	  
 	            <GridView  
 	                android:id="@+id/gridview"  
 	                android:layout_width="wrap_content"  
-	                android:layout_height="wrap_content"
-	                android:layout_gravity="center_vertical"
+	                android:layout_height="match_parent"
+	                android:layout_gravity="center"
 	                android:numColumns="auto_fit"
-	                android:columnWidth="250dp"
+	                android:columnWidth="72px"
 	                android:stretchMode="columnWidth"
-	                android:horizontalSpacing="20dp"
+	                android:horizontalSpacing="36px"
 	                android:paddingLeft="0dp" >  
-	            </GridView>  
+	            </GridView>
 	        </LinearLayout>  
 	    </com.youngsee.customview.YSHorizontalScrollView>
 	    <Button 
             android:layout_height="match_parent"
-            android:layout_width="30dp"
+            android:layout_width="35dp"
             android:id="@+id/BSelectApp"
-            android:background="@null" />
+            android:background="@null">
+	    </Button>
 	</LinearLayout>
 </LinearLayout>

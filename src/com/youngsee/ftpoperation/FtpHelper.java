@@ -18,10 +18,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.youngsee.common.Contants;
 import com.youngsee.common.FileUtils;
-import com.youngsee.common.LogUtils;
-import com.youngsee.common.Logger;
 import com.youngsee.common.Md5;
 import com.youngsee.common.SysParamManager;
+import com.youngsee.logmanager.LogUtils;
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterApplication;
 import it.sauronsoftware.ftp4j.FTPAbortedException;
 import it.sauronsoftware.ftp4j.FTPClient;
@@ -1302,7 +1302,7 @@ public class FtpHelper
             if (localFile.isFile() && localFile.exists())
             {
                 // 断点续传
-                client.download(FileUtils.formatPath4FTP(remoteFileName), localFile, localFile.length(), listener, 0);
+                client.download(FileUtils.formatPath4FTP(remoteFileName), localFile, localFile.length(), listener);
             }
             else
             {

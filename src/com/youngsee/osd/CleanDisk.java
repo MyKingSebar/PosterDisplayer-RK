@@ -16,6 +16,7 @@ import android.os.Handler;
 import android.os.Message;
 import com.youngsee.common.FileUtils;
 import com.youngsee.posterdisplayer.PosterApplication;
+import com.youngsee.posterdisplayer.PosterOsdActivity;
 import com.youngsee.posterdisplayer.R;
 
 public class CleanDisk
@@ -89,6 +90,7 @@ public class CleanDisk
                                                            @Override
                                                            public void onClick(DialogInterface dialog, int which)
                                                            {
+                                                               PosterOsdActivity.INSTANCE.setDismissTime();
                                                            }
                                                        }).show();
                                        return;
@@ -114,6 +116,7 @@ public class CleanDisk
                                                            @Override
                                                            public void onClick(DialogInterface dialog, int which)
                                                            {
+                                                               PosterOsdActivity.INSTANCE.setDismissTime();
                                                            }
                                                        }).show();
                                        return;

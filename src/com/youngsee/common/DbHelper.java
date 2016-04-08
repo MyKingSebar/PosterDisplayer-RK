@@ -1,27 +1,9 @@
 package com.youngsee.common;
 
 import java.io.UnsupportedEncodingException;
-
-
-/*
-import com.youngsee.adplayer.AdApplication;
-import com.youngsee.adplayer.bean.FtpParam;
-import com.youngsee.adplayer.bean.ServerInfoResp;
-import com.youngsee.adplayer.bean.SysInfoResp;
-import com.youngsee.adplayer.common.Constants;
-import com.youngsee.adplayer.provider.DbConstants;
-import com.youngsee.adplayer.system.DbChargeInfo;
-import com.youngsee.adplayer.system.DbSysParam;
-import com.youngsee.adplayer.system.XmlSysParam;
-*/
-
-
-
-
-
-
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.provider.DbConstants;
 import com.youngsee.webservices.SysParam;

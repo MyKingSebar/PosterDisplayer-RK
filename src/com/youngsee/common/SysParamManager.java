@@ -10,6 +10,7 @@ import org.xmlpull.v1.XmlSerializer;
 import android.text.TextUtils;
 import android.util.Xml;
 
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.webservices.SysParam;
 import com.youngsee.webservices.XmlCmdInfoRef;

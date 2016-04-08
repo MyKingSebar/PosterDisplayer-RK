@@ -43,7 +43,6 @@ import com.youngsee.common.Contants;
 import com.youngsee.common.DbHelper;
 import com.youngsee.common.DiskLruCache;
 import com.youngsee.common.FileUtils;
-import com.youngsee.common.Logger;
 import com.youngsee.common.MediaInfoRef;
 import com.youngsee.common.ReflectionUtils;
 import com.youngsee.common.RuntimeExec;
@@ -54,8 +53,8 @@ import com.youngsee.customview.PosterBaseView;
 import com.youngsee.ftpoperation.FtpFileInfo;
 import com.youngsee.ftpoperation.FtpHelper;
 import com.youngsee.ftpoperation.FtpOperationInterface;
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.R;
-import com.youngsee.screenmanager.ProgramFragment;
 import com.youngsee.screenmanager.ScreenManager;
 import com.youngsee.webservices.SysParam;
 import com.youngsee.webservices.WsClient;
@@ -69,8 +68,6 @@ import android.app.AlarmManager;
 import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Matrix;
 import android.graphics.BitmapFactory;
@@ -84,7 +81,6 @@ import android.provider.Settings;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
 import android.text.format.Time;
-import android.util.DisplayMetrics;
 import android.view.View;
 
 public class PosterApplication extends Application
@@ -107,8 +103,7 @@ public class PosterApplication extends Application
     private static String                   mTempFolderFullPath            = null;
 
     // Define the image cache (per APP instance)
-    private static LruCache<String, Bitmap> mNormalImgMemoryCache          = null;
-    private static LruCache<String, Bitmap> mUrgentImgMemoryCache          = null;
+    private static LruCache<String, Bitmap> mImgMemoryCache          = null;
     
     // Define the image disk cache (per APP instance)
     private static DiskLruCache             mImgDiskCache                  = null;
@@ -150,7 +145,7 @@ public class PosterApplication extends Application
         
         // Allocate memory for the image cache space to normal program
         int cacheSize = (int) Runtime.getRuntime().maxMemory() / 10;
-        mNormalImgMemoryCache = new LruCache<String, Bitmap>(cacheSize)
+        mImgMemoryCache = new LruCache<String, Bitmap>(cacheSize)
         {
             @Override
             protected int sizeOf(String key, Bitmap bitmap)
@@ -176,35 +171,7 @@ public class PosterApplication extends Application
                 }
             }
         };
-        
-        // Allocate memory for the image cache space to urgent program
-        mUrgentImgMemoryCache = new LruCache<String, Bitmap>(cacheSize)
-        {
-            @Override
-            protected int sizeOf(String key, Bitmap bitmap)
-            {
-                int nSize = 0;
-                if (bitmap != null)
-                {
-                    nSize = bitmap.getByteCount();
-                }
-                return nSize;
-            }
-            
-            @Override
-            protected void entryRemoved(boolean evicted, String key, Bitmap oldBitmap, Bitmap newBitmap)
-            {
-                if (evicted)
-                {
-                    if ((oldBitmap != null) && (!oldBitmap.isRecycled()))
-                    {
-                        oldBitmap.recycle();
-                        oldBitmap = null;
-                    }
-                }
-            }
-        };
-                
+           
         // Allocate disk size for the image disk cache space
         File cacheDir = DiskLruCache.getDiskCacheDir(this, "thumbnails");
         if ((mImgDiskCache = DiskLruCache.openCache(this, cacheDir, DISK_CACHE_SIZE)) != null)
@@ -322,69 +289,33 @@ public class PosterApplication extends Application
         return mScreenWidth;
     }
     
-    public static void addBitmapToMemoryCache(Context context, String key, Bitmap bitmap)
+    public static void addBitmapToMemoryCache(String key, Bitmap bitmap)
     {
-        if (context instanceof PosterMainActivity)
-        {  
-            if (mNormalImgMemoryCache != null)
-            {
-                mNormalImgMemoryCache.put(key, bitmap);
-            }
-        }
-        else if (context instanceof UrgentPlayerActivity)
+        if (mImgMemoryCache != null)
         {
-            if (mUrgentImgMemoryCache != null)
-            {
-                mUrgentImgMemoryCache.put(key, bitmap);
-            }
+            mImgMemoryCache.put(key, bitmap);
         }
     }
     
-    public static Bitmap getBitmapFromMemoryCache(Context context, String key)
+    public static Bitmap getBitmapFromMemoryCache(String key)
     {
-        if (context instanceof PosterMainActivity)
-        {  
-            if (mNormalImgMemoryCache != null)
-            {
-                Bitmap bmp = mNormalImgMemoryCache.get(key);
-                if (bmp != null && !bmp.isRecycled())
-                {
-                    return bmp;
-                }
-            }
-        }
-        else if (context instanceof UrgentPlayerActivity)
+        if (mImgMemoryCache != null)
         {
-            if (mUrgentImgMemoryCache != null)
+            Bitmap bmp = mImgMemoryCache.get(key);
+            if (bmp != null && !bmp.isRecycled())
             {
-                Bitmap bmp = mUrgentImgMemoryCache.get(key);
-                if (bmp != null && !bmp.isRecycled())
-                {
-                    return bmp;
-                }
+                return bmp;
             }
         }
-
         return null;
     }
     
-    public static void clearMemoryCache(Context context)
-    {
-        if (context instanceof PosterMainActivity)
-        {  
-            if (mNormalImgMemoryCache != null)
-            {
-                mNormalImgMemoryCache.evictAll();
-                System.gc();
-            }
-        }
-        else if (context instanceof UrgentPlayerActivity)
+    public static void clearMemoryCache()
+    { 
+        if (mImgMemoryCache != null)
         {
-            if (mUrgentImgMemoryCache != null)
-            {
-                mUrgentImgMemoryCache.evictAll();
-                System.gc();
-            }
+        	mImgMemoryCache.evictAll();
+            System.gc();
         }
     }
     
@@ -469,24 +400,21 @@ public class PosterApplication extends Application
         return 0;
     }
     
-    public Bitmap getStandbyScreenImage()
+    public Bitmap getDefaultScreenImg()
     {
         Bitmap dstImg = null;
-        String strImagePath = getStandbyScreenImgPath();
         
-        // 优先从磁盘中获取 (待机画面保存位置, 外部可修改)
-        if ((dstImg = loadPicture(strImagePath, mScreenWidth, mScreenHeight)) == null)
+        // 从Resource中获取 (默认的待机画面)
+        String code = PosterApplication.getInstance().getConfiguration().getFeatureCode();
+        if(code != null && YSConfiguration.FEATURE_CODE_YUESHI.equalsIgnoreCase(code))
         {
-            // 从Resource中获取 (默认的待机画面)
-            String code = PosterApplication.getInstance().getConfiguration().getFeatureCode();
-            if(code != null && YSConfiguration.FEATURE_CODE_YUESHI.equalsIgnoreCase(code)){
-                dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.daiji_ys);
-            }
-            else{
-                dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.daiji);
-            }
+            dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.daiji_ys);
         }
-        
+        else
+        {
+            dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.daiji);
+        }
+
         return dstImg;
     }
 
@@ -499,7 +427,7 @@ public class PosterApplication extends Application
         sysParam.netConn.put("ip", "0.0.0.0");
         
         sysParam.serverSet = new ConcurrentHashMap<String, String>();
-        sysParam.serverSet.put("weburl", "http://123.56.146.48/dn2/services/Heart.asmx");
+        sysParam.serverSet.put("weburl", getConfiguration().getDefualtServerUrl() + WsClient.SERVICE_URL_SUFFIX);
         sysParam.serverSet.put("ftpip", "123.56.146.48");
         sysParam.serverSet.put("ftpport", "21");
         sysParam.serverSet.put("ftpname", "dn4");
@@ -726,7 +654,7 @@ public class PosterApplication extends Application
             
             mStandbyScreenImgFullPath = sb.append("background.jpg").toString();
         }
-        
+
         return mStandbyScreenImgFullPath;
     }
     
@@ -1361,20 +1289,11 @@ public class PosterApplication extends Application
 
     public Bitmap combineScreenCap(Bitmap bitmap)
     {
-        ProgramFragment pf = null;
-        
-        if (UrgentPlayerActivity.INSTANCE != null) {
-        	pf = (ProgramFragment) (UrgentPlayerActivity.INSTANCE.getFragmentManager()
-        			.findFragmentByTag(URGENT_FRAGMENT_TAG));
-        } else if (PosterMainActivity.INSTANCE != null) {
-        	pf = (ProgramFragment) (PosterMainActivity.INSTANCE.getFragmentManager()
-        			.findFragmentByTag(NORMAL_FRAGMENT_TAG));
-        }
-        
-        if (pf != null)
+        if (PosterMainActivity.INSTANCE != null) 
         {
-            return pf.combineScreenCap(bitmap);
+        	return PosterMainActivity.INSTANCE.combineScreenCap(bitmap);
         }
+
         return bitmap;
     }
 

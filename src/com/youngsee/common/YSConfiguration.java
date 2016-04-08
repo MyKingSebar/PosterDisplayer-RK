@@ -14,10 +14,10 @@ import android.content.Context;
 public class YSConfiguration{
     private final static String    configFileName          = "config.properties";
     private final static String    key_feature             = "feature";
+    private final static String    key_defualt_server_url  = "defualt_server_url";
     private final static String    key_dock_bar            = "lunch_app_dock_bar";
-    private final static String    key_encryption_chip     = "encryption_chip";
     private final static String    key_environment_monitor = "environment_monitor";
-    private final static String    key_need_bootanimation  = "need_boot_animation";
+    private final static String    key_install_ysctrl      = "install_ysctrl";
     
     public final static String     FEATURE_CODE_YUESHI     = "YueShi";
     public final static String     FEATURE_CODE_COMMON     = "common";
@@ -30,10 +30,10 @@ public class YSConfiguration{
     private static Application     mApplication            = null;
     
     private String                 mFeatureCode            = null;
+    private String                 mServerUrl              = null;
     private Boolean                mHasDockBar             = null;
-    private Boolean                mHasEncryptionChip      = null;
     private Boolean                mHasEnvironmentMonitor  = null;
-    private Boolean                mHasBootAnimation       = null;
+    private Boolean                mIsNeedInstallYsctrl    = null;
     
     /**
      * Get Configuration by this function to avoid create multiple object of
@@ -62,6 +62,20 @@ public class YSConfiguration{
         
         return mFeatureCode;
     }
+
+    /**
+     * get the defualt server URL.
+     * 
+     * @return server URL
+     */
+    public String getDefualtServerUrl(){
+        if(mServerUrl == null){
+        	mServerUrl = (String)getProperties(key_defualt_server_url);
+        }
+        
+        return mServerUrl;
+    }
+    
     
     /**
      * Does the application has dock bar at the bottom of main window.
@@ -81,45 +95,6 @@ public class YSConfiguration{
         
         return mHasDockBar;
     }
-    
-    /**
-     * Does the main board has encryption chip.
-     * 
-     * @return
-     */
-    public Boolean hasEncryptionChip(){
-        if(mHasEncryptionChip == null){
-            String temp = getProperties(key_encryption_chip);
-            if(temp != null){
-                mHasEncryptionChip = Boolean.valueOf(temp);
-            }
-            else{
-                mHasEncryptionChip = false;
-            }
-        }
-        
-        return mHasEncryptionChip;
-    }
-    
-    /**
-     * Check that whether need boot animation
-     * 
-     * @return
-     */
-    public Boolean hasBootAnimation(){
-        if(mHasBootAnimation == null){
-            String temp = getProperties(key_need_bootanimation);
-            if(temp != null){
-                mHasBootAnimation = Boolean.valueOf(temp);
-            }
-            else{
-                mHasBootAnimation = false;
-            }
-        }
-        
-        return mHasBootAnimation;
-    }
-    
     /**
      * Does the application has environment monitor.
      * 
@@ -137,6 +112,25 @@ public class YSConfiguration{
         }
         
         return mHasEnvironmentMonitor;
+    }
+    
+    /**
+     * Whether need install install YSSysCtroller.apk.
+     * 
+     * @return
+     */
+    public Boolean isInstallYsctrl(){
+        if(mIsNeedInstallYsctrl == null){
+            String temp = getProperties(key_install_ysctrl);
+            if(temp != null){
+            	mIsNeedInstallYsctrl = Boolean.valueOf(temp);
+            }
+            else{
+            	mIsNeedInstallYsctrl = false;
+            }
+        }
+        
+        return mIsNeedInstallYsctrl;
     }
     
     // get the property by key.

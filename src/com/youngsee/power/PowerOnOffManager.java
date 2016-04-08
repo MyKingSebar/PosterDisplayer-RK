@@ -6,7 +6,6 @@ import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.posterdisplayer.PosterMainActivity;
 import com.youngsee.posterdisplayer.PosterOsdActivity;
 import com.youngsee.posterdisplayer.R;
-import com.youngsee.posterdisplayer.UrgentPlayerActivity;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
@@ -240,8 +239,6 @@ public class PowerOnOffManager {
 	private Context getCurrentContext(int screenofftype) {
 		if (PosterOsdActivity.INSTANCE != null) {
 			return PosterOsdActivity.INSTANCE;
-		} else if (UrgentPlayerActivity.INSTANCE != null) {
-			return UrgentPlayerActivity.INSTANCE;
 		} else {
 			return PosterMainActivity.INSTANCE;
 		}

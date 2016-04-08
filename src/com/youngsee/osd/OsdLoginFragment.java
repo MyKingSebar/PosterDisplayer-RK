@@ -15,7 +15,9 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.res.Configuration;
+import android.graphics.Rect;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,6 +46,9 @@ public class OsdLoginFragment extends Fragment
     
     private Editor              mEditor            = null;
     private SharedPreferences   mSharedPreferences = null;
+
+    private LinearLayout        mOsdExit        = null;
+    
     private LinearLayout        mOsdLayout         = null;
     private ImageView           mOsdLoginBtn       = null;
     private EditText            mEnterPwd, mOldPwd, mNewPwd = null;
@@ -51,6 +56,8 @@ public class OsdLoginFragment extends Fragment
     private ImageView           mResetPwd          = null;
     private View                mResetView         = null;
     private int                 mOsdMenuId         = 0;
+    
+    private boolean             mIsInit         = false;
     
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -83,6 +90,7 @@ public class OsdLoginFragment extends Fragment
     @Override
     public void onActivityCreated(Bundle savedInstanceState)
     {
+        mIsInit = true;
         super.onActivityCreated(savedInstanceState);
         initLoginOsdFragment();
         
@@ -103,6 +111,11 @@ public class OsdLoginFragment extends Fragment
     @Override
     public void onDestroy()
     {
+        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
+        if (mEnterPwd != null && imm.isActive())
+        {
+            imm.hideSoftInputFromWindow(mEnterPwd.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+        }
         super.onDestroy();
     }
     
@@ -113,35 +126,9 @@ public class OsdLoginFragment extends Fragment
     {
         mSharedPreferences = getActivity().getSharedPreferences(PosterOsdActivity.OSD_CONFIG, Context.MODE_PRIVATE);
         mEditor = mSharedPreferences.edit();
-        if (mSharedPreferences.getString(PosterOsdActivity.OSD_PASSWORD, null) == null)
-        {
-            String spwd = SysParamManager.getInstance().getSysPasswd();
-            mEditor.putString(OSD_DEFAULT_PWD, spwd);
-            mEditor.commit();
-        }
         
+        mOsdExit = (LinearLayout) getActivity().findViewById(R.id.osd_login_exit);
         mOsdLayout = (LinearLayout) getActivity().findViewById(R.id.osd_layout);
-        ViewTreeObserver vto = getView().getViewTreeObserver();  
-		vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener(){ 
-            @SuppressWarnings("deprecation")
-            @Override 
-		    public void onGlobalLayout() { 
-		    	getView().getViewTreeObserver().removeGlobalOnLayoutListener(this);
-		    	if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-			    	RelativeLayout.LayoutParams osdLayoutParams = new RelativeLayout.LayoutParams(
-							(int)(getView().getWidth()*(9.9f/25)), (int)(getView().getHeight()*(0.56f/14)));
-			    	mOsdLayout.setLayoutParams(osdLayoutParams);
-			    	mOsdLayout.setX(getView().getWidth()*(7.71f/25));
-			    	mOsdLayout.setY(getView().getHeight()*(7.82f/14));
-		    	} else {
-		    		RelativeLayout.LayoutParams osdLayoutParams = new RelativeLayout.LayoutParams(
-							(int)(getView().getWidth()*(5.6f/8)), (int)(getView().getHeight()*(0.33f/14)));
-			    	mOsdLayout.setLayoutParams(osdLayoutParams);
-			    	mOsdLayout.setX(getView().getWidth()*(1.47f/8));
-			    	mOsdLayout.setY(getView().getHeight()*(6.88f/14));
-		    	}
-		    }  
-		});
         
         mOsdLoginBtn = (ImageView) getActivity().findViewById(R.id.osd_login);
         mEnterPwd = (EditText) getActivity().findViewById(R.id.osd_password);
@@ -152,12 +139,64 @@ public class OsdLoginFragment extends Fragment
         mOldPwd = (EditText) mResetView.findViewById(R.id.old_password);
         mNewPwd = (EditText) mResetView.findViewById(R.id.new_password);
         
+        ViewTreeObserver vto = getView().getViewTreeObserver();  
+		vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener(){ 
+            @Override 
+            public void onGlobalLayout() {
+                if (mIsInit)
+                {
+                    if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE)
+                    {
+                        RelativeLayout.LayoutParams osdLayoutParams = new RelativeLayout.LayoutParams((int) (getView().getWidth() * (9.9f / 25)), (int) (getView().getHeight() * (0.56f / 14)));
+                        mOsdLayout.setLayoutParams(osdLayoutParams);
+                        mOsdLayout.setX(getView().getWidth() * (7.71f / 25));
+                        mOsdLayout.setY(getView().getHeight() * (7.82f / 14));
+                    }
+                    else
+                    {
+                        RelativeLayout.LayoutParams osdLayoutParams = new RelativeLayout.LayoutParams((int) (getView().getWidth() * (5.6f / 8)), (int) (getView().getHeight() * (0.33f / 14)));
+                        mOsdLayout.setLayoutParams(osdLayoutParams);
+                        mOsdLayout.setX(getView().getWidth() * (1.47f / 8));
+                        mOsdLayout.setY(getView().getHeight() * (6.88f / 14));
+                    }
+                    
+                    mOsdExit.setX(getView().getWidth() - 65);
+                    mOsdExit.setY(5);
+                    mIsInit = false;
+                }
+                else
+                {
+                    // 检查软键盘是否弹出
+                    if (getActivity() != null && 
+                        getActivity().getWindow() != null && 
+                        getActivity().getWindow().peekDecorView() != null)
+                    {
+                        View decorView = getActivity().getWindow().peekDecorView();
+                        Rect rect = new Rect();
+                        decorView.getWindowVisibleDisplayFrame(rect);
+                        int displayHight = rect.bottom - rect.top;
+                        int hight = decorView.getHeight();
+                        boolean softInputIsVisible = (double) displayHight / hight < 0.8;
+                        if (softInputIsVisible)
+                        {
+                            PosterOsdActivity.INSTANCE.cancelDismissTime();
+                        }
+                        else
+                        {
+                            PosterOsdActivity.INSTANCE.setDismissTime();
+                        }
+                    }
+                }
+            }  
+        });
+        
         mOsdLoginBtn.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v)
             {
-                if (mSharedPreferences.getString(PosterOsdActivity.OSD_PASSWORD, OSD_DEFAULT_PWD).equals(mEnterPwd.getText().toString())
-                    || mEnterPwd.getText().toString().equals("admin"))
+                String spwd = SysParamManager.getInstance().getSysPasswd();
+                if ((!TextUtils.isEmpty(spwd) && spwd.equals(mEnterPwd.getText().toString()))
+                    || OSD_DEFAULT_PWD.equals(mEnterPwd.getText().toString()))
                 {
                     InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
                     if (imm.isActive())
@@ -185,19 +224,12 @@ public class OsdLoginFragment extends Fragment
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
             {
-                if (mSharedPreferences.getString(PosterOsdActivity.OSD_PASSWORD, OSD_DEFAULT_PWD).equals(
-                        mEnterPwd.getText().toString()))
+            	String spwd = SysParamManager.getInstance().getSysPasswd();
+                if ((!TextUtils.isEmpty(spwd) && spwd.equals(mEnterPwd.getText().toString()))
+                    || OSD_DEFAULT_PWD.equals(mEnterPwd.getText().toString()))
                 {
-                    if (isChecked)
-                    {
-                        mEditor.putBoolean(PosterOsdActivity.OSD_ISMEMORY, true);
-                        mEditor.commit();
-                    }
-                    else
-                    {
-                        mEditor.putBoolean(PosterOsdActivity.OSD_ISMEMORY, false);
-                        mEditor.commit();
-                    }
+                    mEditor.putBoolean(PosterOsdActivity.OSD_ISMEMORY, isChecked);
+                    mEditor.commit();
                 }
                 else
                 {
@@ -212,6 +244,14 @@ public class OsdLoginFragment extends Fragment
             public void onClick(View v)
             {
                 resetPassword();
+            }
+        });
+        
+        mOsdExit.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                getActivity().finish();
             }
         });
     }
@@ -230,13 +270,11 @@ public class OsdLoginFragment extends Fragment
                 .setPositiveButton(R.string.enter, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which)
                     {
-                        String old_Str = mSharedPreferences.getString(PosterOsdActivity.OSD_PASSWORD, OSD_DEFAULT_PWD);
+                        String old_Str = SysParamManager.getInstance().getSysPasswd();
                         if (mOldPwd.getText().toString().equals(old_Str) && 
                            !mOldPwd.getText().toString().equals(mNewPwd.getText().toString()))
                         {
-                            mEditor.putString(PosterOsdActivity.OSD_PASSWORD, mNewPwd.getText().toString());
-                            mEditor.commit();
-                            Toast.makeText(getActivity(), R.string.login_dialog_msgmodifysuccess, Toast.LENGTH_SHORT).show();
+                            SysParamManager.getInstance().setSysPasswd(mNewPwd.getText().toString());
                         }
                         else if(mOldPwd.getText().toString().equals(mNewPwd.getText().toString()))
                         {

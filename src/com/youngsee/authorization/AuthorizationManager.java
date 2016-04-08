@@ -1,12 +1,6 @@
 package com.youngsee.authorization;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-
 import org.json.JSONException;
 
 import android.annotation.SuppressLint;
@@ -18,7 +12,7 @@ import android.os.Message;
 import com.youngsee.common.Base64Utils;
 import com.youngsee.common.DbHelper;
 import com.youngsee.common.FileUtils;
-import com.youngsee.common.Logger;
+import com.youngsee.logmanager.Logger;
 import com.youngsee.common.RSAUtils;
 import com.youngsee.network.JSONUtil;
 import com.youngsee.network.NetWorkUtil;
@@ -194,7 +188,7 @@ public class AuthorizationManager {
 			return null;
 		}
 		StringBuilder urlsb = new StringBuilder();
-    	urlsb.append(WsClient.getServerURLPrefix());
+    	urlsb.append(AuthorizationCommon.AUTHORIZATION_SERVER_URL);
     	urlsb.append("/");
     	urlsb.append(AuthorizationCommon.SERVERFILE_URL_MIDDLE);
     	urlsb.append(file);
@@ -230,6 +224,7 @@ public class AuthorizationManager {
         boolean mIsWaitingResult = false;
         NetWorkUtil mNetWork = null;
         
+        @SuppressLint("HandlerLeak")
         Handler mHandler = new Handler(){
             public void handleMessage(android.os.Message msg){
                 if(msg.arg1 != NetWorkUtil.NETWORK_OK){

@@ -26,6 +26,7 @@ public class AuthorizationCommon {
 	
 	public static final int DEFAULT_DELAY_SECOND_SERVER = 3;
 	
+	public static final String AUTHORIZATION_SERVER_URL = "http://123.56.146.48/dn2";
 	public static final String SERVERFILE_URL_MIDDLE="dn.ashx?do=getfilecontent&filepath=";
 	
 	public static final String REMOTE_KEY_FILE_PATH="AuthCodeFiles/pub.key";

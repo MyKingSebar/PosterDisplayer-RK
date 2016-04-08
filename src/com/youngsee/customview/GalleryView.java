@@ -13,7 +13,7 @@ import android.view.LayoutInflater;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 
-import com.youngsee.common.Logger;
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.R;
 
 
