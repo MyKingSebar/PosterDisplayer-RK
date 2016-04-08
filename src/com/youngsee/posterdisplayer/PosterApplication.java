@@ -81,6 +81,7 @@ import android.provider.Settings;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
 import android.text.format.Time;
+import android.util.DisplayMetrics;
 import android.view.View;
 
 public class PosterApplication extends Application
@@ -89,9 +90,6 @@ public class PosterApplication extends Application
     
     private YSConfiguration                 mConfiguration                 = null;
 
-    private static int                      mScreenWidth                   = 0;
-    private static int                      mScreenHeight                  = 0;
-    
     private static byte[]                   mEthMac                        = null;
     private static String                   mCpuId                         = null;
     
@@ -269,24 +267,38 @@ public class PosterApplication extends Application
         return verName;
     }
     
-    public static void setScreenHeight(int nHeight)
-    {
-        mScreenHeight = nHeight;
-    }
-    
-    public static void setScreenWidth(int nWidth)
-    {
-        mScreenWidth = nWidth;
-    }
-    
     public static int getScreenHeigth()
     {
-        return mScreenHeight;
+    	int screenHeight = 0;
+    	
+    	if (PosterMainActivity.INSTANCE != null)
+    	{
+    	    // 获取状态栏的高度
+	        int resourceId = PosterMainActivity.INSTANCE.getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+	        int height = PosterMainActivity.INSTANCE.getResources().getDimensionPixelSize(resourceId);
+	    
+		    // 获取屏幕实际大小(以像素为单位)
+		    DisplayMetrics metric = new DisplayMetrics();
+		    PosterMainActivity.INSTANCE.getWindowManager().getDefaultDisplay().getMetrics(metric);
+		    screenHeight = metric.heightPixels + height;
+    	}
+				
+        return screenHeight;
     }
     
     public static int getScreenWidth()
     {
-        return mScreenWidth;
+    	int screenWidth = 0;
+    	
+    	if (PosterMainActivity.INSTANCE != null)
+    	{
+    	    // 获取屏幕实际大小(以像素为单位)
+    	    DisplayMetrics metric = new DisplayMetrics();
+    	    PosterMainActivity.INSTANCE.getWindowManager().getDefaultDisplay().getMetrics(metric);
+    	    screenWidth = metric.widthPixels;
+    	}
+    	
+        return screenWidth;
     }
     
     public static void addBitmapToMemoryCache(String key, Bitmap bitmap)
@@ -408,11 +420,29 @@ public class PosterApplication extends Application
         String code = PosterApplication.getInstance().getConfiguration().getFeatureCode();
         if(code != null && YSConfiguration.FEATURE_CODE_YUESHI.equalsIgnoreCase(code))
         {
-            dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.daiji_ys);
+        	if (getScreenWidth() < getScreenHeigth())
+        	{
+        		// portrait
+        		dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.pdaiji_ys);
+        	}
+        	else
+        	{
+        		// landscape
+        		dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.daiji_ys);
+        	}
         }
         else
         {
-            dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.daiji);
+        	if (getScreenWidth() < getScreenHeigth())
+        	{
+        		// portrait
+        		dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.pdaiji);
+        	}
+        	else
+        	{
+        		// landscape
+        		dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.daiji);
+        	}
         }
 
         return dstImg;
