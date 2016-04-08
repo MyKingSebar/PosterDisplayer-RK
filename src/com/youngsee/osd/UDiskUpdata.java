@@ -79,7 +79,7 @@ public class UDiskUpdata
      */
     public void updateStandbyPic()
     {
-        String strFileSavePath = PosterApplication.getInstance().getStandbyScreenImgPath();
+        String strFileSavePath = PosterApplication.getStandbyScreenImgPath();
         updateImgFromUDisk("background.jpg", strFileSavePath);
     }
     

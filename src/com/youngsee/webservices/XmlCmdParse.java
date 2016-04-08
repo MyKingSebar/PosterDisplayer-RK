@@ -659,11 +659,11 @@ public class XmlCmdParse
                                 StringBuilder sb = new StringBuilder();
                                 sb.append(PosterApplication.getTempFolderPath());
                                 sb.append(FileUtils.getFilename("background.jpg"));
-                                FileUtils.delFile(new File(PosterApplication.getInstance().getStandbyScreenImgPath()));
+                                FileUtils.delFile(new File(PosterApplication.getStandbyScreenImgPath()));
                                 try
                                 {
                                     FileUtils.moveFileTo(
-                                            new File(sb.toString()), new File(PosterApplication.getInstance().getStandbyScreenImgPath()));
+                                            new File(sb.toString()), new File(PosterApplication.getStandbyScreenImgPath()));
                                     WsClient.getInstance().postResultBack(XmlCmdInfoRef.CMD_PTL_SYSUPDATE, nSysUpdateRegCode, 0, "");
                                 }
                                 catch (IOException e)

@@ -1787,7 +1787,7 @@ public class ScreenManager
             
             // 创建新的playMediaInfo
             MediaInfoRef playMediaInfo = new MediaInfoRef();
-            playMediaInfo.filePath = PosterApplication.getInstance().getStandbyScreenImgPath();
+            playMediaInfo.filePath = PosterApplication.getStandbyScreenImgPath();
             playMediaInfo.md5Key = 0;
             playMediaInfo.verifyCode = "";
             playMediaInfo.remotePath = "";

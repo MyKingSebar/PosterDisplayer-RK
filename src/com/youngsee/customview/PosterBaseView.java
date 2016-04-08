@@ -144,7 +144,7 @@ public abstract class PosterBaseView extends FrameLayout {
     
     public static boolean md5IsCorrect(MediaInfoRef media)
     {
-    	if (media.filePath.equals(PosterApplication.getInstance().getStandbyScreenImgPath()))
+    	if (media.filePath.equals(PosterApplication.getStandbyScreenImgPath()))
     	{
     		// 待机画面不做MD5校验
     		return true;

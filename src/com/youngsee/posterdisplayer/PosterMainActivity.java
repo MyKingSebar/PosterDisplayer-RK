@@ -63,6 +63,7 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.Toast;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 
@@ -119,9 +120,11 @@ public class PosterMainActivity extends Activity
 	
 	private static final int EVENT_CHECK_SET_ONOFFTIME = 0;
 
-	private static int MAX_CLICK_CNTS = 5;
-	private long mLastClickTime = 0;
+	private static int MAX_CLICK_CNTS    = 5;
+	private long  mLastClickTime         = 0;
 	private static int mCurrentClickCnts = 0;
+	
+	private long mExitTime               = 0;
 	
 	@SuppressWarnings("deprecation")
 	@Override
@@ -443,8 +446,20 @@ public class PosterMainActivity extends Activity
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_BACK:
-			// Log.i("dddd", "back--");
+			if ((System.currentTimeMillis() - mExitTime) > 2000)
+			{  
+	            Toast.makeText(getApplicationContext(), "再按一次返回到桌面", Toast.LENGTH_SHORT).show();
+	            mExitTime = System.currentTimeMillis();
+	        } 
+			else 
+			{
+	        	Intent mHomeIntent = new Intent(Intent.ACTION_MAIN);  
+	        	mHomeIntent.addCategory(Intent.CATEGORY_HOME);  
+	        	mHomeIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK  | Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED);  
+	        	startActivity(mHomeIntent);
+	        }
 			return true; // 不响应Back键
+			
 		case KeyEvent.KEYCODE_MENU:
 			enterToOSD(PosterOsdActivity.OSD_MAIN_ID);
 			return true; // 打开OSD主菜单

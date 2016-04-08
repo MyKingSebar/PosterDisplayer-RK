@@ -197,7 +197,6 @@ public class PosterApplication extends Application
     public void initAppParam()
     {
         getEthMacAddress();
-        getStandbyScreenImgPath();
         SysParamManager.getInstance().initSysParam();
     }
     
@@ -402,7 +401,7 @@ public class PosterApplication extends Application
         return 0;
     }
     
-    private Bitmap getDefaultScreenImg()
+    public Bitmap getDefaultScreenImg()
     {
         Bitmap dstImg = null;
         
@@ -638,7 +637,7 @@ public class PosterApplication extends Application
     /*
      * 获取系统参数文件存储的路径 注：或有外部存储设备则优先选用外部存储 (外部存储-->私有空间)
      */
-    public String getStandbyScreenImgPath()
+    public static String getStandbyScreenImgPath()
     {
         if (mStandbyScreenImgFullPath == null)
         {
@@ -656,31 +655,7 @@ public class PosterApplication extends Application
             
             mStandbyScreenImgFullPath = sb.append("background.jpg").toString();
         }
-        
-        if (!FileUtils.isExist(mStandbyScreenImgFullPath))
-        {
-        	Bitmap scrImg  = getDefaultScreenImg();
-        	
-        	FileOutputStream out = null;
-			File f = new File(mStandbyScreenImgFullPath);
-			try {
-				out = new FileOutputStream(f);
-				scrImg.compress(Bitmap.CompressFormat.JPEG, 100, out);
-				out.flush();
-				out.close();
-			} catch (Exception e) {
-				if (out != null)
-				{
-					try {
-						out.close();
-					} catch (IOException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-				}
-			}
-        }
-        
+
         return mStandbyScreenImgFullPath;
     }
     

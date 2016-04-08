@@ -887,9 +887,19 @@ public class MultiMediaView extends PosterBaseView
                         }
                         else if (FileUtils.mediaIsFile(media) && !FileUtils.isExist(media.filePath))
                         {
-                            Logger.i(media.filePath + " didn't exist, skip it.");
-                            downloadMedia(media);
-                            Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
+                        	if (media.filePath.equals(PosterApplication.getStandbyScreenImgPath()))
+                        	{
+                        		// 如果待机画面不存在，则播放默认的待机画面
+                        		Bitmap img = PosterApplication.getInstance().getDefaultScreenImg();
+                                showPicture(img, media.mode);
+                                Thread.sleep(60*1000);
+                        	}
+                        	else
+                        	{
+                                Logger.i(media.filePath + " didn't exist, skip it.");
+                                downloadMedia(media);
+                                Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
+                        	}
                             continue;
                         }
                         else if (FileUtils.mediaIsFile(media) && !md5IsCorrect(media))
