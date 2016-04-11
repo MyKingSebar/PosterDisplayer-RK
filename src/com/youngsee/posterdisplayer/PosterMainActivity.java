@@ -244,8 +244,7 @@ public class PosterMainActivity extends Activity
 			APKUpdateManager.getInstance().startAutoDetector();
 		}
 		
-		//在网络管理线程启动之前创建EnvMntManager实例，保证EnvMntManager中生成的handler运行在主线程
-	    //解决偶尔出现的在线程消息队列没有初始化前生成handler造成crash问题
+		// 启动环境监控板功能
 		if (PosterApplication.getInstance().getConfiguration().hasEnvironmentMonitor()) 
 		{
 		    // mEnvMntManager = EnvMntManager.getInstance();
