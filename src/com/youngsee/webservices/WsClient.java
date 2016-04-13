@@ -26,12 +26,14 @@ import org.xmlpull.v1.XmlSerializer;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.net.TrafficStats;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Xml;
 
+import com.youngsee.common.Actions;
 import com.youngsee.common.Contants;
 import com.youngsee.common.DbHelper;
 import com.youngsee.common.FileUtils;
@@ -305,7 +307,13 @@ public class WsClient
         }
 
         if (PosterApplication.getInstance().getConfiguration().hasEnvironmentMonitor()) {
-        	//EnvMntManager.getInstance().updateMonitorDevice();
+        	// Update EnvManger param
+        	Intent intent = new Intent(Actions.UPDATA_ENVMONITOR_DEVID_ACTION);
+        	intent.putExtra("CpuId", PosterApplication.getCpuId().toUpperCase());
+        	intent.putExtra("Mac", PosterApplication.getEthMacStr());
+        	intent.putExtra("term", SysParamManager.getInstance().getTerm());
+        	intent.putExtra("termGroup", SysParamManager.getInstance().getTermGrp());
+        	PosterApplication.getInstance().sendStickyBroadcast(intent);
         }
 
         // 重启设备，参数立即生效

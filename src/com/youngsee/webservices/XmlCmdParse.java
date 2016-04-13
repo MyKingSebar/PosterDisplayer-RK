@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.xmlpull.v1.XmlPullParser;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -30,6 +31,7 @@ import com.youngsee.ftpoperation.FtpFileInfo;
 import com.youngsee.ftpoperation.FtpHelper;
 import com.youngsee.ftpoperation.FtpOperationInterface;
 import com.youngsee.authorization.AuthorizationManager;
+import com.youngsee.common.Actions;
 import com.youngsee.common.FileUtils;
 import com.youngsee.common.Md5;
 import com.youngsee.common.RuntimeExec;
@@ -119,7 +121,13 @@ public class XmlCmdParse
                 }
 
                 if (PosterApplication.getInstance().getConfiguration().hasEnvironmentMonitor()) {
-                	//EnvMntManager.getInstance().updateMonitorDevice();
+                	// Update EnvManger param
+                	Intent intent = new Intent(Actions.UPDATA_ENVMONITOR_DEVID_ACTION);
+                	intent.putExtra("CpuId", PosterApplication.getCpuId().toUpperCase());
+                	intent.putExtra("Mac", PosterApplication.getEthMacStr());
+                	intent.putExtra("term", SysParamManager.getInstance().getTerm());
+                	intent.putExtra("termGroup", SysParamManager.getInstance().getTermGrp());
+                	PosterApplication.getInstance().sendStickyBroadcast(intent);
                 }
 
                 break;
@@ -220,6 +228,8 @@ public class XmlCmdParse
 
                 if (width != 0 && height != 0)
                 {
+                	RuntimeExec.getInstance().runRootCmd("rm -f " + PosterApplication.getScreenCaptureImgPath() + "*");
+                	
                     StringBuilder sb = new StringBuilder();
                     sb.append(PosterApplication.getScreenCaptureImgPath()).append("capture.png");
                     String strCaptureFilePath = sb.toString();

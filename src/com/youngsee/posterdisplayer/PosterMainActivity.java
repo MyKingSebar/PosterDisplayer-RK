@@ -28,6 +28,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -67,6 +68,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 
 import com.youngsee.authorization.AuthorizationManager;
+import com.youngsee.common.Actions;
 import com.youngsee.common.Contants;
 import com.youngsee.common.FileUtils;
 import com.youngsee.common.MediaInfoRef;
@@ -136,7 +138,7 @@ public class PosterMainActivity extends Activity
 		
 		INSTANCE = this;
 
-		// 初始安装APK时，需拷贝YSSysCtroller.apk
+		// 初始安装APK时，需安装YSSysCtroller.apk
 		if (PosterApplication.getInstance().getConfiguration().isInstallYsctrl()) 
 		{
 			int versionCode = PosterApplication.getInstance().getVerCode();
@@ -145,15 +147,18 @@ public class PosterMainActivity extends Activity
 			int installedVersion = sharedPreferences.getInt("versionCode", 0);
 			if (installed == 0 || versionCode != installedVersion) 
 			{
-				// Copy system ctrl APK
+				// install system ctrl APK
 				PackageInstaller install = new PackageInstaller();
 				String controller = install.retrieveSourceFromAssets("YSSysController.apk");
-				if (!TextUtils.isEmpty(controller) && install.installSystemPkg(controller)) 
+				if (!TextUtils.isEmpty(controller) && install.installSystemPkg(controller, "YSSysController.apk")) 
 				{
 				    SharedPreferences.Editor editor = sharedPreferences.edit();
 					editor.putInt("monitorInstalled", 1);
 					editor.putInt("versionCode", versionCode);
 					editor.commit();
+					
+					// start the APK
+					startService(new Intent(Actions.SYSCTRL_SERVICE_ACTION));
 				}
 			}
 		}
@@ -247,9 +252,25 @@ public class PosterMainActivity extends Activity
 		// 启动环境监控板功能
 		if (PosterApplication.getInstance().getConfiguration().hasEnvironmentMonitor()) 
 		{
-		    // mEnvMntManager = EnvMntManager.getInstance();
+			// install the APK
+		    if (!apkIsExist(Contants.ENVMANAGER_PACKAGENAME))
+		    {
+		    	PackageInstaller install = new PackageInstaller();
+				String controller = install.retrieveSourceFromAssets("EnvmntService.apk");
+				install.installSystemPkg(controller, "EnvmntService.apk");
+		    }
+		    
+		    // start the APK
+			startService(new Intent(Actions.ENVMANAGER_SERVICE_ACTION));
+			
+			// Update EnvManger param
+			Intent intent = new Intent(Actions.UPDATA_ENVMONITOR_DEVID_ACTION);
+			intent.putExtra("CpuId", PosterApplication.getCpuId().toUpperCase());
+			intent.putExtra("Mac", PosterApplication.getEthMacStr());
+			intent.putExtra("term", SysParamManager.getInstance().getTerm());
+			intent.putExtra("termGroup", SysParamManager.getInstance().getTermGrp());
+			PosterApplication.getInstance().sendStickyBroadcast(intent);
 		}
-		        
 	}
 
 	private void initReceiver() {
@@ -395,12 +416,6 @@ public class PosterMainActivity extends Activity
 
 		dismissUpdateProgramDialog();
 
-		if (PosterApplication.getInstance().getConfiguration().hasEnvironmentMonitor())
-		{
-			//mEnvMntManager.destroy();
-			//mEnvMntManager = null;
-		}
-
 		// 恢复屏幕
 		if (mWklk != null) {
 			mWklk.release();
@@ -463,6 +478,24 @@ public class PosterMainActivity extends Activity
 		return super.onKeyDown(keyCode, event);
 	}
 
+	private boolean apkIsExist(String packageName)
+    {
+    	if (!TextUtils.isEmpty(packageName))
+    	{
+    		try
+        	{
+        		ApplicationInfo info = getPackageManager().getApplicationInfo(packageName, PackageManager.GET_UNINSTALLED_PACKAGES);
+        		return (info != null);
+        	} 
+        	catch (NameNotFoundException e)
+        	{
+        		return false;
+        	}
+    	}
+    	
+    	return false;
+    }
+	
 	private void showUpdateProgramDialog() {
 		if ((mUpdateProgramDialog != null) && mUpdateProgramDialog.isShowing()) {
 			mUpdateProgramDialog.dismiss();
