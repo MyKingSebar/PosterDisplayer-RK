@@ -8,24 +8,15 @@ import java.io.InputStream;
 import com.youngsee.posterdisplayer.PosterApplication;
 
 public class PackageInstaller {
-	public boolean installSystemPkg(String fileName) {
+	public boolean installSystemPkg(String fileName, String apkName) {
 	    boolean ret = false;
 		try {
+			String destPath = "/system/app/" + apkName;
 			RuntimeExec.getInstance().runRootCmd("mount -o remount,rw /system");
-			RuntimeExec.getInstance().runRootCmd("chmod 777 /system/app");
-			RuntimeExec.getInstance().runRootCmd("rm -f /system/app/YSSysCon*.apk");
-			File src = new File(fileName);
-			String destPath = "/system/app/YSSysController.apk";
-			File dest = new File(destPath);
-
-			if (!dest.exists()) {
-				dest.createNewFile();
-			}
-			FileUtils.moveFileTo(src, dest);
-
-			RuntimeExec.getInstance().runRootCmd("chown root.root " + destPath);
-			RuntimeExec.getInstance().runRootCmd("chmod 644 " + destPath);
-			RuntimeExec.getInstance().runRootCmd("chmod 755 /system/app");
+			RuntimeExec.getInstance().runRootCmd("rm -f " + destPath);
+			RuntimeExec.getInstance().runRootCmd("cp " + fileName + " " + destPath);
+			RuntimeExec.getInstance().runRootCmd("chmod 777 " + destPath);
+			RuntimeExec.getInstance().runRootCmd("pm install -r " + destPath);
 			RuntimeExec.getInstance().runRootCmd("mount -o remount,ro /system");
 			ret = true;
 		} catch (Exception e) {
@@ -35,32 +26,6 @@ public class PackageInstaller {
 		return ret;
 	}
 
-	public boolean installLib(String fileName, String packageName) {
-	    boolean ret = false;
-        try {
-            RuntimeExec.getInstance().runRootCmd("mount -o remount,rw /system");
-            RuntimeExec.getInstance().runRootCmd("chmod 777 /system/lib");
-            File src = new File(fileName);
-            String destPath = "/system/lib/" + packageName;
-            FileUtils.delFile(destPath);
-            File dest = new File(destPath);
-
-            if (!dest.exists()) {
-                dest.createNewFile();
-            }
-            FileUtils.moveFileTo(src, dest);
-
-            RuntimeExec.getInstance().runRootCmd("chmod 777 " + destPath);
-            RuntimeExec.getInstance().runRootCmd("chmod 755 /system/lib");
-            RuntimeExec.getInstance().runRootCmd("mount -o remount,ro /system");
-            ret = true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return ret;
-    }
-	
 	public String retrieveSourceFromAssets(String packageName){
         File filePath = PosterApplication.getInstance().getFilesDir();
         StringBuilder cachePath = new StringBuilder();

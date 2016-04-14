@@ -118,9 +118,6 @@ public class XmlCmdParse
                     SysParamManager.getInstance().setTermGrp(strValue);
                 }
 
-                if (PosterApplication.getInstance().getConfiguration().hasEnvironmentMonitor()) {
-                	//EnvMntManager.getInstance().updateMonitorDevice();
-                }
 
                 break;
             
@@ -220,6 +217,8 @@ public class XmlCmdParse
 
                 if (width != 0 && height != 0)
                 {
+                	RuntimeExec.getInstance().runRootCmd("rm -f " + PosterApplication.getScreenCaptureImgPath() + "*");
+                	
                     StringBuilder sb = new StringBuilder();
                     sb.append(PosterApplication.getScreenCaptureImgPath()).append("capture.png");
                     String strCaptureFilePath = sb.toString();

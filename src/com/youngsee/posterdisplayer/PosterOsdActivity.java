@@ -246,7 +246,7 @@ public class PosterOsdActivity extends Activity
             break;
         
         case OSD_SYSTEM_ID:
-            PosterApplication.startApplication(this, "com.android.settings");
+            PosterApplication.startApplication(this, Contants.SETTING_PACKAGENAME);
             PosterOsdActivity.this.finish();
             break;
             

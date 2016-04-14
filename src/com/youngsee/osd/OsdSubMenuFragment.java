@@ -811,7 +811,7 @@ public class OsdSubMenuFragment extends Fragment
         about_MAC.setText(PosterApplication.getEthFormatMac().toUpperCase());
         about_IP.setText(PosterApplication.getLocalIpAddress());
 		if (!TextUtils.isEmpty(DbHelper.getInstance().getElectricFromDB())) {
-			about_electric.setText(DbHelper.getInstance().getElectricFromDB());
+			about_electric.setText(DbHelper.getInstance().getElectricFromDB()+"度");
 		}
 		else
 		{

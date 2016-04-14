@@ -67,8 +67,8 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
 
 import com.youngsee.authorization.AuthorizationManager;
+import com.youngsee.common.Actions;
 import com.youngsee.common.Contants;
-import com.youngsee.common.ElectricManager;
 import com.youngsee.common.FileUtils;
 import com.youngsee.common.MediaInfoRef;
 import com.youngsee.common.PackageInstaller;
@@ -137,7 +137,7 @@ public class PosterMainActivity extends Activity
 		
 		INSTANCE = this;
 
-		// 初始安装APK时，需拷贝YSSysCtroller.apk
+		// 初始安装APK时，需安装YSSysCtroller.apk
 		if (PosterApplication.getInstance().getConfiguration().isInstallYsctrl()) 
 		{
 			int versionCode = PosterApplication.getInstance().getVerCode();
@@ -146,15 +146,18 @@ public class PosterMainActivity extends Activity
 			int installedVersion = sharedPreferences.getInt("versionCode", 0);
 			if (installed == 0 || versionCode != installedVersion) 
 			{
-				// Copy system ctrl APK
+				// install system ctrl APK
 				PackageInstaller install = new PackageInstaller();
 				String controller = install.retrieveSourceFromAssets("YSSysController.apk");
-				if (!TextUtils.isEmpty(controller) && install.installSystemPkg(controller)) 
+				if (!TextUtils.isEmpty(controller) && install.installSystemPkg(controller, "YSSysController.apk")) 
 				{
 				    SharedPreferences.Editor editor = sharedPreferences.edit();
 					editor.putInt("monitorInstalled", 1);
 					editor.putInt("versionCode", versionCode);
 					editor.commit();
+					
+					// start the APK
+					startService(new Intent(Actions.SYSCTRL_SERVICE_ACTION));
 				}
 			}
 		}
@@ -244,17 +247,10 @@ public class PosterMainActivity extends Activity
 		{
 			APKUpdateManager.getInstance().startAutoDetector();
 		}
-		
-		//在网络管理线程启动之前创建EnvMntManager实例，保证EnvMntManager中生成的handler运行在主线程
-	    //解决偶尔出现的在线程消息队列没有初始化前生成handler造成crash问题
-		if (PosterApplication.getInstance().getConfiguration().hasEnvironmentMonitor()) 
-		{
-		    // mEnvMntManager = EnvMntManager.getInstance();
-		}
 		        
 		if (PosterApplication.getInstance().getConfiguration().isMonitorElectric()) 
 		{
-		    ElectricManager.getInstance().startTimingGetElectric();
+		    PosterApplication.getInstance().startTimerRunPowerMeter();
 		}
 	}
 
@@ -401,15 +397,9 @@ public class PosterMainActivity extends Activity
 
 		dismissUpdateProgramDialog();
 
-		if (PosterApplication.getInstance().getConfiguration().hasEnvironmentMonitor())
-		{
-			//mEnvMntManager.destroy();
-			//mEnvMntManager = null;
-		}
-
 		if (PosterApplication.getInstance().getConfiguration().isMonitorElectric())
 		{
-		    ElectricManager.getInstance().cancelTimingGetElectric();
+		   PosterApplication.getInstance().cancelTimerRunPowerMeter();
 		}
 		
 		// 恢复屏幕

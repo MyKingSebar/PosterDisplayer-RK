@@ -304,9 +304,6 @@ public class WsClient
             SysParamManager.getInstance().setSigOutParam(retSysParam.sigOutSet);
         }
 
-        if (PosterApplication.getInstance().getConfiguration().hasEnvironmentMonitor()) {
-        	//EnvMntManager.getInstance().updateMonitorDevice();
-        }
 
         // 重启设备，参数立即生效
         if (mServerConfigChanged)

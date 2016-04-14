@@ -17,7 +17,6 @@ public class YSConfiguration{
     private final static String    key_feature             = "feature";
     private final static String    key_defualt_server_url  = "defualt_server_url";
     private final static String    key_dock_bar            = "lunch_app_dock_bar";
-    private final static String    key_environment_monitor = "environment_monitor";
     private final static String    key_install_ysctrl      = "install_ysctrl";
     private final static String    key_electric_monitor      = "electric_monitor";
     
@@ -34,7 +33,6 @@ public class YSConfiguration{
     private String                 mFeatureCode            = null;
     private String                 mServerUrl              = null;
     private Boolean                mHasDockBar             = null;
-    private Boolean                mHasEnvironmentMonitor  = null;
     private Boolean                mIsNeedInstallYsctrl    = null;
     private Boolean                mIsMonitorElectric      = null;
     
@@ -98,25 +96,6 @@ public class YSConfiguration{
         
         return mHasDockBar;
     }
-    /**
-     * Does the application has environment monitor.
-     * 
-     * @return
-     */
-    public Boolean hasEnvironmentMonitor(){
-        if(mHasEnvironmentMonitor == null){
-            String temp = getProperties(key_environment_monitor);
-            if(temp != null){
-                mHasEnvironmentMonitor = Boolean.valueOf(temp);
-            }
-            else{
-                mHasEnvironmentMonitor = false;
-            }
-        }
-        
-        return mHasEnvironmentMonitor;
-    }
-    
     /**
      * Whether need install install YSSysCtroller.apk.
      * 
