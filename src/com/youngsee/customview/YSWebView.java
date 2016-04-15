@@ -27,12 +27,17 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.graphics.Bitmap;
 import android.net.http.SslError;
+import android.os.SystemClock;
 
 public class YSWebView extends PosterBaseView
 {
     private Context mContext = null;
     private WebView mWv = null;
 
+    private static int MAX_CLICK_CNTS    = 5;
+	private long  mLastClickTime         = 0;
+	private static int mCurrentClickCnts = 0;
+	
     public YSWebView(Context context)
     {
         super(context);
@@ -171,12 +176,25 @@ public class YSWebView extends PosterBaseView
                 @Override
                 public boolean onTouch(View v, MotionEvent event)
                 {
-                    if (event.getAction() == MotionEvent.ACTION_UP && event.getX() < 100)
+                    if (event.getAction() == MotionEvent.ACTION_UP)
                     {
-                        if (mContext instanceof PosterMainActivity)
-                        {
+                    	long clickTime = SystemClock.uptimeMillis();
+        				long dtime = clickTime - mLastClickTime;
+        				if (mLastClickTime == 0 || dtime < 3000) {
+        					mCurrentClickCnts++;
+        					mLastClickTime = clickTime;
+        				} else {
+        					mLastClickTime = 0;
+        					mCurrentClickCnts = 0;
+        				}
+
+        				// When click times is more than 5, then popup the tools bar
+        				if (mCurrentClickCnts > MAX_CLICK_CNTS) {
                             PosterMainActivity.INSTANCE.showOsd();
-                        }
+        					mLastClickTime = 0;
+        					mCurrentClickCnts = 0;
+        				}
+        				
                         return true;
                     }
                    return false;           

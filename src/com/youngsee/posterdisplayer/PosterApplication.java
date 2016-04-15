@@ -100,6 +100,7 @@ public class PosterApplication extends Application
     private static String                   mStartUpScreenImgFullPath      = null;
     private static String                   mCaptureScreenImgFullPath      = null;
     private static String                   mTempFolderFullPath            = null;
+    private static String                   mMacAddressFilePath            = null;
 
     // Define the image cache (per APP instance)
     private static LruCache<String, Bitmap> mImgMemoryCache          = null;
@@ -866,6 +867,33 @@ public class PosterApplication extends Application
         return "";
     }
 
+    private String getMacFileName() {
+    	if (mMacAddressFilePath == null)
+    	{
+		    StringBuilder sb = new StringBuilder();
+		    sb.append(this.getFilesDir().getPath());
+		    sb.append(File.separator);
+		    sb.append("mac");
+		    sb.append(File.separator);
+		    
+		    // 创建目录
+		    if (!FileUtils.isExist(sb.toString())) {
+		    	FileUtils.createDir(sb.toString());
+	    	}
+		    
+		    sb.append("mac_address.txt");
+	    	try {
+		    	FileUtils.createFile(sb.toString());
+	    	} catch (IOException e) {
+			    // TODO Auto-generated catch block
+			    e.printStackTrace();
+		    }
+		    mMacAddressFilePath = sb.toString();
+    	}
+
+		return mMacAddressFilePath;
+	}
+    
     // 固定用网口的MAC地址做为与服务器通信的Device_ID
     public static synchronized byte[] getEthMacAddress()
     {
@@ -874,15 +902,16 @@ public class PosterApplication extends Application
             return mEthMac;
         }
         
-        if ((mEthMac = DbHelper.getInstance().getMac()) == null)
+        mEthMac = FileUtils.readSDFile(INSTANCE.getMacFileName());
+        if (mEthMac == null||mEthMac.length==0)
         {
             try
             {
                 NetworkInterface intf = null;
                 if ((intf = NetworkInterface.getByName("eth0")) != null)
                 {
-                    mEthMac = intf.getHardwareAddress();
-                    DbHelper.getInstance().setMac(mEthMac);
+                	mEthMac = intf.getHardwareAddress();
+                	FileUtils.writeSDFileData(INSTANCE.getMacFileName(), mEthMac, true);
                 }
             }
             catch (SocketException ex)
@@ -890,6 +919,7 @@ public class PosterApplication extends Application
                 Logger.e("Get MacAddress has error, the msg is: " + ex.toString());
             }
         }
+      
         return mEthMac;
     }
     
