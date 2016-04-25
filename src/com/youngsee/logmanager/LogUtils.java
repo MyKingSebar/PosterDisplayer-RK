@@ -162,7 +162,7 @@ public class LogUtils
                 {
                     synchronized (mPlogList)
                     {
-                        if (!mPlogList.isEmpty() && PosterApplication.strogeIsAvailable())
+                        if (!mPlogList.isEmpty())
                         {
                             if (!PosterApplication.getCurrentDate().equals(mTodayDate))
                             {
@@ -177,7 +177,7 @@ public class LogUtils
                     
                     synchronized (mSlogList)
                     {
-                        if (!mSlogList.isEmpty() && PosterApplication.strogeIsAvailable())
+                        if (!mSlogList.isEmpty())
                         {
                             if (!PosterApplication.getCurrentDate().equals(mTodayDate))
                             {

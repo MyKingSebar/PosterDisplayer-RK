@@ -185,6 +185,28 @@ public class OsdLoginFragment extends Fragment
                         {
                             PosterOsdActivity.INSTANCE.setDismissTime();
                         }
+                        
+                       //获取rootInvisibleHeight在窗体的不可视区域高度(被其他View遮挡的区域高度)  
+                        int rootInvisibleHeight = decorView.getRootView().getHeight() - rect.bottom;  
+                        //若不可视区域高度大于150，则键盘显示  
+                        if (rootInvisibleHeight > 150) 
+                        {  
+                            int[] location = new int[2];  
+                            //获取scrollToView在窗体的坐标  
+                            mOsdLoginBtn.getLocationInWindow(location);  
+                            
+                            //计算srollHeight滚动高度，使scrollToView在可见区域  
+                            int srollHeight = (location[1] + mOsdLoginBtn.getHeight()) - rect.bottom; 
+                            if(srollHeight>0)
+                            { 
+                            	 decorView.scrollTo(0, srollHeight);  
+                            }
+                        } 
+                        else 
+                        {  
+                            // 无需滚动 
+                        	decorView.scrollTo(0, 0);  
+                        } 
                     }
                 }
             }  
@@ -198,6 +220,9 @@ public class OsdLoginFragment extends Fragment
                 if ((!TextUtils.isEmpty(spwd) && spwd.equals(mEnterPwd.getText().toString()))
                     || OSD_DEFAULT_PWD.equals(mEnterPwd.getText().toString()))
                 {
+                	//登陆成功 view回到原位置
+    				getActivity().getWindow().peekDecorView().scrollTo(0, 0);
+    				
                     InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
                     if (imm.isActive())
                     {

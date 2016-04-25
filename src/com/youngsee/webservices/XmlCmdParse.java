@@ -323,10 +323,8 @@ public class XmlCmdParse
                 break;
                 
             case XmlCmdInfoRef.CMD_PTL_FILEDEL:  // 清空节目文件
-                if (PosterApplication.strogeIsAvailable())
-                {
-                    FileUtils.delDir(PosterApplication.getProgramPath());
-                }
+
+                FileUtils.delDir(PosterApplication.getProgramPath());
                 ScreenManager.getInstance().osdNotify(ScreenManager.CLEAR_PGM_OPERATE);
                 break;
                 

@@ -23,6 +23,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
 import android.text.format.Time;
 
 import com.youngsee.authorization.AuthorizationActivity;
@@ -44,7 +45,6 @@ public class ScreenManager
     private static final int     IDLE_STATE                = 0;
     private static final int     PLAYING_NORMAL_PROGRAM    = 1;
     private static final int     PLAYING_EMERGENCE_PROGRAM = 2;
-    private static final int     NO_STORAGE_STATE          = 3;
     
     private static final int     NORMAL_PROGRAM            = 1;
     private static final int     ERGENT_PROGRAM            = 2;
@@ -122,12 +122,7 @@ public class ScreenManager
     {
         return mScreenManagerInstance;
     }
-    
-    public void setToNoStorage()
-    {
-        mStatus = NO_STORAGE_STATE;
-    }
-    
+
     public int getStatus()
     {
         return mStatus;
@@ -438,6 +433,21 @@ public class ScreenManager
             return sb.toString();
         }
         
+        private boolean pgmPathIsAvalible()
+        {
+        	String extPath = FileUtils.getLargestExtStorage();
+        	if (!TextUtils.isEmpty(mNormalPgmFilePath) && !mNormalPgmFilePath.startsWith(extPath))
+        	{
+        		return false;
+        	}
+        	else if (!TextUtils.isEmpty(mUrgentPgmFilePath) && !mUrgentPgmFilePath.startsWith(extPath))
+        	{
+        		return false;
+        	}
+        	
+        	return true;
+        }
+        
         @Override
         public void run()
         {
@@ -480,13 +490,22 @@ public class ScreenManager
                         continue;
                     }
                     
-                    if (mUrgentPgmFileHasChanged)
+                    if (!pgmPathIsAvalible())
+                    {
+                        mNormalPgmFilePath = obtainNormalPgmFilePath();
+                        mUrgentPgmFilePath = obtainUrgentPgmFilePath();
+                        mUrgentProgramInfoList = getProgramScheduleFromXml(mUrgentPgmFilePath);
+                        mNormalProgramInfoList = getProgramScheduleFromXml(mNormalPgmFilePath);
+                        mStatus = IDLE_STATE;
+                        Logger.i("Program stroge has been changed, go to Idle state.");
+                    }
+                    else if (mUrgentPgmFileHasChanged)
                     {
                         /* 服务器更新插播节目 */
                         mUrgentPgmFileHasChanged = false;
                         mUrgentPgmFilePath = obtainUrgentPgmFilePath();
                         mUrgentProgramInfoList = getProgramScheduleFromXml(mUrgentPgmFilePath);
-                        mUrgentProgram = getPlayProgram(mUrgentProgramInfoList, ERGENT_PROGRAM);
+                        mUrgentProgram = obtainUrgentProgram();
                         
                         if (mUrgentProgram != null)
                         {
@@ -508,7 +527,7 @@ public class ScreenManager
                         mNormalPgmFileHasChanged = false;
                         mNormalPgmFilePath = obtainNormalPgmFilePath();
                         mNormalProgramInfoList = getProgramScheduleFromXml(mNormalPgmFilePath);
-                        mNormalProgram = getPlayProgram(mNormalProgramInfoList, NORMAL_PROGRAM);
+                        mNormalProgram = obtainNormalProgram();
                         
                         if (mNormalProgram != null && mStatus != PLAYING_EMERGENCE_PROGRAM)
                         {
@@ -605,31 +624,7 @@ public class ScreenManager
                         }
                         
                         break;
-                        
-                    case NO_STORAGE_STATE:
-                        
-                        mNormalProgram = null;
-                        mUrgentProgram = null;
-                        mCurrentPgmVerifyCode = null;
-                        
-                        if (!mStandbyScreenIsShow)
-                        {
-                            /* Show standby screen */
-                            Logger.i("Start standby screen.");
-                            loadProgramContent(EVENT_SHOW_IDLE_PROGRAM, null);
-                        }
-                        
-                        if (PosterApplication.strogeIsAvailable())
-                        {
-                            mNormalPgmFilePath = obtainNormalPgmFilePath();
-                            mUrgentPgmFilePath = obtainUrgentPgmFilePath();
-                            mUrgentProgramInfoList = getProgramScheduleFromXml(mUrgentPgmFilePath);
-                            mNormalProgramInfoList = getProgramScheduleFromXml(mNormalPgmFilePath);
-                            mStatus = IDLE_STATE;
-                        }
-                        Thread.sleep(100);
-                        continue;
-                        
+
                     case PLAYING_NORMAL_PROGRAM:
                         
                         if (normalPgmIsValid())
@@ -772,12 +767,16 @@ public class ScreenManager
                  * 服务器通知节目改变的原因之一
                  * 有可能是因为本地的节目列表丢失了，所以需要检查外部存储是否被拔走
                  */
-                if (!PosterApplication.strogeIsAvailable())
+                if (!pgmPathIsAvalible())
                 {
-                    mStatus = NO_STORAGE_STATE;
+                	mNormalPgmFilePath = obtainNormalPgmFilePath();
+                    mUrgentPgmFilePath = obtainUrgentPgmFilePath();
+                    mUrgentProgramInfoList = getProgramScheduleFromXml(mUrgentPgmFilePath);
+                    mNormalProgramInfoList = getProgramScheduleFromXml(mNormalPgmFilePath);
+                    mStatus = IDLE_STATE;
+                    Logger.i("Stroge has been lost, go to Idle state.");
                 }
-                
-                if (msgId == EVENT_SHOW_URGENT_PROGRAM)
+                else if (msgId == EVENT_SHOW_URGENT_PROGRAM)
                 {
                     Logger.i("loadProgramContent(): urgent program is playing.");
                 }

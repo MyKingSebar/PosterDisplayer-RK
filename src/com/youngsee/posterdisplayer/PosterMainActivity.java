@@ -188,16 +188,16 @@ public class PosterMainActivity extends Activity
             AuthorizationManager.getInstance().startAuth();
         }
 		
-		// 启动屏幕管理线程
-		if (ScreenManager.getInstance() == null) 
-		{
-			ScreenManager.createInstance(this).startRun();
-		}
-
 		// 启动网络管理线程
 		if (WsClient.getInstance() == null) 
 		{
 			WsClient.createInstance(this).startRun();
+		}
+
+		// 启动屏幕管理线程
+		if (ScreenManager.getInstance() == null) 
+		{
+			ScreenManager.createInstance(this).startRun();
 		}
 
 		// 启动日志输出线程

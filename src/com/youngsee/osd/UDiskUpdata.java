@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.youngsee.common.DbHelper;
 import com.youngsee.common.FileUtils;
 import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterOsdActivity;
@@ -297,13 +296,11 @@ public class UDiskUpdata
             File newestFile = findNewestPgm();
             if (newestFile != null)
             {
-                FileUtils.cleanupDir(PosterApplication.getProgramPath());
-                
-                String destDir = PosterApplication.getNewProgramPath();
                 try
                 {
-                    retValue = FileUtils.copyDirFilesTo(newestFile.getAbsolutePath(), destDir);
-                    DbHelper.getInstance().setPgmPath(destDir);
+                	String dstPath = PosterApplication.getProgramPath();
+                	FileUtils.cleanupDir(dstPath);
+                    retValue = FileUtils.copyDirFilesTo(newestFile.getAbsolutePath(), dstPath);
                 }
                 catch (IOException e)
                 {
@@ -342,7 +339,10 @@ public class UDiskUpdata
                                                            @Override
                                                            public void onClick(DialogInterface dialog, int which)
                                                            {
-                                                               PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   if (PosterOsdActivity.INSTANCE != null)
+                                                        	   {
+                                                                       PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   }
                                                            }
                                                        }).show();
                                        return;
@@ -368,7 +368,10 @@ public class UDiskUpdata
                                                            @Override
                                                            public void onClick(DialogInterface dialog, int which)
                                                            {
-                                                               PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   if (PosterOsdActivity.INSTANCE != null)
+                                                        	   {
+                                                                       PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   }
                                                            }
                                                        }).show();
                                        return;
@@ -393,7 +396,10 @@ public class UDiskUpdata
                                                            @Override
                                                            public void onClick(DialogInterface dialog, int which)
                                                            {
-                                                               PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   if (PosterOsdActivity.INSTANCE != null)
+                                                        	   {
+                                                                   PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   }
                                                            }
                                                        }).show();
                                        return;
@@ -410,7 +416,10 @@ public class UDiskUpdata
                                                            @Override
                                                            public void onClick(DialogInterface dialog, int which)
                                                            {
-                                                               PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   if (PosterOsdActivity.INSTANCE != null)
+                                                        	   {
+                                                                   PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   }
                                                            }
                                                        }).show();
                                        return;
@@ -435,7 +444,10 @@ public class UDiskUpdata
                                                            @Override
                                                            public void onClick(DialogInterface dialog, int which)
                                                            {
-                                                               PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   if (PosterOsdActivity.INSTANCE != null)
+                                                        	   {
+                                                                   PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   }
                                                            }
                                                        }).show();
                                        return;
@@ -452,7 +464,10 @@ public class UDiskUpdata
                                                            @Override
                                                            public void onClick(DialogInterface dialog, int which)
                                                            {
-                                                               PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   if (PosterOsdActivity.INSTANCE != null)
+                                                        	   {
+                                                                   PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   }
                                                            }
                                                        }).show();
                                        return;
@@ -477,7 +492,10 @@ public class UDiskUpdata
                                                            @Override
                                                            public void onClick(DialogInterface dialog, int which)
                                                            {
-                                                               PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   if (PosterOsdActivity.INSTANCE != null)
+                                                        	   {
+                                                                   PosterOsdActivity.INSTANCE.setDismissTime();
+                                                        	   }
                                                            }
                                                        }).show();
                                        return;

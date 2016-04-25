@@ -164,12 +164,7 @@ public abstract class PosterBaseView extends FrameLayout {
     {
         if (media != null)
         {
-            if (!PosterApplication.strogeIsAvailable())
-            {
-                Log.i("downloadMedia()", "Stroge is not available, No need to download.");
-                return;
-            }
-            else if (FileUtils.isExist(media.filePath) && md5IsCorrect(media))
+            if (FileUtils.isExist(media.filePath) && md5IsCorrect(media))
             {
                 Log.i("downloadMedia()", "Media has been existing. No need to download.");
                 return;
