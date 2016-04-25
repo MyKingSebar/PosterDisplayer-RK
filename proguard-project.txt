@@ -77,6 +77,8 @@
 
 -keep class com.youngsee.webservices.SysParam {*;}
 -keep class com.youngsee.webservices.XmlParser {*;}
+-keep class com.youngsee.common.FileUtils {*;}
+-keep class com.youngsee.common.SerialPort {*;}
 
 -keepclasseswithmembernames class * {                                           # 保持 native 方法不被混淆
     native <methods>;

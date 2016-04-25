@@ -29,7 +29,6 @@ import org.apache.http.util.EncodingUtils;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.os.Environment;
-import android.os.StatFs;
 import android.os.storage.StorageManager;
 import android.text.TextUtils;
 
@@ -57,46 +56,32 @@ public class FileUtils
     
     public static String getDiskSpace()
     {
-        if (PosterApplication.strogeIsAvailable())
-        {
-            File win = new File(getExternalStorage());
-            double dbValue = (double) win.getTotalSpace() / 1024 / 1024 / 1024;
-            StringBuilder sb  = new StringBuilder();
-            sb.append(String.format("%.2f", dbValue));
-            sb.append("GB");
-            return sb.toString();
-        }
-        
-        return "0B";
+        File win = new File(getLargestExtStorage());
+        double dbValue = (double) win.getTotalSpace() / 1024 / 1024 / 1024;
+        StringBuilder sb  = new StringBuilder();
+        sb.append(String.format("%.2f", dbValue));
+        sb.append("GB");
+        return sb.toString();
     }
     
     public static String getDiskFreeSpace()
     {
-        if (PosterApplication.strogeIsAvailable())
-        {
-            File win = new File(getExternalStorage());
-            double dbValue = (double) win.getFreeSpace() / 1024 / 1024 / 1024;
-            StringBuilder sb  = new StringBuilder();
-            sb.append(String.format("%.2f", dbValue));
-            sb.append("GB");
-            return sb.toString();
-        }
-        return "0B";
+        File win = new File(getLargestExtStorage());
+        double dbValue = (double) win.getFreeSpace() / 1024 / 1024 / 1024;
+        StringBuilder sb  = new StringBuilder();
+        sb.append(String.format("%.2f", dbValue));
+        sb.append("GB");
+        return sb.toString();
     }
     
     public static String getDiskUseSpace()
     {
-        if (PosterApplication.strogeIsAvailable())
-        {
-            File win = new File(getExternalStorage());
-            double dbValue = (double) (win.getTotalSpace() - win.getUsableSpace()) / 1024 / 1024 / 1024;
-            StringBuilder sb  = new StringBuilder();
-            sb.append(String.format("%.2f", dbValue));
-            sb.append("GB");
-            return sb.toString();
-        }
-        
-        return "0B";
+        File win = new File(getLargestExtStorage());
+        double dbValue = (double) (win.getTotalSpace() - win.getUsableSpace()) / 1024 / 1024 / 1024;
+        StringBuilder sb  = new StringBuilder();
+        sb.append(String.format("%.2f", dbValue));
+        sb.append("GB");
+        return sb.toString();
     }
     
     public static String getHardDiskPath()
@@ -120,22 +105,19 @@ public class FileUtils
         if(PosterMainActivity.INSTANCE != null){
             try{
                 // 获取所有的存储设备
-                StorageManager storageManager = (StorageManager)PosterMainActivity.INSTANCE
-                        .getSystemService(Context.STORAGE_SERVICE);
+                StorageManager storageManager = (StorageManager)PosterMainActivity.INSTANCE.getSystemService(Context.STORAGE_SERVICE);
                 Method method = StorageManager.class.getDeclaredMethod("getVolumePaths");
                 method.setAccessible(true);
                 Object result = method.invoke(storageManager);
                 if(result != null && result instanceof String[]){
                     File f = null;
-                    StatFs statFs = null;
                     long maxDiskSpace = 0;
                     String[] pathes = (String[])result;
                     for(String path : pathes){
                         if(!TextUtils.isEmpty(path) && !path.contains("usb")) // U盘不能当作存储盘
                         {
                             f = new File(path);
-                            statFs = new StatFs(path);
-                            if(f.exists() && f.canWrite() && statFs.getBlockCount() * statFs.getBlockSize() != 0){
+                            if(f.exists() && f.canWrite()){
                                 if(f.getTotalSpace() > maxDiskSpace){
                                     maxDiskSpace = f.getTotalSpace();
                                     temp = path;
@@ -154,7 +136,7 @@ public class FileUtils
     }
 
     /*
-     * 获取获取外部存储的路径 选用外部最大的存储介质做为存储
+     * 获取获取存储的路径
      */
     public static String getExternalStorage()
     {
@@ -1210,20 +1192,7 @@ public class FileUtils
     
     public static boolean formatDisk()
     {
-        if (PosterApplication.strogeIsAvailable())
-        {
-            String path = FileUtils.getExternalStorage();
-            if (!path.equals(Environment.getExternalStorageDirectory().getAbsolutePath()))
-            {
-                return FileUtils.delDir(path);  // 如果是外置sd卡或U盘则删除所有文件
-            }
-            else
-            {
-                return FileUtils.delDir(PosterApplication.getProgramPath());  // 如果是内部Flash，只删除节目内容
-            }
-        }
-        
-        return true;
+        return FileUtils.delDir(PosterApplication.getProgramPath());  // 删除节目内容
     }
     
     public static String findFilePath(String filename) {

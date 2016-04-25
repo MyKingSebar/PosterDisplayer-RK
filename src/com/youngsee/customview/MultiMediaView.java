@@ -437,7 +437,7 @@ public class MultiMediaView extends PosterBaseView
         
         if (mIsPlayingVideo)
         {
-            if (mMediaPlayer != null && mMediaPlayer.isPlaying() && PosterApplication.strogeIsAvailable())
+            if (mMediaPlayer != null && mMediaPlayer.isPlaying())
             {
                 mMediaPosition = mMediaPlayer.getCurrentPosition();
             }

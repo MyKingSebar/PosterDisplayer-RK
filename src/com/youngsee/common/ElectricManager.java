@@ -150,18 +150,18 @@ public class ElectricManager {
 	}
 
 	public void startGetElectric() {
-		stopGetElectric();
 		try {
+			stopGetElectric();
 			mSerialPort = new SerialPort(new File(DEVFILE_SERIALPORT),BAUTRATE, DATABITS, STOPBITS, PARITY);
 			mOutputStream = mSerialPort.getOutputStream();
 			mInputStream = mSerialPort.getInputStream();
+			mReadThread = new ReadThread();
+			mReadThread.start();
 		} catch (SecurityException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		mReadThread = new ReadThread();
-		mReadThread.start();
 	}
 	
 	private final class ReadThread extends Thread {

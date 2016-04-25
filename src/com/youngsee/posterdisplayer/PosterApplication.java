@@ -77,7 +77,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Environment;
-import android.os.StatFs;
 import android.provider.Settings;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
@@ -490,36 +489,21 @@ public class PosterApplication extends Application
     /*
      * 获取节目存储的路径 选用外部最大的存储空间做为节目的存储介质 注：路径有可能实时变化，因为U盘和SD卡随时可能插拔
      */
-    public static String getNewProgramPath()
+    public static String getProgramPath()
     {
-        StringBuilder sb = new StringBuilder();
+    	StringBuilder sb = new StringBuilder();
         sb.append(FileUtils.getLargestExtStorage());
         sb.append(File.separator);
         sb.append("pgm");
         String path = sb.toString();
         
-        if(!FileUtils.isExist(path) && strogeIsAvailable()){
+        if(!FileUtils.isExist(path)){
             FileUtils.createDir(path);
         }
         
+        //DbHelper.getInstance().setPgmPath(path);
+        
         return path;
-    }
-
-    /*
-     * 获取当前节目存储的路径
-     */
-    public static String getProgramPath()
-    {
-        DbHelper helper = DbHelper.getInstance();
-        String temp = helper.getPgmPath();
-        
-        //初始化数据库时获取不到当前播放目录
-        if(temp == null || temp.length() == 0 || !((new File(temp)).exists())){
-            temp = getNewProgramPath();
-            helper.setPgmPath(temp);
-        }
-        
-        return temp;
     }
     
     public static boolean existsPgmInUdisk(String path) {
@@ -554,49 +538,10 @@ public class PosterApplication extends Application
     	return false;
     }
     
-    public static String getLatestPgmPathFromUdisk(String path) {
-    	if ((path == null)
-    			|| (path.length() < 13)
-    			|| !path.substring(5).startsWith(Contants.UDISK_NAME_PREFIX)) {
-    		return null;
-    	}
-    	File latestPgmFile = null;
-    	File udisk = new File(path);
-    	if (udisk.getTotalSpace() > 0) {
-    		File[] files = udisk.listFiles();
-    		for (File file : files) {
-    			if (file.isDirectory() && file.getName().endsWith(".pgm")) {
-    				if ((latestPgmFile == null)
-    						|| (file.lastModified() > latestPgmFile.lastModified())) {
-    					latestPgmFile = file;
-    				}
-    			}
-    		}
-    	} else {
-    		File[] files = udisk.listFiles();
-    		if (files != null) {
-    			for (File file : files) {
-    				if (file.getTotalSpace() > 0) {
-    					File[] subFiles = file.listFiles();
-    					for (File subFile : subFiles) {
-    		    			if (subFile.isDirectory() && subFile.getName().endsWith(".pgm")) {
-    		    				if ((latestPgmFile == null)
-    		    						|| (subFile.lastModified() > latestPgmFile.lastModified())) {
-    		    					latestPgmFile = subFile;
-    		    				}
-    		    			}
-    		    		}
-    				}
-    			}
-    		}
-    	}
-    	return (latestPgmFile == null) ? null : latestPgmFile.getAbsolutePath();
-    }
-    
     public static String getGifImagePath(String subDirName)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append(getProgramPath());
+        sb.append(FileUtils.getExternalStorage());
         sb.append(File.separator);
         sb.append("Gif");
         if (subDirName != null)
@@ -610,20 +555,6 @@ public class PosterApplication extends Application
         }
         
         return sb.toString();
-    }
-    
-    /*
-     * 检测存储磁盘是否有效(SD卡或U盘有可能在播放过程中拔出来)
-     */
-    public static boolean strogeIsAvailable()
-    {
-        String path = FileUtils.getExternalStorage();
-        if (!path.equals(Environment.getExternalStorageDirectory().getAbsolutePath()))
-        {
-            StatFs statFs = new StatFs(path);
-            return (new File(path).exists() && (statFs.getBlockCount() * statFs.getBlockSize() != 0));
-        }
-        return true;
     }
     
     /*
@@ -767,7 +698,7 @@ public class PosterApplication extends Application
         }
         
         // 创建目录
-        if (strogeIsAvailable() && !FileUtils.isExist(mLogFilePath))
+        if (!FileUtils.isExist(mLogFilePath))
         {
             FileUtils.createDir(mLogFilePath);
         }
@@ -1555,9 +1486,9 @@ public class PosterApplication extends Application
 	public void cancelTimerRunPowerMeter(){
 		if (mGetElectricTimer != null)
         {
+			ElectricManager.getInstance().stopGetElectric();
 			mGetElectricTimer.cancel();
 			mGetElectricTimer = null;
-			ElectricManager.getInstance().stopGetElectric();
         }
 	}
 	
