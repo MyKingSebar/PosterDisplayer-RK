@@ -876,7 +876,7 @@ public class MultiMediaView extends PosterBaseView
                     
                     if (!mIsPlayingVideo)
                     {
-                        mCurrentMedia = null;
+                        //mCurrentMedia = null;
                         
                         media = findNextMedia();
                         if (media == null)
@@ -885,21 +885,12 @@ public class MultiMediaView extends PosterBaseView
                             Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
                             continue;
                         }
-                        else if (FileUtils.mediaIsFile(media) && !FileUtils.isExist(media.filePath))
+                        else if (FileUtils.mediaIsFile(media) && !FileUtils.isExist(media.filePath) &&
+                        		!media.filePath.equals(PosterApplication.getStandbyScreenImgPath()))
                         {
-                        	if (media.filePath.equals(PosterApplication.getStandbyScreenImgPath()))
-                        	{
-                        		// 如果待机画面不存在，则播放默认的待机画面
-                        		Bitmap img = PosterApplication.getInstance().getDefaultScreenImg();
-                                showPicture(img, media.mode);
-                                Thread.sleep(60*1000);
-                        	}
-                        	else
-                        	{
-                                Logger.i(media.filePath + " didn't exist, skip it.");
-                                downloadMedia(media);
-                                Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
-                        	}
+                            Logger.i(media.filePath + " didn't exist, skip it.");
+                            downloadMedia(media);
+                            Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
                             continue;
                         }
                         else if (FileUtils.mediaIsFile(media) && !md5IsCorrect(media))
@@ -963,28 +954,50 @@ public class MultiMediaView extends PosterBaseView
                         }
                         else if (FileUtils.mediaIsPicFromFile(media) || FileUtils.mediaIsPicFromNet(media))
                         {
+                        	if (mCurrentMedia != null && mCurrentMedia.filePath.equals(media.filePath))
+                        	{
+                        		Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
+                        		continue;
+                        	}
+                        	
                             mCurrentMedia = media;
                             if (mViewType.contains("Main"))
                             {
                                 informStartAudio();
                             }
                             LogUtils.getInstance().toAddPLog(Contants.INFO, Contants.PlayMediaStart, mCurrentMedia.mid, mViewName, "");
-                            playImage(mCurrentMedia);
-                            FileUtils.updateFileLastTime(mCurrentMedia.filePath);
-                            if (mViewName.startsWith("Weather"))
-                            {
-                                Thread.sleep(Math.max(mCurrentMedia.duration, DEFAULT_MEDIA_DURATION));
-                            }
+                            if (media.filePath.equals(PosterApplication.getStandbyScreenImgPath()) && !FileUtils.isExist(media.filePath))
+                        	{
+                        		// 如果待机画面不存在，则播放默认的待机画面
+                        		Bitmap img = PosterApplication.getInstance().getDefaultScreenImg();
+                                showPicture(img, media.mode);
+                                Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
+                        	}
                             else
                             {
-                                Thread.sleep(Math.max(mCurrentMedia.durationPerPage, DEFAULT_MEDIA_DURATION));
+                                playImage(mCurrentMedia);
+                                FileUtils.updateFileLastTime(mCurrentMedia.filePath);
+                                if (mViewName.startsWith("Weather"))
+                                {
+                                    Thread.sleep(Math.max(mCurrentMedia.duration, DEFAULT_MEDIA_DURATION));
+                                }
+                                else
+                                {
+                                    Thread.sleep(Math.max(mCurrentMedia.durationPerPage, DEFAULT_MEDIA_DURATION));
+                                }
+                                mCurrentMedia.playedtimes++;
+                                LogUtils.getInstance().toAddPLog(Contants.INFO, Contants.PlayMediaEnd, mCurrentMedia.mid, mViewName, Contants.NOMALSTOP);
                             }
-                            mCurrentMedia.playedtimes++;
-                            LogUtils.getInstance().toAddPLog(Contants.INFO, Contants.PlayMediaEnd, mCurrentMedia.mid, mViewName, Contants.NOMALSTOP);
                             continue;
                         }
                         else if (FileUtils.mediaIsTextFromFile(media) || FileUtils.mediaIsTextFromNet(media))
                         {
+                        	if (mCurrentMedia != null && mCurrentMedia.filePath.equals(media.filePath))
+                        	{
+                        		Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
+                        		continue;
+                        	}
+                        	
                             mCurrentMedia = media;
                             if (mViewType.contains("Main"))
                             {

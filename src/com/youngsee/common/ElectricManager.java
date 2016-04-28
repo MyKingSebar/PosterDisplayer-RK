@@ -13,7 +13,7 @@ import android.util.Log;
 public class ElectricManager {
 	private final long DEFAULT_READTHREAD_PERIOD = 1000;
 	private final int BAUTRATE = 1200;
-	private final String DEVFILE_SERIALPORT = "/dev/ttyS3";
+	private final String DEVFILE_SERIALPORT = "/dev/ttyS1";
 	private final int DATABITS=8,STOPBITS=1,PARITY='e';
 	private SerialPort mSerialPort = null;
 	private OutputStream mOutputStream = null;
