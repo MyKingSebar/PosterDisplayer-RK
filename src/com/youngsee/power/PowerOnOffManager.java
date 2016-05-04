@@ -40,7 +40,7 @@ public class PowerOnOffManager {
 	public static final int AUTOSCREENOFF_COMMON = 1;
 	public static final int AUTOSCREENOFF_URGENT = 2;
 	
-	private final int COMMON_AUTOSCREENOFF_MINUTE = 3;
+	private final int COMMON_AUTOSCREENOFF_MINUTE = 1;
 	private final int COMMON_AUTOSCREENOFF_MILLISECOND = COMMON_AUTOSCREENOFF_MINUTE*60*1000;
 	private final int URGENT_AUTOSCREENOFF_MINUTE = 1;
 	private final int URGENT_AUTOSCREENOFF_MILLISECOND = URGENT_AUTOSCREENOFF_MINUTE*60*1000;

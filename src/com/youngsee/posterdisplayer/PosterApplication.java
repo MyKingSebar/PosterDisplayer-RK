@@ -839,6 +839,11 @@ public class PosterApplication extends Application
 		return mMacAddressFilePath;
 	}
     
+    public static void updateEthMacAddress(byte[] newMac){
+    	mEthMac = newMac;
+    	FileUtils.writeSDFileData(INSTANCE.getMacFileName(), newMac, false);
+    }
+    
     // 固定用网口的MAC地址做为与服务器通信的Device_ID
     public static synchronized byte[] getEthMacAddress()
     {

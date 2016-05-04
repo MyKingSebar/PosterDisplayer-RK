@@ -12,7 +12,6 @@ import android.app.Activity;
 import android.app.FragmentTransaction;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.graphics.PixelFormat;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -69,7 +68,7 @@ public class PosterOsdActivity extends Activity
         super.onCreate(savedInstanceState);
         PosterApplication.setSystemBarVisible(this, false);
         setContentView(R.layout.activity_osd);
-        getWindow().setFormat(PixelFormat.TRANSLUCENT);
+        //getWindow().setFormat(PixelFormat.TRANSLUCENT);
         
         INSTANCE = this;
         if (ScreenManager.getInstance() != null)

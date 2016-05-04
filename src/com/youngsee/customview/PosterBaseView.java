@@ -715,7 +715,12 @@ public abstract class PosterBaseView extends FrameLayout {
         {
             for (MediaInfoRef mediaInfo : mMediaList)
             {
-                if (FileUtils.mediaIsFile(mediaInfo) && 
+            	if (mediaInfo.filePath.equals(PosterApplication.getStandbyScreenImgPath()))
+            	{
+            		// 加载待机画面不需要显示ProgressBar
+            		return false;
+            	}
+            	else if (FileUtils.mediaIsFile(mediaInfo) && 
                     FileUtils.isExist(mediaInfo.filePath) && 
                     md5IsCorrect(mediaInfo) && 
                     mediaTimeIsValid(mediaInfo))

@@ -35,7 +35,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.BitmapDrawable;
@@ -132,7 +131,7 @@ public class PosterMainActivity extends Activity
 		super.onCreate(savedInstanceState);
 		PosterApplication.setSystemBarVisible(this, false);
         setContentView(R.layout.activity_main);
-		getWindow().setFormat(PixelFormat.TRANSLUCENT);
+		//getWindow().setFormat(PixelFormat.TRANSLUCENT);
 
 		Logger.d("====>PosterMainActivity onCreate: " + getIntent().toString());
 		
@@ -187,17 +186,17 @@ public class PosterMainActivity extends Activity
         {
             AuthorizationManager.getInstance().startAuth();
         }
+        
+        // 启动屏幕管理线程
+        if (ScreenManager.getInstance() == null) 
+        {
+     	    ScreenManager.createInstance(this).startRun();
+        }
 		
 		// 启动网络管理线程
 		if (WsClient.getInstance() == null) 
 		{
 			WsClient.createInstance(this).startRun();
-		}
-
-		// 启动屏幕管理线程
-		if (ScreenManager.getInstance() == null) 
-		{
-			ScreenManager.createInstance(this).startRun();
 		}
 
 		// 启动日志输出线程
