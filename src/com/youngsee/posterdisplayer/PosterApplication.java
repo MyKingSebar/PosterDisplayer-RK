@@ -40,9 +40,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import com.youngsee.common.Contants;
-import com.youngsee.common.DbHelper;
 import com.youngsee.common.DiskLruCache;
-import com.youngsee.common.ElectricManager;
 import com.youngsee.common.FileUtils;
 import com.youngsee.common.MediaInfoRef;
 import com.youngsee.common.ReflectionUtils;
@@ -76,7 +74,6 @@ import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.Environment;
 import android.provider.Settings;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
@@ -123,8 +120,6 @@ public class PosterApplication extends Application
 
     private Timer                           mDelPeriodFileTimer            = null;
     private Timer                           mUploadLogTimer                = null;
-    private Timer  							mGetElectricTimer         	   = null;
-    
     private AlarmManager mAlarmManager = null;
     
     private final String SYSPROP_HWROTATION_CLASS = "android.os.SystemProperties";
@@ -824,7 +819,10 @@ public class PosterApplication extends Application
 
 		return mMacAddressFilePath;
 	}
-    
+    public static void updateEthMacAddress(byte[] newMac){
+    	mEthMac=newMac;
+    	FileUtils.writeSDFileData(INSTANCE.getMacFileName(), mEthMac, false);	
+    }
     // 固定用网口的MAC地址做为与服务器通信的Device_ID
     public static synchronized byte[] getEthMacAddress()
     {
@@ -1482,26 +1480,6 @@ public class PosterApplication extends Application
         };
         mUploadLogTimer.schedule(task, 60000, 24 * 60 * 60 * 1000);
     }
-    
-	public void cancelTimerRunPowerMeter(){
-		if (mGetElectricTimer != null)
-        {
-			ElectricManager.getInstance().stopGetElectric();
-			mGetElectricTimer.cancel();
-			mGetElectricTimer = null;
-        }
-	}
-	
-	public void startTimerRunPowerMeter(){
-		cancelTimerRunPowerMeter();
-		mGetElectricTimer=new Timer();
-		mGetElectricTimer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				ElectricManager.getInstance().startGetElectric();
-			}
-		}, 2000, 24*60*60*1000);
-	}
     
     /**
      * Returns true if the time represented by this Time object occurs before current time.

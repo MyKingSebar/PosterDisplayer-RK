@@ -44,6 +44,7 @@
 	            android:layout_weight="3.2"
 	            android:gravity="center"
 	            android:hint="@string/login_un_hint"
+		    android:inputType="textNoSuggestions"
 	            android:textColor="@color/black"
 	            android:textSize="20sp" />
 

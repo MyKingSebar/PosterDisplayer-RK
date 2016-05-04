@@ -5,8 +5,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import com.youngsee.logmanager.Logger;
+
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -25,6 +28,7 @@ public class ElectricManager {
 			(byte) 0x43, (byte) 0xC3, (byte) 0x6F, (byte) 0x16 };
 	
 	private ReadThread mReadThread = null;
+	private Timer mGetElectricTimer;
 	private ElectricManager() {
 	}
 
@@ -116,7 +120,7 @@ public class ElectricManager {
 		}
 	}
     
-	public void stopGetElectric() {
+	private void stopGetElectric() {
 		
 		if (mReadThread != null) {
 			mReadThread.cancel();
@@ -149,13 +153,14 @@ public class ElectricManager {
 		}
 	}
 
-	public void startGetElectric() {
+	private void startGetElectric() {
 		try {
 			stopGetElectric();
 			mSerialPort = new SerialPort(new File(DEVFILE_SERIALPORT),BAUTRATE, DATABITS, STOPBITS, PARITY);
 			mOutputStream = mSerialPort.getOutputStream();
 			mInputStream = mSerialPort.getInputStream();
 			mReadThread = new ReadThread();
+			mReadThread.setStartRun();
 			mReadThread.start();
 		} catch (SecurityException e) {
 			e.printStackTrace();
@@ -171,7 +176,9 @@ public class ElectricManager {
         	mIsCanceled = true;
             interrupt();
         }
-
+		public void setStartRun(){
+			mIsCanceled=false;
+		}
 		@Override
 		public void run() {
 			Log.i("ElectricManager ReadThread", "A new read thread is started. Thread id is " + getId() + ".");
@@ -207,5 +214,23 @@ public class ElectricManager {
 		    stopGetElectric();
 		}
 	}
-
+	public void cancelTimerRunPowerMeter(){
+		if (mGetElectricTimer != null)
+        {
+			mGetElectricTimer.cancel();
+			mGetElectricTimer = null;
+			stopGetElectric();
+        }
+	}
+	
+	public void startTimerRunPowerMeter() {
+		cancelTimerRunPowerMeter();
+		mGetElectricTimer = new Timer();
+		mGetElectricTimer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				startGetElectric();
+			}
+		}, 5000, 24*60*60*1000);
+	}
 }

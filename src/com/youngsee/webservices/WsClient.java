@@ -197,6 +197,28 @@ public class WsClient
         return (mState == STATE_ONLINE);
     }
     
+    /**
+     * 改变冲突mac地址
+     */
+    private void changeLocalMac(){
+		if (mLocalMac != null && !mLocalMac.equals("")&&mLocalMac.length()==12) {
+			StringBuilder sb = new StringBuilder(mLocalMac);
+			sb.replace(1, 2, String.valueOf((int) (Math.random() * 10)));
+			sb.replace(3, 4, String.valueOf((int) (Math.random() * 10)));
+			mLocalMac = sb.toString();
+
+			byte[] mByte = new byte[6];
+			for (int i = 0, j = 0; i < mByte.length; i++) {
+				j = Integer.valueOf(
+						mLocalMac.substring(i * 2, (i + 1) * 2), 16);
+				mByte[i] = (byte) j;
+			}
+			
+			PosterApplication.updateEthMacAddress(mByte);
+			Logger.i("change MAC because of mac conflict :"+PosterApplication.getEthFormatMac());
+		}
+    }
+    
     /**********************************************
      * CPE send the authentication request to ACS *
      **********************************************/
@@ -969,7 +991,11 @@ public class WsClient
             retSoapObj = (SoapObject) envelope.bodyIn;
             
             // debug code
-            Logger.d(((SoapObject) envelope.bodyIn).getProperty(0).toString());
+            String debugCode=retSoapObj.getProperty(0).toString();
+            Logger.d(debugCode);
+            if(debugCode!=null&&debugCode.equals("MacConflict")){
+            	changeLocalMac(); 	
+            }
         }
         catch (Exception e)
         {

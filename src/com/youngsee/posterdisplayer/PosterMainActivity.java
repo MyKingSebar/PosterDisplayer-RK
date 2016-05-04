@@ -69,6 +69,7 @@ import android.widget.AdapterView.OnItemLongClickListener;
 import com.youngsee.authorization.AuthorizationManager;
 import com.youngsee.common.Actions;
 import com.youngsee.common.Contants;
+import com.youngsee.common.ElectricManager;
 import com.youngsee.common.FileUtils;
 import com.youngsee.common.MediaInfoRef;
 import com.youngsee.common.PackageInstaller;
@@ -250,7 +251,7 @@ public class PosterMainActivity extends Activity
 		        
 		if (PosterApplication.getInstance().getConfiguration().isMonitorElectric()) 
 		{
-		    PosterApplication.getInstance().startTimerRunPowerMeter();
+		    ElectricManager.getInstance().startTimerRunPowerMeter();
 		}
 	}
 
@@ -399,7 +400,7 @@ public class PosterMainActivity extends Activity
 
 		if (PosterApplication.getInstance().getConfiguration().isMonitorElectric())
 		{
-		   PosterApplication.getInstance().cancelTimerRunPowerMeter();
+		   ElectricManager.getInstance().cancelTimerRunPowerMeter();
 		}
 		
 		// 恢复屏幕

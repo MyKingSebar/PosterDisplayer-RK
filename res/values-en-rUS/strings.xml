@@ -47,6 +47,7 @@
     <string name="about_certNum">Network access license:</string>
     <string name="about_termGrp">Terminal belong to group:</string>
     <string name="about_diskStatus"> Disk status :</string>
+    <string name="about_electric">Equipment power consumption:</string>
     <string name="title_activity_normal_displayer">NormalDisplayerActivity</string>
     <string name="dummy_button">Dummy Button</string>
     <string name="dummy_content">DUMMY\nCONTENT</string>
