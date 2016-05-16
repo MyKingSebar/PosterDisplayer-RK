@@ -1880,30 +1880,38 @@ public class ScreenManager
 	{
 		boolean hasMediaReady = false;
 		List<MediaInfoRef> mediaList = null;
+		if (subWndList == null)
+		{
+			return true;
+		}
+		
 		for (SubWindowInfoRef subWndInfo : subWndList)
         {
 			hasMediaReady = false;
 			mediaList = subWndInfo.getSubWndMediaList();
-			for (MediaInfoRef media : mediaList)
+			if (mediaList != null)
 			{
-				if (FileUtils.mediaIsFile(media))
-				{
-					if (md5IsCorrect(media))
-					{
-						hasMediaReady = true;
-						break;
-					}
-				}
-				else
-				{
-					hasMediaReady = true;
-					break;
-				}
-			}
+			    for (MediaInfoRef media : mediaList)
+			    {
+				    if (FileUtils.mediaIsFile(media))
+				    {
+				    	if (md5IsCorrect(media))
+				    	{
+					    	hasMediaReady = true;
+					    	break;
+					    }
+				    }
+				    else
+				    {
+				    	hasMediaReady = true;
+					    break;
+				    }
+			    }
 			
-			if (!hasMediaReady)
-			{
-				return false;
+			    if (!hasMediaReady)
+			    {
+				    return false;
+			    }
 			}
         }
 		return true;
