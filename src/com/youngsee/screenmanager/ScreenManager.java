@@ -69,7 +69,10 @@ public class ScreenManager
     private static final int     EVENT_SHOW_IDLE_PROGRAM   = 0x8001;
     private final static int     EVENT_SHOW_NORMAL_PROGRAM = 0x8002;
     private final static int     EVENT_SHOW_URGENT_PROGRAM = 0x8003;
+    private final static int     EVENT_MEDIA_READY_SHOW_PROGRAM = 0x8004;
 
+    private waitForMediaReady    mWaitForMediaReadyThread  = null;
+    
     // 节目信息
     private final class ProgramInfo
     {
@@ -287,12 +290,19 @@ public class ScreenManager
             mScreenDaemonThread = null;
         }
         
+        if (mWaitForMediaReadyThread != null)
+        {
+        	mWaitForMediaReadyThread.cancel();
+        	mWaitForMediaReadyThread = null;
+        }
+        
         FtpHelper.getInstance().cancelAllUploadThread();
         FtpHelper.getInstance().cancelAllDownloadThread();
         
         mHandler.removeMessages(EVENT_SHOW_IDLE_PROGRAM);
         mHandler.removeMessages(EVENT_SHOW_NORMAL_PROGRAM);
         mHandler.removeMessages(EVENT_SHOW_URGENT_PROGRAM);
+        mHandler.removeMessages(EVENT_MEDIA_READY_SHOW_PROGRAM);
     }
     
     public boolean isRuning()
@@ -760,23 +770,23 @@ public class ScreenManager
                 Logger.e("loadProgramContent(): Osd already open, can't load program.");
                 return false;
             }
-            else if ((msgId == EVENT_SHOW_URGENT_PROGRAM || msgId == EVENT_SHOW_NORMAL_PROGRAM) &&
-                     pgmInfo.verifyCode.equals(mCurrentPgmVerifyCode))
+            else if (!pgmPathIsAvalible())
             {
-                /*
+            	/*
                  * 服务器通知节目改变的原因之一
                  * 有可能是因为本地的节目列表丢失了，所以需要检查外部存储是否被拔走
                  */
-                if (!pgmPathIsAvalible())
-                {
-                	mNormalPgmFilePath = obtainNormalPgmFilePath();
-                    mUrgentPgmFilePath = obtainUrgentPgmFilePath();
-                    mUrgentProgramInfoList = getProgramScheduleFromXml(mUrgentPgmFilePath);
-                    mNormalProgramInfoList = getProgramScheduleFromXml(mNormalPgmFilePath);
-                    mStatus = IDLE_STATE;
-                    Logger.i("Stroge has been lost, go to Idle state.");
-                }
-                else if (msgId == EVENT_SHOW_URGENT_PROGRAM)
+            	mNormalPgmFilePath = obtainNormalPgmFilePath();
+                mUrgentPgmFilePath = obtainUrgentPgmFilePath();
+                mUrgentProgramInfoList = getProgramScheduleFromXml(mUrgentPgmFilePath);
+                mNormalProgramInfoList = getProgramScheduleFromXml(mNormalPgmFilePath);
+                Logger.i("loadProgramContent(): Stroge has been lost, can't load program.");
+                return false;
+            }
+            else if ((msgId == EVENT_SHOW_URGENT_PROGRAM || msgId == EVENT_SHOW_NORMAL_PROGRAM) &&
+                     pgmInfo.verifyCode.equals(mCurrentPgmVerifyCode))
+            {
+                if (msgId == EVENT_SHOW_URGENT_PROGRAM)
                 {
                     Logger.i("loadProgramContent(): urgent program is playing.");
                 }
@@ -785,7 +795,7 @@ public class ScreenManager
                 	Logger.i("loadProgramContent(): normal program is playing.");
                 }
                 return true;
-            }  
+            }
 
             // Stop the FTP download of the last program
             stopFtpDownloadMaterials();
@@ -1457,7 +1467,7 @@ public class ScreenManager
                 }
             }
             
-            // 计算播放节目的打断时间点(在下一个播放节目的开始时间在当前节目的结束时间之前，则更新节目的打断时间点)
+            // 计算播放节目的打断时间点(下一个播放节目的开始时间在当前节目的结束时间之前，则更新节目的打断时间点)
             int toPlaySchPri = 0;
             int toPlayPgmPri = 0;
             ProgramInfo toPlayPgm = null;
@@ -1852,6 +1862,125 @@ public class ScreenManager
         }
     }
     
+    private boolean md5IsCorrect(MediaInfoRef media)
+    {
+    	if (media != null && FileUtils.isExist(media.filePath))
+    	{
+            String md5Value = new Md5(media.md5Key).ComputeFileMd5(media.filePath);
+            if (md5Value != null && md5Value.equals(media.verifyCode))
+            {
+                return true;
+            }
+    	}
+    	
+        return false;
+    }
+	
+	private boolean wndMediaIsReady(ArrayList<SubWindowInfoRef> subWndList)
+	{
+		boolean hasMediaReady = false;
+		List<MediaInfoRef> mediaList = null;
+		for (SubWindowInfoRef subWndInfo : subWndList)
+        {
+			hasMediaReady = false;
+			mediaList = subWndInfo.getSubWndMediaList();
+			for (MediaInfoRef media : mediaList)
+			{
+				if (FileUtils.mediaIsFile(media))
+				{
+					if (md5IsCorrect(media))
+					{
+						hasMediaReady = true;
+						break;
+					}
+				}
+				else
+				{
+					hasMediaReady = true;
+					break;
+				}
+			}
+			
+			if (!hasMediaReady)
+			{
+				return false;
+			}
+        }
+		return true;
+	}
+	
+	private final class waitForMediaReady extends Thread
+    {
+        private boolean mIsRun = true;
+        private ArrayList<SubWindowInfoRef> mSubWndList = null;
+
+        public void setWndList(ArrayList<SubWindowInfoRef> wndList)
+        {
+        	mSubWndList = wndList;
+        }
+        
+        public void cancel()
+        {
+            mIsRun = false;
+            this.interrupt();
+        }
+        
+        @Override
+        public void run()
+        {
+        	while (mIsRun)
+            {
+        		if (wndMediaIsReady(mSubWndList))
+        		{
+        			// 准备参数
+                    Bundle bundle = new Bundle();
+                    bundle.putSerializable("subwindowlist", (Serializable) mSubWndList);
+                    
+                    // 发送消息
+                    Message msg = mHandler.obtainMessage();
+                    msg.what = EVENT_MEDIA_READY_SHOW_PROGRAM;
+                    msg.setData(bundle);
+                    mHandler.sendMessage(msg);
+                    
+        			break;
+        		}
+        		
+        		try
+                {
+        			Thread.sleep(1000);
+                }
+        		catch (InterruptedException e)
+                {
+                    break;
+                }
+            }
+        }
+    }
+	
+	private void LoadProgram(ArrayList<SubWindowInfoRef> subWndList)
+	{
+		boolean isWaitMeidaReady = PosterApplication.getInstance().getConfiguration().isWaitForMediaReady();
+		
+		if (isWaitMeidaReady)
+		{
+			if (mWaitForMediaReadyThread != null && mWaitForMediaReadyThread.isAlive())
+			{
+				mWaitForMediaReadyThread.cancel();
+			}
+			
+			mWaitForMediaReadyThread = new waitForMediaReady();
+			mWaitForMediaReadyThread.setWndList(subWndList);
+			mWaitForMediaReadyThread.start();
+		}
+		else
+		{
+		    if (mContext instanceof PosterMainActivity)
+            {
+                ((PosterMainActivity) mContext).loadNewProgram(subWndList);
+            }
+		}
+	}
+	
     @SuppressLint("HandlerLeak")
     final Handler mHandler = new Handler() 
     {
@@ -1863,7 +1992,12 @@ public class ScreenManager
             {
             case EVENT_SHOW_NORMAL_PROGRAM:
             case EVENT_SHOW_URGENT_PROGRAM:
+            	LoadProgram((ArrayList<SubWindowInfoRef>) msg.getData().getSerializable("subwindowlist"));
+                mLoadProgramDone = true;
+                return; 
+            
             case EVENT_SHOW_IDLE_PROGRAM:
+            case EVENT_MEDIA_READY_SHOW_PROGRAM:
                 if (mContext instanceof PosterMainActivity)
                 {
                     ((PosterMainActivity) mContext).loadNewProgram((ArrayList<SubWindowInfoRef>) msg.getData().getSerializable("subwindowlist"));
