@@ -463,6 +463,12 @@ public class ScreenManager
         {
             Logger.i("New ScreenDaemon thread, id is: " + currentThread().getId());
             
+            try {
+				loadProgramContent(EVENT_SHOW_IDLE_PROGRAM, null);
+			} catch (InterruptedException e2) {
+				e2.printStackTrace();
+			}
+            
             mNormalPgmFilePath = obtainNormalPgmFilePath();
             mUrgentPgmFilePath = obtainUrgentPgmFilePath();
             mUrgentProgramInfoList = getProgramScheduleFromXml(mUrgentPgmFilePath);
