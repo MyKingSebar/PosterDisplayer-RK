@@ -484,6 +484,7 @@ public class ScreenManager
 							while (AuthorizationActivity.INSTANCE != null) {
 								Thread.sleep(100);
 							}
+							loadProgramContent(EVENT_SHOW_IDLE_PROGRAM, null);
 						}
 					} else {
 						if (AuthorizationActivity.INSTANCE == null) {
