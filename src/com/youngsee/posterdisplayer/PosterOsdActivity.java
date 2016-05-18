@@ -70,7 +70,7 @@ public class PosterOsdActivity extends Activity
         super.onCreate(savedInstanceState);
         PosterApplication.setSystemBarVisible(this, false);
         setContentView(R.layout.activity_osd);
-        getWindow().setFormat(PixelFormat.TRANSLUCENT);
+        //getWindow().setFormat(PixelFormat.TRANSLUCENT);
         
         INSTANCE = this;
         if (ScreenManager.getInstance() != null)

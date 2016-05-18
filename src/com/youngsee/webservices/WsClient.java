@@ -30,10 +30,10 @@ import android.content.pm.ApplicationInfo;
 import android.net.TrafficStats;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
 import android.util.Xml;
 
 import com.youngsee.common.Contants;
-import com.youngsee.common.DbHelper;
 import com.youngsee.common.FileUtils;
 import com.youngsee.common.Md5;
 import com.youngsee.common.RuntimeExec;
@@ -201,7 +201,7 @@ public class WsClient
      * 改变冲突mac地址
      */
     private void changeLocalMac(){
-		if (mLocalMac != null && !mLocalMac.equals("")&&mLocalMac.length()==12) {
+		if (!TextUtils.isEmpty(mLocalMac)) {
 			StringBuilder sb = new StringBuilder(mLocalMac);
 			sb.replace(1, 2, String.valueOf((int) (Math.random() * 10)));
 			sb.replace(3, 4, String.valueOf((int) (Math.random() * 10)));
@@ -209,8 +209,7 @@ public class WsClient
 
 			byte[] mByte = new byte[6];
 			for (int i = 0, j = 0; i < mByte.length; i++) {
-				j = Integer.valueOf(
-						mLocalMac.substring(i * 2, (i + 1) * 2), 16);
+				j = Integer.valueOf(mLocalMac.substring(i * 2, (i + 1) * 2), 16);
 				mByte[i] = (byte) j;
 			}
 			
