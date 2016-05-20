@@ -22,7 +22,7 @@
         
 		<com.youngsee.customview.YSHorizontalScrollView
 		    android:id="@+id/HSVDockBar"
-	        android:layout_width="0dp"  
+	        android:layout_width="0dp"
 	        android:layout_weight="1"  
 	        android:layout_height="match_parent"
 	        android:scrollbars="none"
@@ -33,7 +33,6 @@
 	            android:layout_height="match_parent"
 	            android:layout_gravity="center_horizontal"  
 	            android:orientation="horizontal" >  
-	  
 	            <GridView  
 	                android:id="@+id/gridview"  
 	                android:layout_width="wrap_content"  
@@ -47,11 +46,14 @@
 	            </GridView>
 	        </LinearLayout>  
 	    </com.youngsee.customview.YSHorizontalScrollView>
+	    
 	    <Button 
             android:layout_height="match_parent"
             android:layout_width="35dp"
             android:id="@+id/BSelectApp"
             android:background="@null">
 	    </Button>
+	    
 	</LinearLayout>
+	
 </LinearLayout>

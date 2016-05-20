@@ -216,7 +216,6 @@ public class WsClient
 			}
 			
 			PosterApplication.updateEthMacAddress(mByte);
-			Logger.i("change MAC because of mac conflict :"+PosterApplication.getEthFormatMac());
 		}
     }
     

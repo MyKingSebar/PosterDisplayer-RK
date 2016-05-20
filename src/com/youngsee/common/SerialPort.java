@@ -20,7 +20,16 @@ public class SerialPort {
 	static {
 		System.loadLibrary("serial_port");
 	}
-
+	/**
+	 * 
+	 * @param device
+	 * @param baudrate
+	 * @param databits
+	 * @param stopBits
+	 * @param parity 校验 'e'->偶校验 'o'->校验  'n'->none
+	 * @throws SecurityException
+	 * @throws IOException
+	 */
 	public SerialPort(File device, int baudrate, int databits, int stopBits, int parity) throws SecurityException, IOException {
 		/* Check access permission */
 		if (!device.canRead() || !device.canWrite()) {

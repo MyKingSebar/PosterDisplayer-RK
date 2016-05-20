@@ -74,6 +74,8 @@ import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Environment;
+import android.provider.MediaStore.Files;
 import android.provider.Settings;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
@@ -122,11 +124,6 @@ public class PosterApplication extends Application
     private Timer                           mUploadLogTimer                = null;
     
     private AlarmManager mAlarmManager = null;
-    
-    private final String SYSPROP_HWROTATION_CLASS = "android.os.SystemProperties";
-    private final String SYSPROP_HWROTATION_GETMETHOD = "getInt";
-    private final String SYSPROP_HWROTATION = "persist.sys.hwrotation";
-    private final int SYSPROP_HWROTATION_DEFAULT = -1;
     
     public static PosterApplication getInstance()
     {
@@ -816,7 +813,7 @@ public class PosterApplication extends Application
     	if (mMacAddressFilePath == null)
     	{
 		    StringBuilder sb = new StringBuilder();
-		    sb.append(this.getFilesDir().getPath());
+		    sb.append(FileUtils.getHardDiskPath());
 		    sb.append(File.separator);
 		    sb.append("mac");
 		    sb.append(File.separator);
@@ -840,8 +837,8 @@ public class PosterApplication extends Application
 	}
     
     public static void updateEthMacAddress(byte[] newMac){
-    	mEthMac = newMac;
-    	FileUtils.writeSDFileData(INSTANCE.getMacFileName(), newMac, false);
+    	mEthMac=newMac;
+    	FileUtils.writeSDFileData(INSTANCE.getMacFileName(), mEthMac, false);	
     }
     
     // 固定用网口的MAC地址做为与服务器通信的Device_ID
@@ -1608,15 +1605,14 @@ public class PosterApplication extends Application
         return t.toMillis(false);
     }
     
+    /**
+     * 获取屏幕方向
+     * @return 1:0° 2:90° 4:180° 8:270° 默认值是1
+     */
     public int getHwRotation() {
-		Object hwRotation = ReflectionUtils.invokeStaticMethod(
-				SYSPROP_HWROTATION_CLASS, SYSPROP_HWROTATION_GETMETHOD, new Object[] {
-				SYSPROP_HWROTATION, SYSPROP_HWROTATION_DEFAULT}, new Class[] {String.class, int.class});
-		if (hwRotation != null) {
-			return ((Integer)hwRotation).intValue();
-		}
-		return -1;
+	    return (int) Settings.System.getLong(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION_ANGLES,1);
 	}
+
     
     //get the object of YSConfiguration.
     public YSConfiguration getConfiguration(){

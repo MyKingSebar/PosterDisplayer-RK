@@ -335,6 +335,9 @@ public class MultiMediaView extends PosterBaseView
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
         {
+        	Canvas canvas = holder.lockCanvas();  
+            canvas.drawColor(Color.BLACK);// 清除画布  
+            holder.unlockCanvasAndPost(canvas);  
             Logger.i("Surface is changed, holder = " + holder);
         }
         
@@ -432,6 +435,7 @@ public class MultiMediaView extends PosterBaseView
     @Override
     public void onViewPause()
     {
+    	
         pauseUpdateThread();
         cleanupMsg();
         
