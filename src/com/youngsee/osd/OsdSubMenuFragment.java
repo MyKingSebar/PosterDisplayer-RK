@@ -1348,6 +1348,20 @@ public class OsdSubMenuFragment extends Fragment
     }
     
     private void dismissDialog(DialogInterface dialog) {
+    	InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
+        if (imm.isActive())
+        {
+            if (mOnTimeEditText != null)
+            {
+                imm.hideSoftInputFromWindow(mOnTimeEditText.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+            }
+            
+            if (mOffTimeEditText != null)
+            {
+                imm.hideSoftInputFromWindow(mOffTimeEditText.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+            }
+        }
+        
     	try
         {
             Field field = dialog.getClass().getSuperclass().getDeclaredField("mShowing");
@@ -1425,20 +1439,6 @@ public class OsdSubMenuFragment extends Fragment
                         }
                         else
                         {
-                            InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
-                            if (imm.isActive())
-                            {
-                                if (mOnTimeEditText != null)
-                                {
-                                    imm.hideSoftInputFromWindow(mOnTimeEditText.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
-                                }
-                                
-                                if (mOffTimeEditText != null)
-                                {
-                                    imm.hideSoftInputFromWindow(mOffTimeEditText.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
-                                }
-                            }
-                            
                             ClockItem item = new ClockItem();
                             item.setOnTime(mOnTimeEditText.getText().toString());
                             item.setOffTime(mOffTimeEditText.getText().toString());
@@ -1449,24 +1449,11 @@ public class OsdSubMenuFragment extends Fragment
                     }
                 }).setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which)
-                    {
-                    	InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
-                        if (imm.isActive())
-                        {
-                            if (mOnTimeEditText != null)
-                            {
-                                imm.hideSoftInputFromWindow(mOnTimeEditText.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
-                            }
-                            
-                            if (mOffTimeEditText != null)
-                            {
-                                imm.hideSoftInputFromWindow(mOffTimeEditText.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
-                            }
-                        }
-                        
+                    {          
                     	dismissDialog(dialog);
                     }
                 }).create();
+        mOnOffAlertDialog.setCanceledOnTouchOutside(false);
         mOnOffAlertDialog.show();
     }
     
@@ -1597,6 +1584,7 @@ public class OsdSubMenuFragment extends Fragment
                     	dismissDialog(dialog);
                     }
                 }).create();
+        mOnOffAlertDialog.setCanceledOnTouchOutside(false);
         mOnOffAlertDialog.show();
     }
 }

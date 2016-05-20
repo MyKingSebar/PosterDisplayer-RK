@@ -118,7 +118,6 @@ public class XmlCmdParse
                     SysParamManager.getInstance().setTermGrp(strValue);
                 }
 
-
                 break;
             
             case XmlCmdInfoRef.CMD_PTL_SETOUT:   // 设置输出参数
@@ -242,6 +241,19 @@ public class XmlCmdParse
                     Bitmap newBitmap = orgBitmap;
                     int rotation = PosterApplication.getInstance().getHwRotation();
                     if ((rotation != -1) && (rotation != 0)) {
+                    	switch (rotation) {
+						case 2:
+							rotation = 90;
+							break;
+						case 4:
+							rotation = 180;
+							break;
+						case 8:
+							rotation = 270;
+							break;
+						default:
+							break;
+						}
 	                    Matrix matrix = new Matrix();
 	                	matrix.setRotate((-1) * rotation);
 	                	newBitmap = Bitmap.createBitmap(orgBitmap, 0, 0, orgBitmap.getWidth(), orgBitmap.getHeight(), matrix, true);

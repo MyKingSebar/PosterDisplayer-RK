@@ -17,14 +17,20 @@ import java.util.LinkedList;
 import java.util.List;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.text.TextUtils;
 import android.text.format.Time;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.FrameLayout.LayoutParams;
 
 import com.youngsee.authorization.AuthorizationActivity;
 import com.youngsee.authorization.AuthorizationManager;
@@ -32,6 +38,7 @@ import com.youngsee.common.FileUtils;
 import com.youngsee.common.Md5;
 import com.youngsee.common.MediaInfoRef;
 import com.youngsee.common.SubWindowInfoRef;
+import com.youngsee.customview.RunningView;
 import com.youngsee.ftpoperation.FtpFileInfo;
 import com.youngsee.ftpoperation.FtpHelper;
 import com.youngsee.logmanager.Logger;
@@ -1950,7 +1957,6 @@ public class ScreenManager
         			// 准备参数
                     Bundle bundle = new Bundle();
                     bundle.putSerializable("subwindowlist", (Serializable) mSubWndList);
-                    
                     // 发送消息
                     Message msg = mHandler.obtainMessage();
                     msg.what = EVENT_MEDIA_READY_SHOW_PROGRAM;
@@ -1972,6 +1978,9 @@ public class ScreenManager
         }
     }
 	
+	private RunningView runningView= null ;
+	
+	@TargetApi(Build.VERSION_CODES.KITKAT)
 	private void LoadProgram(ArrayList<SubWindowInfoRef> subWndList)
 	{
 		boolean isWaitMeidaReady = PosterApplication.getInstance().getConfiguration().isWaitForMediaReady();
@@ -1983,6 +1992,20 @@ public class ScreenManager
 				mWaitForMediaReadyThread.cancel();
 			}
 			
+			//显示runningView
+			if (runningView == null) {
+				if (mContext instanceof PosterMainActivity) {
+					runningView = new RunningView(mContext);
+					FrameLayout.LayoutParams mLayoutParams = new FrameLayout.LayoutParams(new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT,LayoutParams.WRAP_CONTENT));
+					mLayoutParams.gravity = Gravity.CENTER | Gravity.BOTTOM;
+					FrameLayout frame = new FrameLayout(mContext);
+					frame.addView(runningView);
+					((PosterMainActivity) mContext).addContentView(frame,mLayoutParams);
+				}
+			} else {
+				
+				runningView.setVisibility(View.VISIBLE);
+			}
 			mWaitForMediaReadyThread = new waitForMediaReady();
 			mWaitForMediaReadyThread.setWndList(subWndList);
 			mWaitForMediaReadyThread.start();
@@ -2013,6 +2036,11 @@ public class ScreenManager
             
             case EVENT_SHOW_IDLE_PROGRAM:
             case EVENT_MEDIA_READY_SHOW_PROGRAM:
+            	
+            	if(runningView!=null){
+            		runningView.setVisibility(View.GONE);
+            	
+            	}
                 if (mContext instanceof PosterMainActivity)
                 {
                     ((PosterMainActivity) mContext).loadNewProgram((ArrayList<SubWindowInfoRef>) msg.getData().getSerializable("subwindowlist"));

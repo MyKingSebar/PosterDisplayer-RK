@@ -325,7 +325,6 @@ public class WsClient
             SysParamManager.getInstance().setSigOutParam(retSysParam.sigOutSet);
         }
 
-
         // 重启设备，参数立即生效
         if (mServerConfigChanged)
         {

@@ -570,7 +570,7 @@ public class PosterMainActivity extends Activity
 		// 清空上一个节目的缓存
         PosterApplication.clearMemoryCache();
 	}
-	
+
 	// 加载新节目
 	public void loadNewProgram(ArrayList<SubWindowInfoRef> subWndList) 
 	{
@@ -598,7 +598,7 @@ public class PosterMainActivity extends Activity
             for (SubWindowInfoRef subWndInfo : subWndList)
             {
                 tempSubWnd = null;
-                
+
                 // 窗体类型和名称
                 if ((wndType = subWndInfo.getSubWindowType()) == null)
                 {

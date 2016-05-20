@@ -23,7 +23,6 @@ import com.youngsee.common.SysParamManager;
 import com.youngsee.logmanager.LogUtils;
 import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterApplication;
-
 import it.sauronsoftware.ftp4j.FTPAbortedException;
 import it.sauronsoftware.ftp4j.FTPClient;
 import it.sauronsoftware.ftp4j.FTPDataTransferException;

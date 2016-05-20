@@ -33,6 +33,7 @@
 -libraryjars libs/commons-codec-1.10.jar
 -libraryjars libs/commons-logging-1.1.jar
 -libraryjars libs/ksoap2-android-assembly-3.0.0-jar-with-dependencies.jar
+-libraryjars classes.jar
 
 -dontwarn org.apache.**
 -dontwarn org.xmlpull.**
