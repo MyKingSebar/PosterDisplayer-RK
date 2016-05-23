@@ -335,9 +335,6 @@ public class MultiMediaView extends PosterBaseView
         @Override
         public void surfaceChanged(SurfaceHolder holder, int format, int width, int height)
         {
-        	Canvas canvas=holder.lockCanvas();
-        	canvas.drawColor(Color.BLACK);
-        	holder.unlockCanvasAndPost(canvas);
             Logger.i("Surface is changed, holder = " + holder);
         }
         
