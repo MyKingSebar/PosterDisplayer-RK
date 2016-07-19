@@ -105,13 +105,13 @@ public class PosterMainActivity extends Activity
 
 	private Intent popService = null;
 	private boolean isPopServiceRunning = false;
-	
+
 	private Dialog mUpdateProgramDialog = null;
 	private InternalReceiver mInternalReceiver = null;
 
 	private MediaInfoRef mBgImgInfo = null;
-	
-    private Set<PosterBaseView> mSubWndCollection   = null;  // 屏幕布局信息
+
+	private Set<PosterBaseView> mSubWndCollection   = null;  // 屏幕布局信息
 
     private ApplicationSelector      mSelector = null;
     private List<AppInfo>            mAppInfo = null;
@@ -231,8 +231,7 @@ public class PosterMainActivity extends Activity
 			}
 		});
 
-		// 初始化停靠栏
-        initDockBar();
+		
         
 		// 启动定时器，定时清理文件和上传日志
 		PosterApplication.getInstance().startTimingDel();
@@ -302,6 +301,9 @@ public class PosterMainActivity extends Activity
 	@Override
 	protected void onResume() 
 	{
+		// 初始化停靠栏
+        initDockBar();
+		
 		if (mSubWndCollection != null)
         {
             for (PosterBaseView wnd : mSubWndCollection)
@@ -1017,7 +1019,8 @@ public class PosterMainActivity extends Activity
                     showAppSelector();
                 }
             });
-            queryAppInfo(mAppInfo);
+            queryInitAppInfo(mAppInfo);
+            saveAppInfo();
             showAppInfo();
         }
         else{
@@ -1128,8 +1131,41 @@ public class PosterMainActivity extends Activity
         });
     }
     
+    private List<String> getInitAppInfo()
+    {
+    	ArrayList<String> appList = new ArrayList<String>();
+    	SharedPreferences sp = getSharedPreferences("applist", Context.MODE_PRIVATE); 
+    	int nAppCnt = sp.getInt("app_size", 0);
+
+    	for(int i = 0; i < nAppCnt; i++) 
+    	{  
+    		appList.add(sp.getString("app_" + i, ""));  
+        }  
+    	
+    	return appList;
+    }
+    
+    private boolean isInitApp(String appPkgName)
+    {
+    	List<String> initAppList = getInitAppInfo();
+    	if (initAppList.isEmpty())
+    	{
+    		return true;   // 如果没有保存APP列表，则将全体APP列出在状态栏中
+    	}
+    	
+    	for (int i = 0; i < initAppList.size(); i++)
+    	{
+    		if (appPkgName.equals(initAppList.get(i)))
+    		{
+    			return true;
+    		}
+    	}
+    	
+    	return false;
+    }
+    
     // 获得所有启动Activity的信息，类似于Launch界面  
-    private void queryAppInfo(List<AppInfo> listAppInfo) {
+    private void queryInitAppInfo(List<AppInfo> listAppInfo) {
         PackageManager pm = this.getPackageManager(); // 获得PackageManager对象  
         Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
         mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
@@ -1140,21 +1176,32 @@ public class PosterMainActivity extends Activity
         Collections.sort(resolveInfos,new ResolveInfo.DisplayNameComparator(pm));
         if (listAppInfo != null) {
             listAppInfo.clear();
+            ApplicationInfo info = null;
+            String activityName = null;
+            String pkgName = null;
+            String appLabel = null;
+            Drawable icon = null;
+            Intent launchIntent = null;
+            AppInfo appInfo = null;
+            
             for (ResolveInfo reInfo : resolveInfos) {
-                ApplicationInfo info = reInfo.activityInfo.applicationInfo;
-                if (((info.flags & ApplicationInfo.FLAG_SYSTEM) > 0) &&
-                        ((info.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) == 0)) {
+                info = reInfo.activityInfo.applicationInfo;
+                if (((info.flags & ApplicationInfo.FLAG_SYSTEM) > 0 &&
+                     (info.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) == 0) ||
+                     (!isInitApp(reInfo.activityInfo.packageName))) {
                     continue;
                 }
-                String activityName = reInfo.activityInfo.name; // 获得该应用程序的启动Activity的name
-                String pkgName = reInfo.activityInfo.packageName; // 获得应用程序的包名
-                String appLabel = (String) reInfo.loadLabel(pm); // 获得应用程序的Label
-                Drawable icon = reInfo.loadIcon(pm); // 获得应用程序图标  
+                
+                activityName = reInfo.activityInfo.name; // 获得该应用程序的启动Activity的name
+                pkgName = reInfo.activityInfo.packageName; // 获得应用程序的包名
+                appLabel = (String) reInfo.loadLabel(pm); // 获得应用程序的Label
+                icon = reInfo.loadIcon(pm); // 获得应用程序图标  
                 // 为应用程序的启动Activity 准备Intent
-                Intent launchIntent = new Intent();
+                launchIntent = new Intent();
                 launchIntent.setComponent(new ComponentName(pkgName, activityName));
+                
                 // 创建一个AppInfo对象，并赋值
-                AppInfo appInfo = new AppInfo();
+                appInfo = new AppInfo();
                 appInfo.setAppLabel(appLabel);
                 appInfo.setPkgName(pkgName);
                 appInfo.setAppIcon(icon);
