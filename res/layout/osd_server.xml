@@ -25,159 +25,164 @@
         android:gravity="center"
         android:orientation="horizontal" >
 
-        <TableLayout
+        <ScrollView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="vertical" >
+            android:scrollbars="none" >
 
-            <TableRow>
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Web URL: "
-                    android:gravity="right"
-                    android:textColor="@android:color/white"
-                    android:textSize="30dp" />
+            <TableLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical" >
 
-                <EditText
-                    android:id="@+id/server_webURL"
-                    android:layout_width="400dp"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:text="http://192.168.0.1"
-                    android:textColor="@android:color/black"
-                    android:textSize="22dp" />
-            </TableRow>
+                <TableRow>
 
-            <TableRow>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="right"
+                        android:text="Web URL: "
+                        android:textColor="@android:color/white"
+                        android:textSize="30dp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Ftp IP: "
-                    android:gravity="right"
-                    android:textColor="@android:color/white"
-                    android:textSize="30dp" />
+                    <EditText
+                        android:id="@+id/server_webURL"
+                        android:layout_width="400dp"
+                        android:layout_height="wrap_content"
+                        android:singleLine="true"
+                        android:text="http://192.168.0.1"
+                        android:textColor="@android:color/black"
+                        android:textSize="22dp" />
+                </TableRow>
 
-                <EditText
-                    android:id="@+id/server_ftp_IP"
-                    android:layout_width="400dp"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:text="http://192.168.0.1"
-                    android:textColor="@android:color/black"
-                    android:textSize="22dp"
-                    android:enabled="false" />
-            </TableRow>
+                <TableRow>
 
-            <TableRow>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="right"
+                        android:text="Ftp IP: "
+                        android:textColor="@android:color/white"
+                        android:textSize="30dp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/server_ftp_port"
-                    android:gravity="right"
-                    android:textColor="@android:color/white"
-                    android:textSize="30dp" />
+                    <EditText
+                        android:id="@+id/server_ftp_IP"
+                        android:layout_width="400dp"
+                        android:layout_height="wrap_content"
+                        android:enabled="false"
+                        android:singleLine="true"
+                        android:text="http://192.168.0.1"
+                        android:textColor="@android:color/black"
+                        android:textSize="22dp" />
+                </TableRow>
 
-                <EditText
-                    android:id="@+id/server_ftp_port"
-                    android:layout_width="400dp"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:text="http://192.168.0.1"
-                    android:textColor="@android:color/black"
-                    android:textSize="22dp"
-                    android:enabled="false" />
-            </TableRow>
+                <TableRow>
 
-            <TableRow>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="right"
+                        android:text="@string/server_ftp_port"
+                        android:textColor="@android:color/white"
+                        android:textSize="30dp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/server_ftp_id"
-                    android:gravity="right"
-                    android:textColor="@android:color/white"
-                    android:textSize="30dp" />
+                    <EditText
+                        android:id="@+id/server_ftp_port"
+                        android:layout_width="400dp"
+                        android:layout_height="wrap_content"
+                        android:enabled="false"
+                        android:singleLine="true"
+                        android:text="http://192.168.0.1"
+                        android:textColor="@android:color/black"
+                        android:textSize="22dp" />
+                </TableRow>
 
-                <EditText
-                    android:id="@+id/server_ftp_count"
-                    android:layout_width="400dp"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:text="http://192.168.0.1"
-                    android:textColor="@android:color/black"
-                    android:textSize="22dp"
-                    android:enabled="false" />
-            </TableRow>
+                <TableRow>
 
-            <TableRow>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="right"
+                        android:text="@string/server_ftp_id"
+                        android:textColor="@android:color/white"
+                        android:textSize="30dp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/server_ftp_pwd"
-                    android:gravity="right"
-                    android:textColor="@android:color/white"
-                    android:textSize="30dp" />
+                    <EditText
+                        android:id="@+id/server_ftp_count"
+                        android:layout_width="400dp"
+                        android:layout_height="wrap_content"
+                        android:enabled="false"
+                        android:singleLine="true"
+                        android:text="http://192.168.0.1"
+                        android:textColor="@android:color/black"
+                        android:textSize="22dp" />
+                </TableRow>
 
-                <EditText
-                    android:id="@+id/server_ftp_password"
-                    android:layout_width="400dp"
-                    android:layout_height="wrap_content"
-                    android:inputType="textPassword"
-                    android:singleLine="true"
-                    android:text="http://192.168.0.1"
-                    android:textColor="@android:color/black"
-                    android:textSize="22dp"
-                    android:enabled="false" />"
-            </TableRow>
+                <TableRow>
 
-            <TableRow
-                android:visibility="gone">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="right"
+                        android:text="@string/server_ftp_pwd"
+                        android:textColor="@android:color/white"
+                        android:textSize="30dp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:text="Ntp IP: "
-                    android:gravity="right"
-                    android:textColor="@android:color/white"
-                    android:textSize="30dp" />
+                    <EditText
+                        android:id="@+id/server_ftp_password"
+                        android:layout_width="400dp"
+                        android:layout_height="wrap_content"
+                        android:enabled="false"
+                        android:inputType="textPassword"
+                        android:singleLine="true"
+                        android:text="http://192.168.0.1"
+                        android:textColor="@android:color/black"
+                        android:textSize="22dp" />
+                </TableRow>
 
-                <EditText
-                    android:id="@+id/server_ntp_ip"
-                    android:layout_width="400dp"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:text="http://192.168.0.1"
-                    android:textColor="@android:color/black"
-                    android:textSize="22dp" />
-            </TableRow>
+                <TableRow android:visibility="gone" >
 
-            <TableRow
-                android:visibility="gone">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="right"
+                        android:singleLine="true"
+                        android:text="Ntp IP: "
+                        android:textColor="@android:color/white"
+                        android:textSize="30dp" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/server_ntp_port"
-                    android:gravity="right"
-                    android:textColor="@android:color/white"
-                    android:textSize="30dp" />
+                    <EditText
+                        android:id="@+id/server_ntp_ip"
+                        android:layout_width="400dp"
+                        android:layout_height="wrap_content"
+                        android:singleLine="true"
+                        android:text="http://192.168.0.1"
+                        android:textColor="@android:color/black"
+                        android:textSize="22dp" />
+                </TableRow>
 
-                <EditText
-                    android:id="@+id/server_ntp_port"
-                    android:layout_width="400dp"
-                    android:layout_height="wrap_content"
-                    android:singleLine="true"
-                    android:text="http://192.168.0.1"
-                    android:textColor="@android:color/black"
-                    android:textSize="22dp" />
-            </TableRow>
-        </TableLayout>
+                <TableRow android:visibility="gone" >
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="right"
+                        android:text="@string/server_ntp_port"
+                        android:textColor="@android:color/white"
+                        android:textSize="30dp" />
+
+                    <EditText
+                        android:id="@+id/server_ntp_port"
+                        android:layout_width="400dp"
+                        android:layout_height="wrap_content"
+                        android:singleLine="true"
+                        android:text="http://192.168.0.1"
+                        android:textColor="@android:color/black"
+                        android:textSize="22dp" />
+                </TableRow>
+            </TableLayout>
+        </ScrollView>
     </LinearLayout>
 
 </LinearLayout>

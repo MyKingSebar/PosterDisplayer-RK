@@ -2,24 +2,27 @@ package com.youngsee.authorization;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+
+import com.youngsee.common.DialogUtil;
+import com.youngsee.common.DialogUtil.DialogDoubleButtonListener;
+import com.youngsee.common.DialogUtil.DialogSingleButtonListener;
 import com.youngsee.common.FileUtils;
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.posterdisplayer.R;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.view.View;
 
 @SuppressLint("DefaultLocale")
 public class AuthorizationHelper {
-	private final static String USB_COMMON_NAME = "usb";
-	
 	private final static int EVENT_START = 0x8000;
     private final static int EVENT_SUCCESS = 0x8001;
     private final static int EVENT_FAILURE = 0x8002;
@@ -33,6 +36,7 @@ public class AuthorizationHelper {
     private ProgressDialog mProgressDlg = null;
 	
 	private OnStatusListener mListener = null;
+	private Dialog dlg = null;
 	
 	public interface OnStatusListener {
         public void onCompleted();
@@ -53,35 +57,25 @@ public class AuthorizationHelper {
 	}
 	
 	private String getDevInfoSavePath() {
+		List<String> listUsbPath = FileUtils.getUsbPathList();
+		if (listUsbPath == null || listUsbPath.isEmpty())
+		{
+			Logger.i("Didn't found Usb path.");
+			return null;
+		}
+		
+		long currMaxSpace = 0;
     	String savePath = null;
-    	String externalRootPath = Environment.getExternalStorageDirectory().getParent();
-    	if (externalRootPath != null) {
-    		File exRootPath = new File(externalRootPath);
-    		File[] exRootPathFiles = exRootPath.listFiles();
-    		if (exRootPathFiles != null) {
-	    		long currMaxSpace = 0;
-	    		for (File rootFile : exRootPathFiles) {
-	    			if (rootFile.isDirectory() && rootFile.getName().contains(USB_COMMON_NAME)) {
-	    				if (rootFile.getTotalSpace() > 0) {
-	    					if (rootFile.getUsableSpace() > currMaxSpace) {
-	    						savePath = rootFile.getAbsolutePath();
-	    	    				currMaxSpace = rootFile.getUsableSpace();
-	    					}
-	    				} else {
-	    					File[] exRootSubPathFiles = rootFile.listFiles();
-	    					if (exRootSubPathFiles != null) {
-		    					for (File rootSubFile : exRootSubPathFiles) {
-		    						if (rootSubFile.getUsableSpace() > currMaxSpace) {
-		        						savePath = rootSubFile.getAbsolutePath();
-		        	    				currMaxSpace = rootSubFile.getUsableSpace();
-		        					}
-		    					}
-	    					}
-	    				}
-	    			}
-	    		}
+    	long fileSpace = 0;
+    	for (int i = 0; i < listUsbPath.size(); i++)
+    	{
+    		fileSpace = (new File(listUsbPath.get(i))).getUsableSpace();
+    		if (fileSpace > currMaxSpace)
+    		{
+    			savePath = listUsbPath.get(i);
+    			currMaxSpace = fileSpace;
     		}
-        }
+    	}
     	return savePath;
     }
 	
@@ -244,84 +238,111 @@ public class AuthorizationHelper {
         public void handleMessage(Message msg) {
 			int residtitle = -1;
 			final int type = msg.getData().getInt("type");
-            switch (msg.what) {
-            case EVENT_START:
-                if (mProgressDlg != null && !mProgressDlg.isShowing()) {
-                    mProgressDlg.show();
-                }
-                break;
-            case EVENT_SUCCESS:
-            	if (mListener != null) {
-            		mListener.onCompleted();
-            	}
-                if (mProgressDlg != null && mProgressDlg.isShowing()) {
-                    mProgressDlg.dismiss();
-                }
-                switch(type) {
-                case PDLGTYPE_GETDEVINFO:
-                	residtitle = R.string.exportdevinfo_success_title;
-                	break;
-                case PDLGTYPE_IMPORTAUTHCODE:
-                	residtitle = R.string.importauthcode_success_title;
-                	break;
-                case PDLGTYPE_IMPORTKEY:
-                	residtitle = R.string.importkey_success_title;
-                	break;
-                case PDLGTYPE_UPDATEKEY:
-                	residtitle = R.string.updatekey_success_title;
-                	break;
-                }
-                if (residtitle != -1) {
-	                new AlertDialog.Builder(mContext).setTitle(residtitle)
-	                        .setPositiveButton(R.string.enter, null).create().show();
-                }
-                break;
-            case EVENT_FAILURE:
-                if (mProgressDlg != null && mProgressDlg.isShowing()) {
-                    mProgressDlg.dismiss();
-                }
-                switch(type) {
-                case PDLGTYPE_GETDEVINFO:
-                	residtitle = R.string.exportdevinfo_failure_title;
-                	break;
-                case PDLGTYPE_IMPORTAUTHCODE:
-                	residtitle = R.string.importauthcode_failure_title;
-                	break;
-                case PDLGTYPE_IMPORTKEY:
-                	residtitle = R.string.importkey_failure_title;
-                	break;
-                case PDLGTYPE_UPDATEKEY:
-                	residtitle = R.string.updatekey_failure_title;
-                	break;
-                }
-                if (residtitle != -1) {
-	                new AlertDialog.Builder(mContext)
-	                        .setTitle(residtitle)
-	                        .setPositiveButton(R.string.retry1,
-	                                new DialogInterface.OnClickListener() {
-	                                    @Override
-	                                    public void onClick(DialogInterface dialog, int which) {
-	                                    	switch(type) {
-	                                        case PDLGTYPE_GETDEVINFO:
-	                                        	exportDevInfoToUDisk();
-	                                        	break;
-	                                        case PDLGTYPE_IMPORTAUTHCODE:
-	                                        	importAuthCodeFromUDisk();
-	                                        	break;
-	                                        case PDLGTYPE_IMPORTKEY:
-	                                        	importKeyFromUDisk();
-	                                        	break;
-	                                        case PDLGTYPE_UPDATEKEY:
-	                                        	updateKeyFromUDisk();
-	                                        	break;
-	                                        }
-	                                    }
-	                                })
-	                        .setNegativeButton(R.string.cancel, null).create().show();
-                }
-                return;
-            }
-            super.handleMessage(msg);
-        }
+			switch (msg.what) {
+			case EVENT_START:
+				if (mProgressDlg != null && !mProgressDlg.isShowing()) {
+					mProgressDlg.show();
+				}
+				break;
+			case EVENT_SUCCESS:
+				if (mListener != null) {
+					mListener.onCompleted();
+				}
+				if (mProgressDlg != null && mProgressDlg.isShowing()) {
+					mProgressDlg.dismiss();
+				}
+				switch (type) {
+				case PDLGTYPE_GETDEVINFO:
+					residtitle = R.string.exportdevinfo_success_title;
+					break;
+				case PDLGTYPE_IMPORTAUTHCODE:
+					residtitle = R.string.importauthcode_success_title;
+					break;
+				case PDLGTYPE_IMPORTKEY:
+					residtitle = R.string.importkey_success_title;
+					break;
+				case PDLGTYPE_UPDATEKEY:
+					residtitle = R.string.updatekey_success_title;
+					break;
+				}
+				if (residtitle != -1) {
+					dlg = DialogUtil.showTipsDialog(mContext, mContext.getString(residtitle), mContext.getString(R.string.enter), new DialogSingleButtonListener() {
+
+						@Override
+						public void onSingleClick(Context context , View v , int which) {
+							if (dlg != null) {
+								dlg.dismiss();
+								dlg = null;
+							}
+						}
+
+					}, false);
+
+					dlg.show();
+					
+					DialogUtil.dialogTimeOff(dlg,90000);
+				}
+				break;
+			case EVENT_FAILURE:
+				if (mProgressDlg != null && mProgressDlg.isShowing()) {
+					mProgressDlg.dismiss();
+				}
+				switch (type) {
+				case PDLGTYPE_GETDEVINFO:
+					residtitle = R.string.exportdevinfo_failure_title;
+					break;
+				case PDLGTYPE_IMPORTAUTHCODE:
+					residtitle = R.string.importauthcode_failure_title;
+					break;
+				case PDLGTYPE_IMPORTKEY:
+					residtitle = R.string.importkey_failure_title;
+					break;
+				case PDLGTYPE_UPDATEKEY:
+					residtitle = R.string.updatekey_failure_title;
+					break;
+				}
+				if (residtitle != -1) {
+					dlg = DialogUtil.showTipsDialog(mContext, mContext.getString(residtitle), mContext.getString(R.string.retry1), mContext.getString(R.string.cancel), new DialogDoubleButtonListener() {
+
+						@Override
+						public void onLeftClick(Context context , View v , int which) {
+							switch (type) {
+							case PDLGTYPE_GETDEVINFO:
+								exportDevInfoToUDisk();
+								break;
+							case PDLGTYPE_IMPORTAUTHCODE:
+								importAuthCodeFromUDisk();
+								break;
+							case PDLGTYPE_IMPORTKEY:
+								importKeyFromUDisk();
+								break;
+							case PDLGTYPE_UPDATEKEY:
+								updateKeyFromUDisk();
+								break;
+							}
+							if (dlg != null) {
+								dlg.dismiss();
+								dlg = null;
+							}
+						}
+
+						@Override
+						public void onRightClick(Context context , View v , int which) {
+							if (dlg != null) {
+								dlg.dismiss();
+								dlg = null;
+							}
+						}
+
+					}, false);
+					
+					dlg.show();
+					
+					DialogUtil.dialogTimeOff(dlg,90000);
+				}
+				return;
+			}
+			super.handleMessage(msg);
+		}
 	};
 }

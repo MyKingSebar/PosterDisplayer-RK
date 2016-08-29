@@ -64,21 +64,31 @@ public class ApplicationSelector extends PopupWindow implements OnItemClickListe
         Collections.sort(resolveInfos,new ResolveInfo.DisplayNameComparator(pm));
         if (listAppInfo != null) {
         	listAppInfo.clear();
+        	ApplicationInfo info = null;
+        	String activityName = null;
+        	String pkgName = null;
+        	String appLabel = null;
+        	Drawable icon = null;
+        	Intent launchIntent = null;
+        	AppInfo appInfo = null;
+        	
             for (ResolveInfo reInfo : resolveInfos) {
-            	ApplicationInfo info = reInfo.activityInfo.applicationInfo;
+            	info = reInfo.activityInfo.applicationInfo;
             	if (((info.flags & ApplicationInfo.FLAG_SYSTEM) > 0) &&
-            			((info.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) == 0)) {
+            	    ((info.flags & ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) == 0)) {
             		continue;
             	}
-                String activityName = reInfo.activityInfo.name; // 获得该应用程序的启动Activity的name
-                String pkgName = reInfo.activityInfo.packageName; // 获得应用程序的包名
-                String appLabel = (String) reInfo.loadLabel(pm); // 获得应用程序的Label
-                Drawable icon = reInfo.loadIcon(pm); // 获得应用程序图标  
+            	
+                activityName = reInfo.activityInfo.name; // 获得该应用程序的启动Activity的name
+                pkgName = reInfo.activityInfo.packageName; // 获得应用程序的包名
+                appLabel = (String) reInfo.loadLabel(pm); // 获得应用程序的Label
+                icon = reInfo.loadIcon(pm); // 获得应用程序图标  
                 // 为应用程序的启动Activity 准备Intent
-                Intent launchIntent = new Intent();
+                launchIntent = new Intent();
                 launchIntent.setComponent(new ComponentName(pkgName, activityName));
+                
                 // 创建一个AppInfo对象，并赋值
-                AppInfo appInfo = new AppInfo();
+                appInfo = new AppInfo();
                 appInfo.setAppLabel(appLabel);
                 appInfo.setPkgName(pkgName);
                 appInfo.setAppIcon(icon);
@@ -88,9 +98,7 @@ public class ApplicationSelector extends PopupWindow implements OnItemClickListe
         }  
     }
     
-    
     public static class AppInfo {
-    	  
         private String appLabel;    
         private Drawable appIcon ;  
         private Intent intent ;     

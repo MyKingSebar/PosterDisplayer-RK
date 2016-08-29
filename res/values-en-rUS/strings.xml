@@ -80,7 +80,7 @@
     <string name="tools_dialog_backup_warn_success">Configuration file backup success!</string>
     <string name="tools_dialog_backup_warn_failure">Configuration file backup failed!</string>
     <string name="tools_dialog_u_disk_update_titles">Program update</string>
-    <string name="tools_dialog_u_disk_update_message">Being updated program, please wait a moment…</string>
+    <string name="tools_dialog_u_disk_update_message">Being updated, please wait a moment…</string>
     <string name="tools_dialog_u_disk_update_success">Show the update is successful!</string>
     <string name="tools_dialog_u_disk_update_failure">Program update failed, please try again!</string>
     <string name="tools_dialog_factory_titles">Restore the factory Settings</string>
@@ -90,7 +90,7 @@
     <string name="tools_dialog_boot_update_success">Boot screen updated successfully!</string>
     <string name="tools_dialog_standby_update_failure">Standby screen update failed, please try again!</string>
     <string name="tools_dialog_standby_update_success">Standby images updated successfully!</string>
-    <string name="tools_dialog_sw_update_failure">Failed to update SW, Please save PostDisplayer.apk to U Disk.</string>
+    <string name="tools_dialog_sw_update_failure">Failed to update SW, Please try again!</string>
     <string name="tools_dialog_sw_update_success">SW Update Success!</string>
     <string name="tools_dialog_cancel_title">Note: this operation will clear the password record state</string>
     <string name="tools_dialog_cancel_success">Succeed to cancel remember password</string>
@@ -157,7 +157,7 @@
     <string name="close">close</string>
     <string name="update">update</string>
     <string name="wait1">please wait…</string>
-
+    <string name="dialog_quit">exit</string>
     <!-- 下载节目进度 -->
     <string name="downnomaltitle">Download is normal program</string>
     <string name="downurgenttitle">Download is emergency program</string>
@@ -247,5 +247,8 @@
     <string name="udisk_content">There is a new program in the U-DISK, do you want update it?</string>
     <string name="udisk_title">Update</string>
     <string name="udisk_btn_cancel">Cancel</string>
+    
+    <string name="udisk_update_apk">Update Software</string>
+    <string name="udisk_content_apk">There is a new software in the U-DISK, do you want update it?</string>
     
 </resources>

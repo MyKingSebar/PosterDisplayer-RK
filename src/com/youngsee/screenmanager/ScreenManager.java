@@ -42,6 +42,9 @@ import com.youngsee.customview.RunningView;
 import com.youngsee.ftpoperation.FtpFileInfo;
 import com.youngsee.ftpoperation.FtpHelper;
 import com.youngsee.logmanager.Logger;
+import com.youngsee.multicast.MulticastCommon;
+import com.youngsee.multicast.MulticastManager;
+import com.youngsee.multicast.MulticastSyncInfoRef;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.posterdisplayer.PosterMainActivity;
 import com.youngsee.webservices.XmlParser;
@@ -78,6 +81,7 @@ public class ScreenManager
     private final static int     EVENT_SHOW_URGENT_PROGRAM = 0x8003;
     private final static int     EVENT_MEDIA_READY_SHOW_PROGRAM = 0x8004;
 
+    private MulticastSyncInfoRef mSyncInfoRef              = null;
     private waitForMediaReady    mWaitForMediaReadyThread  = null;
     
     private RunningView runningView= null ;
@@ -237,6 +241,16 @@ public class ScreenManager
         return nFileList;
     }
     
+    public String getPlayingPgmVerifyCode()
+    {
+    	String retVryCode = "0";
+    	if (!TextUtils.isEmpty(mCurrentPgmVerifyCode))
+    	{
+    		retVryCode = mCurrentPgmVerifyCode;
+    	}
+    	return retVryCode;
+    }
+    
     // 获取当前播放的Program ID
     public String getPlayingPgmId()
     {
@@ -357,7 +371,7 @@ public class ScreenManager
         private int                    mSamePriUrgentPgmListIdx = 0;
         private ArrayList<ProgramInfo> mSamePriNormalPgmList    = null;
         private ArrayList<ProgramInfo> mSamePriUrgentPgmList    = null;
-        
+
         public void setRunFlag(boolean bIsRun)
         {
             mIsRun = bIsRun;
@@ -466,53 +480,117 @@ public class ScreenManager
         	return true;
         }
         
+        private boolean isAuthorizated() throws InterruptedException
+        {
+        	if (AuthorizationManager.getInstance().getStatus() == AuthorizationManager.STATUS_AUTHORIZED) 
+        	{
+				if (AuthorizationActivity.INSTANCE != null) 
+				{
+					AuthorizationActivity.INSTANCE.finish();
+					while (AuthorizationActivity.INSTANCE != null) 
+					{
+						Thread.sleep(100);
+					}
+					loadProgramContent(EVENT_SHOW_IDLE_PROGRAM, null);
+				}
+			} 
+        	else 
+        	{
+				if (AuthorizationActivity.INSTANCE == null) 
+				{
+					Logger.i("start AuthorizationActivity ....");
+					if (mContext != null) 
+					{
+						((Activity) mContext).startActivity(new Intent(mContext, AuthorizationActivity.class));
+						while (AuthorizationActivity.INSTANCE == null) 
+						{
+							Thread.sleep(100);
+						}
+					}
+				}
+				return false;
+			}
+        	
+        	return true;
+        }
         @Override
         public void run()
         {
             Logger.i("New ScreenDaemon thread, id is: " + currentThread().getId());
             
-            try {
-				loadProgramContent(EVENT_SHOW_IDLE_PROGRAM, null);
-			} catch (InterruptedException e2) {
-				e2.printStackTrace();
+            try 
+            {
+            	if (isAuthorizated())
+            	{
+				    loadProgramContent(EVENT_SHOW_IDLE_PROGRAM, null);
+            	}
+			} 
+            catch (InterruptedException e2) 
+            {
+				Logger.i("ScreenDaemon Thread sleep over, and safe exit, the Thread id is: " + currentThread().getId());
+				return;
 			}
             
             mNormalPgmFilePath = obtainNormalPgmFilePath();
             mUrgentPgmFilePath = obtainUrgentPgmFilePath();
             mUrgentProgramInfoList = getProgramScheduleFromXml(mUrgentPgmFilePath);
             mNormalProgramInfoList = getProgramScheduleFromXml(mNormalPgmFilePath);
-            
+
             while (mIsRun)
             {
                 try
                 {
-					if (AuthorizationManager.getInstance().getStatus() == AuthorizationManager.STATUS_AUTHORIZED) {
-						if (AuthorizationActivity.INSTANCE != null) {
-							AuthorizationActivity.INSTANCE.finish();
-							while (AuthorizationActivity.INSTANCE != null) {
-								Thread.sleep(100);
-							}
-							loadProgramContent(EVENT_SHOW_IDLE_PROGRAM, null);
-						}
-					} else {
-						if (AuthorizationActivity.INSTANCE == null) {
-							Logger.i("start AuthorizationActivity ....");
-							if (mContext != null) {
-								((Activity) mContext).startActivity(new Intent(
-										mContext, AuthorizationActivity.class));
-								while (AuthorizationActivity.INSTANCE == null) {
-									Thread.sleep(100);
-								}
-							}
-						}
+					if (!isAuthorizated())
+					{
 						Thread.sleep(1000);
-						continue;
+                        continue;
 					}
                 	
                     if (mOsdIsOpen)
                     {
                         Thread.sleep(1000);
                         continue;
+                    }
+                    
+                    // 同步播放节目 (本终端为组员)
+                    if (MulticastManager.getInstance().memberIsValid())
+                    {
+                    	// 当前播放的节目与组长的节目不一致，则重新加载节目
+                    	if (mSyncInfoRef != null &&
+                    	   (mSyncInfoRef.ProgramState != mStatus ||
+                    	   !mSyncInfoRef.PgmVerifyCode.equals(mCurrentPgmVerifyCode)))
+                    	{
+                    		if (mSyncInfoRef.ProgramState == IDLE_STATE)
+                    		{
+                    			loadProgramContent(EVENT_SHOW_IDLE_PROGRAM, null);
+                    			mStatus = IDLE_STATE;
+                    			Logger.i("Sync play idle program.");
+                    		}
+                    		else if (mSyncInfoRef.ProgramState == PLAYING_EMERGENCE_PROGRAM)
+                    		{
+                    			mUrgentPgmFilePath = obtainUrgentPgmFilePath();
+                    			mUrgentProgramInfoList = getProgramScheduleFromXml(mUrgentPgmFilePath);
+                    			mUrgentProgram = getSyncPlayProgram(mUrgentProgramInfoList, mSyncInfoRef.ProgramId, mSyncInfoRef.PgmVerifyCode);
+                    			if (mUrgentProgram != null && loadProgramContent(EVENT_SHOW_URGENT_PROGRAM, mUrgentProgram))
+                    			{
+                                    mStatus = PLAYING_EMERGENCE_PROGRAM;
+                                    Logger.i("Sync play emergence program is: " + mUrgentProgram.programName + " File name is: " + mUrgentProgram.pgmFileName);
+                    			}
+                    		}
+                    		else if (mSyncInfoRef.ProgramState == PLAYING_NORMAL_PROGRAM)
+                    		{
+                    			mNormalPgmFilePath = obtainNormalPgmFilePath();
+                    			mNormalProgramInfoList = getProgramScheduleFromXml(mNormalPgmFilePath);
+                    			mNormalProgram = getSyncPlayProgram(mNormalProgramInfoList, mSyncInfoRef.ProgramId, mSyncInfoRef.PgmVerifyCode);
+                    			if (mNormalProgram != null && loadProgramContent(EVENT_SHOW_NORMAL_PROGRAM, mNormalProgram))
+                    			{
+                                    mStatus = PLAYING_NORMAL_PROGRAM;
+                                    Logger.i("Sync play normal program is: " + mNormalProgram.programName + " File name is: " + mNormalProgram.pgmFileName);
+                    			}
+                    		}
+                    	}
+                    	Thread.sleep(100);
+                    	continue;
                     }
                     
                     if (!pgmPathIsAvalible())
@@ -798,6 +876,11 @@ public class ScreenManager
                 Logger.i("loadProgramContent(): Stroge has been lost, can't load program.");
                 return false;
             }
+            else if (msgId == EVENT_SHOW_IDLE_PROGRAM && mStandbyScreenIsShow)
+            {
+            	Logger.i("loadProgramContent(): idle program is playing.");
+            	return true;
+            }
             else if ((msgId == EVENT_SHOW_URGENT_PROGRAM || msgId == EVENT_SHOW_NORMAL_PROGRAM) &&
                      pgmInfo.verifyCode.equals(mCurrentPgmVerifyCode))
             {
@@ -832,6 +915,45 @@ public class ScreenManager
                 return false;
             }
 
+            // 若是同步播放，且该终端为组长，则通知其他组员开始加载节目
+            if (MulticastManager.getInstance().leaderIsValid())
+            {
+            	MulticastSyncInfoRef syncInfo = new MulticastSyncInfoRef();
+            	syncInfo.SyncFlag = MulticastCommon.MC_SYNCFLAG_LOAD_PROGRAM;
+            	switch (msgId)
+            	{
+            	case EVENT_SHOW_IDLE_PROGRAM:
+            		syncInfo.ProgramState = IDLE_STATE;
+            		syncInfo.ProgramId = "0";
+            		syncInfo.PgmVerifyCode = "0";
+            		break;
+            		
+            	case EVENT_SHOW_NORMAL_PROGRAM:
+            		syncInfo.ProgramState = PLAYING_NORMAL_PROGRAM;
+            		syncInfo.ProgramId = pgmInfo.programId;
+            		syncInfo.PgmVerifyCode = pgmInfo.verifyCode;
+            		break;
+            		
+            	case EVENT_SHOW_URGENT_PROGRAM:
+            		syncInfo.ProgramState = PLAYING_EMERGENCE_PROGRAM;
+            		syncInfo.ProgramId = pgmInfo.programId;
+            		syncInfo.PgmVerifyCode = pgmInfo.verifyCode;
+            		break;
+            	}
+            	syncInfo.WndName = "0";
+            	syncInfo.MediaFullName = "0";
+            	syncInfo.MediaSource = "0";
+            	syncInfo.MediaVerifyCode = "0";
+            	syncInfo.MediaPosition = 0;
+            	MulticastManager.getInstance().sendSyncInfo(syncInfo);
+            	
+            	// 发送同步命令网络时延
+            	if (MulticastCommon.DEFAULT_SYNC_TIMES_DIFFERENCE > 0)
+            	{
+            	    Thread.sleep(MulticastCommon.DEFAULT_SYNC_TIMES_DIFFERENCE);
+            	}
+            }
+            
             // 清空标志
             mLoadProgramDone = false;
             if (pgmInfo != null)
@@ -1375,6 +1497,28 @@ public class ScreenManager
         }
         
         /*
+         * 从节目清单中获取同步播放的节目
+         */
+        private ProgramInfo getSyncPlayProgram(ArrayList<ProgramInfo> pgmSchedule, String pgmId, String pgmVryCode)
+        {
+        	if (pgmSchedule == null)
+            {
+                return null;
+            }
+        	
+        	ProgramInfo currentPgmInfo = null;
+        	for (ProgramInfo tempPgmInfo : pgmSchedule)
+            {
+        		if (tempPgmInfo.programId.equals(pgmId) &&
+        		    tempPgmInfo.verifyCode.equals(pgmVryCode))
+        		{
+        			currentPgmInfo = tempPgmInfo;
+        		}
+            }
+        	return currentPgmInfo;
+        }
+        
+        /*
          * 从节目清单中获取将要播放的节目
          */
         private ProgramInfo getPlayProgram(ArrayList<ProgramInfo> pgmSchedule, int nProgramType)
@@ -1853,9 +1997,10 @@ public class ScreenManager
             int nScreenWidth = PosterApplication.getScreenWidth();
             if (pgmWidth > 0 && nScreenWidth > 0)
             {
-                ret = nValue * nScreenWidth / pgmWidth;
+                ret = (int)(nValue * nScreenWidth / pgmWidth + 0.5f);
             }
-            return PosterApplication.px2dip(mContext, ret);
+            return ret;
+            //return PosterApplication.px2dip(mContext, ret);
         }
         
         // 按屏幕实际大小进行比例缩放(纵向)
@@ -1865,9 +2010,10 @@ public class ScreenManager
             int nScreenHeight = PosterApplication.getScreenHeigth();
             if (pgmHeight > 0 && nScreenHeight > 0)
             {
-                ret = nValue * nScreenHeight / pgmHeight;
+                ret = (int)(nValue * nScreenHeight / pgmHeight + 0.5f);
             }
-            return PosterApplication.px2dip(mContext, ret);
+            return ret;
+            //return PosterApplication.px2dip(mContext, ret);
         }
 
         // 终止素材下载
@@ -1936,7 +2082,7 @@ public class ScreenManager
     {
         private boolean mIsRun = true;
         private ArrayList<SubWindowInfoRef> mSubWndList = null;
-      
+
         public void setWndList(ArrayList<SubWindowInfoRef> wndList)
         {
         	mSubWndList = wndList;
@@ -1957,7 +2103,8 @@ public class ScreenManager
         		{
         			// 准备参数
                     Bundle bundle = new Bundle();
-                    bundle.putSerializable("subwindowlist", (Serializable) mSubWndList);           
+                    bundle.putSerializable("subwindowlist", (Serializable) mSubWndList);
+                    
                     // 发送消息
                     Message msg = mHandler.obtainMessage();
                     msg.what = EVENT_MEDIA_READY_SHOW_PROGRAM;
@@ -1979,7 +2126,7 @@ public class ScreenManager
         }
     }
 	
-	@TargetApi(Build.VERSION_CODES.KITKAT)
+
 	private void LoadProgram(ArrayList<SubWindowInfoRef> subWndList)
 	{
 		boolean isWaitMeidaReady = PosterApplication.getInstance().getConfiguration().isWaitForMediaReady();
@@ -2021,6 +2168,53 @@ public class ScreenManager
 		}
 	}
 	
+	/**
+     * 同步播放
+     * 
+     * @param syncInfo
+     *         同步信息包内容
+     * @return
+     */
+    public void syncPlayProgram(MulticastSyncInfoRef syncInfo)
+    {
+    	if (mSyncInfoRef == null)
+    	{
+    	    mSyncInfoRef = new MulticastSyncInfoRef();
+    	}
+    	
+    	mSyncInfoRef.SyncFlag = syncInfo.SyncFlag;
+    	mSyncInfoRef.ProgramState = syncInfo.ProgramState;
+    	mSyncInfoRef.ProgramId = syncInfo.ProgramId;
+    	mSyncInfoRef.PgmVerifyCode = syncInfo.PgmVerifyCode;
+    	mSyncInfoRef.WndName = syncInfo.WndName;
+    	mSyncInfoRef.MediaFullName = syncInfo.MediaFullName;
+    	mSyncInfoRef.MediaSource = syncInfo.MediaSource;
+    	mSyncInfoRef.MediaPosition = syncInfo.MediaPosition;
+    	mSyncInfoRef.MediaVerifyCode = syncInfo.MediaVerifyCode;
+    	
+    	switch (mSyncInfoRef.SyncFlag)
+    	{
+    	case MulticastCommon.MC_SYNCFLAG_CLOSE:
+    		MulticastManager.getInstance().stopWork();
+    		break;
+    		
+    	case MulticastCommon.MC_SYNCFLAG_LOAD_PROGRAM:
+    		/* ScreenDaemon handle it, nothing to do at this */
+    		break;
+    		
+    	case MulticastCommon.MC_SYNCFLAG_LOAD_MEDIA:
+    	case MulticastCommon.MC_SYNCFLAG_PLAY_MEDIA:
+    		if (MulticastManager.getInstance().memberIsValid())
+            {
+    			if (mContext instanceof PosterMainActivity)
+                {
+                    ((PosterMainActivity) mContext).syncPlay(syncInfo);
+                }
+            }
+    		break;
+    	}
+    }
+    
     @SuppressLint("HandlerLeak")
     final Handler mHandler = new Handler() 
     {
@@ -2038,11 +2232,11 @@ public class ScreenManager
             
             case EVENT_SHOW_IDLE_PROGRAM:
             case EVENT_MEDIA_READY_SHOW_PROGRAM:
-            	
-            	if(runningView!=null){
+            	if(runningView!=null)
+            	{
             		runningView.setVisibility(View.GONE);
-            	
             	}
+            	
                 if (mContext instanceof PosterMainActivity)
                 {
                     ((PosterMainActivity) mContext).loadNewProgram((ArrayList<SubWindowInfoRef>) msg.getData().getSerializable("subwindowlist"));

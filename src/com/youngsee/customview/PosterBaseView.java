@@ -29,6 +29,9 @@ import com.youngsee.common.TypefaceManager;
 import com.youngsee.ftpoperation.FtpFileInfo;
 import com.youngsee.ftpoperation.FtpHelper;
 import com.youngsee.logmanager.Logger;
+import com.youngsee.multicast.MulticastCommon;
+import com.youngsee.multicast.MulticastManager;
+import com.youngsee.multicast.MulticastSyncInfoRef;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.screenmanager.ScreenManager;
 
@@ -62,6 +65,15 @@ public abstract class PosterBaseView extends FrameLayout {
     protected long  DEFAULT_THREAD_PERIOD      = 1000;
     protected long  DEFAULT_THREAD_QUICKPERIOD = 100;
 
+    protected boolean mIsSyncLoadMedia      = false;
+    protected boolean mIsSyncPlayMedia      = false;
+    protected boolean mIsSyncStartPlayVideo = false;
+    
+    protected String mSyncMediaName    = null;
+    protected String mSyncMediaSrc     = null;
+    protected String mSyncMediaVryCode = null;
+    protected int    mSyncMediaPos     = 0;
+    
     public PosterBaseView(Context context) {
         super(context);
         mContext = context;
@@ -756,6 +768,187 @@ public abstract class PosterBaseView extends FrameLayout {
         }
         
         return mMediaList.get(mCurrentIdx);
+    }
+    
+    protected MediaInfoRef findSyncMedia()
+    {
+    	if (mMediaList == null)
+        {
+            Logger.i("View [" + mViewName + "] Media list is null.");
+            return null;
+        }
+        
+        if (mMediaList.isEmpty())
+        {
+            Logger.i("View [" + mViewName + "] No media in the list.");
+            return null;
+        }
+        
+        if (this.mSyncMediaPos < mMediaList.size())
+        {
+        	MediaInfoRef media = mMediaList.get(mSyncMediaPos);
+        	if ("File".equals(this.mSyncMediaSrc))
+        	{
+        		if (media.verifyCode.equals(this.mSyncMediaVryCode))
+        		{
+        			return media;
+        		}
+        	}
+        	else
+        	{
+        		if (media.filePath.equals(this.mSyncMediaName))
+        		{
+        			return media;
+        		}
+        	}
+        }
+        
+        for (MediaInfoRef mediaInfo : mMediaList)
+        {
+        	if ("File".equals(this.mSyncMediaSrc))
+        	{
+        		if (mediaInfo.verifyCode.equals(this.mSyncMediaVryCode))
+        		{
+        			return mediaInfo;
+        		}
+        	}
+        	else
+        	{
+        		if (mediaInfo.filePath.equals(this.mSyncMediaName))
+        		{
+        			return mediaInfo;
+        		}
+        	}
+        }
+        
+        return null;
+    }
+    
+    protected MediaInfoRef findNextOrSyncMedia() throws InterruptedException
+    {
+    	MediaInfoRef retMedia = null;
+    	
+    	// 若是同步播放，且该终端为组员，则等待组长通知加载素材
+    	if (MulticastManager.getInstance().memberIsValid())
+    	{
+    		while (!mIsSyncLoadMedia && !mIsSyncPlayMedia && mIsSyncStartPlayVideo && !MulticastManager.getInstance().recvSyncInfoIsTimeOut())
+    		{
+    			Thread.sleep(100);
+    		}
+    		retMedia = findSyncMedia();
+    	}
+    	else
+    	{
+    		retMedia = findNextMedia();
+    	}
+    	
+    	return retMedia;
+    }
+    
+    protected void syncLoadMedia() throws InterruptedException
+    {
+    	if (MulticastManager.getInstance().leaderIsValid()) 
+		{
+			// 该终端为组长，则通知其他组员开始加载素材
+			sendMediaSyncInfo(MulticastCommon.MC_SYNCFLAG_LOAD_MEDIA, mCurrentIdx);
+			// 发送同步命令网络时延
+			if (MulticastCommon.DEFAULT_SYNC_TIMES_DIFFERENCE > 0) 
+			{
+				Thread.sleep(MulticastCommon.DEFAULT_SYNC_TIMES_DIFFERENCE);
+			}
+		} 
+		else if (MulticastManager.getInstance().memberIsValid()) 
+		{
+			// 组员本次加载完成, 复位标志
+			mIsSyncLoadMedia = false;
+		}
+    }
+    
+    protected void syncPlayMedia() throws InterruptedException
+    {
+    	if (MulticastManager.getInstance().leaderIsValid())
+        {
+        	// 该终端为组长，则通知其他组员开始播放素材
+        	sendMediaSyncInfo(MulticastCommon.MC_SYNCFLAG_PLAY_MEDIA, mCurrentIdx);
+        	// 发送同步命令网络时延
+        	if (MulticastCommon.DEFAULT_SYNC_TIMES_DIFFERENCE > 0)
+    	    {
+    	        Thread.sleep(MulticastCommon.DEFAULT_SYNC_TIMES_DIFFERENCE);
+    	    } 
+        }
+        else if (MulticastManager.getInstance().memberIsValid())
+        {
+        	// 该终端为组员，则等待组长通知, 超过1秒后播放
+        	int i  = 0;
+    	    while (!mIsSyncPlayMedia && i++ < 10)
+    	    {
+    	    	Thread.sleep(100);
+    	    }
+    	    mIsSyncPlayMedia = false;
+        }
+    }
+    
+    protected void sendMediaSyncInfo(byte syncFlag, int postion)
+    {
+    	if (mCurrentMedia == null)
+    	{
+    		return;
+    	}
+    	
+        MulticastSyncInfoRef syncInfo = new MulticastSyncInfoRef();
+        syncInfo.SyncFlag = syncFlag;
+        syncInfo.ProgramState = ScreenManager.getInstance().getStatus();
+        syncInfo.ProgramId = ScreenManager.getInstance().getPlayingPgmId();
+        syncInfo.PgmVerifyCode = ScreenManager.getInstance().getPlayingPgmVerifyCode();
+        syncInfo.WndName = mViewName;
+        syncInfo.MediaFullName = mCurrentMedia.filePath;
+        syncInfo.MediaSource = mCurrentMedia.source;
+        syncInfo.MediaVerifyCode = mCurrentMedia.verifyCode;
+        syncInfo.MediaPosition = postion;
+        MulticastManager.getInstance().sendSyncInfo(syncInfo);
+    }
+    
+    public void recvSyncPlayInfo(MulticastSyncInfoRef syncInfo)
+    {
+    	this.mSyncMediaName = syncInfo.MediaFullName;
+	    this.mSyncMediaPos = syncInfo.MediaPosition;
+	    this.mSyncMediaSrc = syncInfo.MediaSource;
+	    this.mSyncMediaVryCode = syncInfo.MediaVerifyCode;
+	    
+    	switch (syncInfo.SyncFlag)
+		{
+	    case MulticastCommon.MC_SYNCFLAG_LOAD_MEDIA:
+		    this.mIsSyncLoadMedia = true;
+		    break;
+		
+	    case MulticastCommon.MC_SYNCFLAG_PLAY_MEDIA:    	
+		    this.mIsSyncPlayMedia = true;
+		    break;
+		    
+	    case MulticastCommon.MC_SYNCFLAG_START_PLAY_VIDEO:
+	    	this.mIsSyncStartPlayVideo = true;
+	    	break;
+		}
+    }
+    
+    protected boolean syncMediaIsSame(MediaInfoRef mediaInfo)
+    {
+    	if ("File".equals(this.mSyncMediaSrc))
+    	{
+    		if (mediaInfo.verifyCode.equals(this.mSyncMediaVryCode))
+    		{
+    			return true;
+    		}
+    	}
+    	else
+    	{
+    		if (mediaInfo.filePath.equals(this.mSyncMediaName))
+    		{
+    			return true;
+    		}
+    	}
+    	
+    	return false;
     }
     
     private boolean materaialsIsAllShow()

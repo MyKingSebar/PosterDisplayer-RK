@@ -34,6 +34,7 @@
 -libraryjars libs/commons-logging-1.1.jar
 -libraryjars libs/ksoap2-android-assembly-3.0.0-jar-with-dependencies.jar
 -libraryjars classes.jar
+-libraryjars libs/ftp4j-1.7.2.jar
 
 -dontwarn org.apache.**
 -dontwarn org.xmlpull.**
@@ -54,15 +55,15 @@
 -keep public class com.youngsee.common.Contants
 -keep public class com.youngsee.update.UpdateApkInfo
 
--keep class it.sauronsoftware.ftp4j.**
+-keep class it.sauronsoftware.ftp4j.** {*;}
 -keep class org.apache.** {*;}
 -keep class org.bouncycastle.** {*;}
--keep class org.kxml2.** {}
+-keep class org.kxml2.** {*;}
 -keep class org.ksoap2.** {*;}
 -keep class org.xmlpull.v1.** {*;}
--keep class org.kobjects.**
--keep class android.support.v4.**
--keep interface android.support.v4.app.** {*;}
+-keep class org.kobjects.** {*;}
+-keep class android.** {*;}
+-keep interface android.support.** {*;}
 
 -keep class com.youngsee.osd.OsdSubMenuFragment {*;}
 

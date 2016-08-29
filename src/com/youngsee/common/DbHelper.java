@@ -197,6 +197,172 @@ public class DbHelper {
         c.close();
     }
     
+    public int getPgmSyncFlagFromDB()
+    {
+    	int pgmSyncFlag = 0;
+    	Cursor c = mContentResolver.query(DbConstants.CONTENTURI_MULTICAST, null, null, null, null);
+    	if (c.moveToFirst())
+        {
+    		pgmSyncFlag = c.getInt(c.getColumnIndex(DbConstants.MULT_SYNC_FLAG));
+        }
+        c.close();
+    	return pgmSyncFlag;
+    }
+    
+    public String getBcastIpFromDB()
+    {
+    	String bcastIp = null;
+    	Cursor c = mContentResolver.query(DbConstants.CONTENTURI_MULTICAST, null, null, null, null);
+    	if (c.moveToFirst())
+        {
+    		bcastIp = c.getString(c.getColumnIndex(DbConstants.MULT_IP));
+        }
+        c.close();
+    	return bcastIp;
+    }
+    
+    public int getBcastPortFromDB()
+    {
+    	int bcastPort = 0;
+    	Cursor c = mContentResolver.query(DbConstants.CONTENTURI_MULTICAST, null, null, null, null);
+    	if (c.moveToFirst())
+        {
+    		bcastPort = c.getInt(c.getColumnIndex(DbConstants.MULT_PORT));
+        }
+        c.close();
+        
+    	return bcastPort;
+    }
+    
+    public int getBcastLocalPortFromDB()
+    {
+    	int bcastLocalPort = 0;
+    	Cursor c = mContentResolver.query(DbConstants.CONTENTURI_MULTICAST, null, null, null, null);
+    	if (c.moveToFirst())
+        {
+    		bcastLocalPort = c.getInt(c.getColumnIndex(DbConstants.MULT_LOCAL_PORT));
+        }
+        c.close();
+        
+    	return bcastLocalPort;
+    }
+    
+    public int getBcastFollowFromDB()
+    {
+    	int bcastFollow = 0;
+    	Cursor c = mContentResolver.query(DbConstants.CONTENTURI_MULTICAST, null, null, null, null);
+    	if (c.moveToFirst())
+        {
+    		bcastFollow = c.getInt(c.getColumnIndex(DbConstants.MULT_FOLLOWDELT));
+        }
+        c.close();
+        
+    	return bcastFollow;
+    }
+    
+    public void saveBcastParamToDB(int syncFlag, int port, int localPort, int follow, String ip)
+    {
+    	ContentValues cv = new ContentValues();
+        cv.put(DbConstants.MULT_SYNC_FLAG, syncFlag);
+        cv.put(DbConstants.MULT_PORT, port);
+        cv.put(DbConstants.MULT_LOCAL_PORT, localPort);
+        cv.put(DbConstants.MULT_FOLLOWDELT, follow);
+        if (!TextUtils.isEmpty(ip))
+        {
+            cv.put(DbConstants.MULT_IP, ip);
+        }
+        
+        Cursor c = mContentResolver.query(DbConstants.CONTENTURI_MULTICAST, null, null, null, null);
+        if (c.moveToFirst()) 
+        {
+            long id = c.getLong(c.getColumnIndex(DbConstants._ID));
+            mContentResolver.update(ContentUris.withAppendedId(DbConstants.CONTENTURI_MULTICAST, id), cv, null, null);
+        }
+        else
+        {
+            mContentResolver.insert(DbConstants.CONTENTURI_MULTICAST, cv);
+        }
+        c.close();
+    }
+    
+    //保存同步状态到数据库
+	public void saveSyncFlagToDb(int syncFlag) {
+		ContentValues cv = new ContentValues();
+		cv.put(DbConstants.MULT_SYNC_FLAG, syncFlag);
+		Cursor c = mContentResolver.query(DbConstants.CONTENTURI_MULTICAST,
+				null, null, null, null);
+		if (c.moveToFirst()) {
+			long id = c.getLong(c.getColumnIndex(DbConstants._ID));
+			mContentResolver.update(ContentUris.withAppendedId(
+					DbConstants.CONTENTURI_MULTICAST, id), cv, null, null);
+		} else {
+			mContentResolver.insert(DbConstants.CONTENTURI_MULTICAST, cv);
+		}
+		c.close();
+	}
+    
+    //保存本地图案口到数据库
+	public void saveSyncPortToDb(int port) {
+		ContentValues cv = new ContentValues();
+		cv.put(DbConstants.MULT_PORT, port);
+		Cursor c = mContentResolver.query(DbConstants.CONTENTURI_MULTICAST,
+				null, null, null, null);
+		if (c.moveToFirst()) {
+			long id = c.getLong(c.getColumnIndex(DbConstants._ID));
+			mContentResolver.update(ContentUris.withAppendedId(
+					DbConstants.CONTENTURI_MULTICAST, id), cv, null, null);
+		} else {
+			mContentResolver.insert(DbConstants.CONTENTURI_MULTICAST, cv);
+		}
+		c.close();
+	}
+
+	public void saveSynLocalPortToDb(int localPort) {
+		ContentValues cv = new ContentValues();
+		cv.put(DbConstants.MULT_LOCAL_PORT, localPort);
+		Cursor c = mContentResolver.query(DbConstants.CONTENTURI_MULTICAST,
+				null, null, null, null);
+		if (c.moveToFirst()) {
+			long id = c.getLong(c.getColumnIndex(DbConstants._ID));
+			mContentResolver.update(ContentUris.withAppendedId(
+					DbConstants.CONTENTURI_MULTICAST, id), cv, null, null);
+		} else {
+			mContentResolver.insert(DbConstants.CONTENTURI_MULTICAST, cv);
+		}
+		c.close();
+	}
+
+	public void saveSynFollowToDb(int follow) {
+		ContentValues cv = new ContentValues();
+		cv.put(DbConstants.MULT_FOLLOWDELT, follow);
+		Cursor c = mContentResolver.query(DbConstants.CONTENTURI_MULTICAST,
+				null, null, null, null);
+		if (c.moveToFirst()) {
+			long id = c.getLong(c.getColumnIndex(DbConstants._ID));
+			mContentResolver.update(ContentUris.withAppendedId(
+					DbConstants.CONTENTURI_MULTICAST, id), cv, null, null);
+		} else {
+			mContentResolver.insert(DbConstants.CONTENTURI_MULTICAST, cv);
+		}
+		c.close();
+	}
+    
+    //保存同步组播地址IP到数据库
+	public void saveSyncIpToDb(String ip) {
+		ContentValues cv = new ContentValues();
+			cv.put(DbConstants.MULT_IP, ip);
+		Cursor c = mContentResolver.query(DbConstants.CONTENTURI_MULTICAST,
+				null, null, null, null);
+		if (c.moveToFirst()) {
+			long id = c.getLong(c.getColumnIndex(DbConstants._ID));
+			mContentResolver.update(ContentUris.withAppendedId(
+					DbConstants.CONTENTURI_MULTICAST, id), cv, null, null);
+		} else {
+			mContentResolver.insert(DbConstants.CONTENTURI_MULTICAST, cv);
+		}
+		c.close();
+	}
+    
     public SysParam getSysParamFromDB()
     {
         SysParam sysParam = new SysParam();

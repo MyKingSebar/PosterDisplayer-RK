@@ -132,6 +132,7 @@ public class Contants {
 	public static final String FILEBROWSER_PACKAGENAME = "com.android.rk";
 	public static final String SETTING_PACKAGENAME = "com.android.settings";
 	public static final String ENVMANAGER_PACKAGENAME = "com.youngsee.envservice";
-
-	public static final String UDISK_NAME_PREFIX = "usbhost";
+	
+	public static final String UDISK_NAME_PREFIX1 = "usb";
+	public static final String UDISK_NAME_PREFIX2 = "sd";
 }

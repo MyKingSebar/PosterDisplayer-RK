@@ -36,7 +36,7 @@ import it.sauronsoftware.ftp4j.FTPListParser;
 public class FtpHelper
 {
     // 单个文件最大重试次数
-    private final static int        MAX_RETRY_TIMES             = 5;
+    private final static int        MAX_RETRY_TIMES             = 10;
     
     // 节目素材下载线程(只允许有一个)
     private static DLFileListThread mDLPrgMaterialThreadHandler = null;

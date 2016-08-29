@@ -14,6 +14,8 @@ import com.youngsee.common.FileUtils;
 import com.youngsee.common.MediaInfoRef;
 import com.youngsee.logmanager.LogUtils;
 import com.youngsee.logmanager.Logger;
+import com.youngsee.multicast.MulticastCommon;
+import com.youngsee.multicast.MulticastManager;
 import com.youngsee.posterdisplayer.R;
 
 import android.content.Context;
@@ -21,6 +23,7 @@ import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
 import android.media.MediaPlayer.OnPreparedListener;
+import android.os.SystemClock;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 
@@ -186,6 +189,8 @@ public class AudioView extends PosterBaseView
         {
             Logger.i("New audio thread, id is: " + currentThread().getId());
             
+            int   nPos = 0;
+            long  lastSendSyncInfoTime = 0;
             MediaInfoRef media = null;
             
             while (mIsRun)
@@ -218,10 +223,8 @@ public class AudioView extends PosterBaseView
                     
                     if (!mIsPlayingMusic)
                     {
-                        mCurrentMedia = null;
-                        
-                        // Get the Media Info
-                        media = findNextMedia();
+                    	media = findNextOrSyncMedia();
+
                         if (media == null)
                         {
                             Logger.i("No media can be found, current index is: " + mCurrentIdx);
@@ -251,14 +254,81 @@ public class AudioView extends PosterBaseView
                         else
                         {
                             mCurrentMedia = media;
+                            
+                            // 同步加载素材
+                            if (MulticastManager.getInstance().isSyncPlay())
+                            {
+                            	nPos = 0;
+                            	lastSendSyncInfoTime = 0;
+                            	syncLoadMedia();
+                            }
+                            
                             mIsPlayingMusic = true;
                             LogUtils.getInstance().toAddPLog(Contants.INFO, Contants.PlayMediaStart, mCurrentMedia.mid, mViewName, "");
                             playMusic(media.filePath);
                             FileUtils.updateFileLastTime(media.filePath);
                         }
                     }
+                    else
+                    {
+                    	// 定时同步音频帧
+                    	if (MulticastManager.getInstance().isSyncPlay())
+                    	{
+                            if (MulticastManager.getInstance().leaderIsValid())
+                            {
+                        	    // 播放音频时，组长每隔15秒，发送一次同步信息
+                        	    if (mMediaPlayer != null && mMediaPlayer.isPlaying() && (SystemClock.uptimeMillis() - lastSendSyncInfoTime > 15000))
+                        	    {
+                        		    nPos = mMediaPlayer.getCurrentPosition();
+                        		    if (lastSendSyncInfoTime == 0)
+                        		    {
+                        			    mMediaPlayer.pause();
+                        		        sendMediaSyncInfo(MulticastCommon.MC_SYNCFLAG_START_PLAY_VIDEO, nPos);                        		    
+                        		        Thread.sleep(150);
+                        		        mMediaPlayer.start();
+                        		    }
+                        		    else
+                        		    {
+                        			    sendMediaSyncInfo(MulticastCommon.MC_SYNCFLAG_PLAY_MEDIA, nPos);
+                        		    }
+                        		    lastSendSyncInfoTime = SystemClock.uptimeMillis();
+                        	    }
+                            }
+                            else if (MulticastManager.getInstance().memberIsValid())
+                            {                      	
+                        	    if (mIsSyncLoadMedia && !syncMediaIsSame(mCurrentMedia))
+                        	    {
+                        	    	// 播放音频中收到组长更换音频文件的消息, 马上切换
+                        	    	releaseMediaPlayer();
+                        		    mIsPlayingMusic = false;
+                        		    continue;
+                        	    }
+                        	    else if (mIsSyncStartPlayVideo && mMediaPlayer != null && mMediaPlayer.isPlaying())
+                        	    {
+                        		    // 播放音频时, 组员收到组长的开始播放位置，需要和组长播放同步
+                        		    if (Math.abs(mSyncMediaPos - mMediaPlayer.getCurrentPosition()) > 100)
+                        		    {
+                        			    mMediaPlayer.seekTo(mSyncMediaPos);
+                        		    }
+                        		    mIsSyncStartPlayVideo = false;
+                        	    }
+                        	    else if (mIsSyncPlayMedia && mMediaPlayer != null && mMediaPlayer.isPlaying())
+                        	    {
+                        	    	// 播放音频时, 组员需要和组长播放同步
+                        	    	if (Math.abs(mSyncMediaPos - mMediaPlayer.getCurrentPosition()) > 3000)
+                        		    {
+                        		    	mMediaPlayer.seekTo(mSyncMediaPos);
+                        		    }
+                        		    mIsSyncPlayMedia = false;
+                        	    }
+                            }
+                    	}
+                    }
                     
-                    Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
+                    if (!MulticastManager.getInstance().memberIsValid())
+                    {
+                        Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);  // 同步时，组内成员无需自行等待，等待组长发令即可
+                    }
                 }
                 catch (InterruptedException e)
                 {

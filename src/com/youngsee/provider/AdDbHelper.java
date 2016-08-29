@@ -23,6 +23,7 @@ public class AdDbHelper extends SQLiteOpenHelper {
 		createOffDLTable(db);
 		createAuthInfoTable(db);
 		createPgmPathTable(db);
+		createMutilcastTable(db);
 	}
 
 	@Override
@@ -36,6 +37,7 @@ public class AdDbHelper extends SQLiteOpenHelper {
 	    db.execSQL("DROP TABLE IF EXISTS " + DbConstants.TABLE_OFFDLTIME);
 	    db.execSQL("DROP TABLE IF EXISTS " + DbConstants.TABLE_AUTHINFO);
 	    db.execSQL("DROP TABLE IF EXISTS " + DbConstants.TABLE_PGM_PATH);
+	    db.execSQL("DROP TABLE IF EXISTS " + DbConstants.TABLE_MULTICAST);
 	    
 	    onCreate(db);
 	}
@@ -139,5 +141,15 @@ public class AdDbHelper extends SQLiteOpenHelper {
 	    db.execSQL("CREATE TABLE IF NOT EXISTS " + DbConstants.TABLE_PGM_PATH + " ("
 	            + DbConstants._ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
 	            + DbConstants.PGM_PATH + " BLOB DEFAULT NULL);");
+	}
+	
+	private void createMutilcastTable(SQLiteDatabase db) {
+		db.execSQL("CREATE TABLE IF NOT EXISTS " + DbConstants.TABLE_MULTICAST + " ("
+				+ DbConstants._ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+				+ DbConstants.MULT_SYNC_FLAG + " INTEGER DEFAULT '0',"
+				+ DbConstants.MULT_IP + " TEXT DEFAULT NULL,"
+				+ DbConstants.MULT_PORT + " INTEGER DEFAULT '0',"
+				+ DbConstants.MULT_LOCAL_PORT + " INTEGER DEFAULT '0',"
+				+ DbConstants.MULT_FOLLOWDELT + " INTEGER DEFAULT '0');");
 	}
 }

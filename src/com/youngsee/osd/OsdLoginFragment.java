@@ -8,10 +8,9 @@
 package com.youngsee.osd;
 
 import android.app.Activity;
-import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.Fragment;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.content.res.Configuration;
@@ -34,6 +33,8 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.youngsee.common.DialogUtil;
+import com.youngsee.common.DialogUtil.DialogDoubleButtonListener;
 import com.youngsee.common.SysParamManager;
 import com.youngsee.common.YSConfiguration;
 import com.youngsee.posterdisplayer.PosterApplication;
@@ -42,8 +43,7 @@ import com.youngsee.posterdisplayer.PosterOsdActivity;
 
 public class OsdLoginFragment extends Fragment
 {
-    private static final String OSD_DEFAULT_PWD    = "123456";
-    
+   
     private Editor              mEditor            = null;
     private SharedPreferences   mSharedPreferences = null;
 
@@ -59,6 +59,7 @@ public class OsdLoginFragment extends Fragment
     
     private boolean             mIsInit         = false;
     
+    private Dialog 										dlgModMsg              								= null;
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
@@ -218,7 +219,7 @@ public class OsdLoginFragment extends Fragment
             {
                 String spwd = SysParamManager.getInstance().getSysPasswd();
                 if ((!TextUtils.isEmpty(spwd) && spwd.equals(mEnterPwd.getText().toString()))
-                    || OSD_DEFAULT_PWD.equals(mEnterPwd.getText().toString()))
+                    || SysParamManager.getInstance().getSysPasswd().equals(mEnterPwd.getText().toString()))
                 {
                 	//登陆成功 view回到原位置
     				getActivity().getWindow().peekDecorView().scrollTo(0, 0);
@@ -251,7 +252,7 @@ public class OsdLoginFragment extends Fragment
             {
             	String spwd = SysParamManager.getInstance().getSysPasswd();
                 if ((!TextUtils.isEmpty(spwd) && spwd.equals(mEnterPwd.getText().toString()))
-                    || OSD_DEFAULT_PWD.equals(mEnterPwd.getText().toString()))
+                    || SysParamManager.getInstance().getSysPasswd().equals(mEnterPwd.getText().toString()))
                 {
                     mEditor.putBoolean(PosterOsdActivity.OSD_ISMEMORY, isChecked);
                     mEditor.commit();
@@ -291,30 +292,46 @@ public class OsdLoginFragment extends Fragment
         {
             vg.removeAllViewsInLayout();
         }
-        new AlertDialog.Builder(getActivity()).setTitle(R.string.login_modifyrmsg).setView(mResetView)
-                .setPositiveButton(R.string.enter, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                        String old_Str = SysParamManager.getInstance().getSysPasswd();
-                        if (mOldPwd.getText().toString().equals(old_Str) && 
-                           !mOldPwd.getText().toString().equals(mNewPwd.getText().toString()))
-                        {
-                            SysParamManager.getInstance().setSysPasswd(mNewPwd.getText().toString());
-                        }
-                        else if(mOldPwd.getText().toString().equals(mNewPwd.getText().toString()))
-                        {
-                            Toast.makeText(getActivity(), R.string.login_dialog_newpwddifferent, Toast.LENGTH_SHORT).show();
-                        }
-                        else
-                        {
-                            Toast.makeText(getActivity(), R.string.login_dialog_retrywrite, Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                }).setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which)
-                    {
-                        
-                    }
-                }).create().show();
+        dlgModMsg = DialogUtil.showTipsDialog(getActivity(), getString(R.string.login_modifyrmsg), mResetView, getString(R.string.enter), getString(R.string.cancel), new DialogDoubleButtonListener(){
+
+			@Override
+			public void onLeftClick(Context context , View v , int which) {
+				String old_Str = SysParamManager.getInstance().getSysPasswd();
+                if (mOldPwd.getText().toString().equals(old_Str) && 
+                   !mOldPwd.getText().toString().equals(mNewPwd.getText().toString()))
+                {
+                    SysParamManager.getInstance().setSysPasswd(mNewPwd.getText().toString());
+                    Toast.makeText(getActivity(), R.string.login_dialog_msgmodifysuccess,Toast.LENGTH_SHORT).show();;
+                }
+                else if(mOldPwd.getText().toString().equals(mNewPwd.getText().toString()))
+                {
+                    Toast.makeText(getActivity(), R.string.login_dialog_newpwddifferent, Toast.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    Toast.makeText(getActivity(), R.string.login_dialog_retrywrite, Toast.LENGTH_SHORT).show();
+                }
+                if (dlgModMsg != null) {
+                	DialogUtil.hideInputMethod(getActivity(), mResetView, dlgModMsg);
+                	dlgModMsg.dismiss();
+                	dlgModMsg = null;
+				}
+			}
+
+			@Override
+			public void onRightClick(Context context , View v , int which) {
+                if (dlgModMsg != null) {
+                	DialogUtil.hideInputMethod(getActivity(), mResetView, dlgModMsg);
+                	dlgModMsg.dismiss();
+                	dlgModMsg = null;
+				}
+			}
+        	
+        }, false);
+        
+        dlgModMsg.show();
+        
+        DialogUtil.dialogTimeOff(dlgModMsg, 90000);
+        
     }
 }

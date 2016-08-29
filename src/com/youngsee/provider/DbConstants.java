@@ -16,6 +16,7 @@ public class DbConstants {
     public static final String TABLE_OFFDLTIME     = "offdltime";
     public static final String TABLE_AUTHINFO      = "authinfo";
     public static final String TABLE_PGM_PATH      = "pgmpath";
+    public static final String TABLE_MULTICAST     = "multicast";
     
     public static final String _ID                 = "_id";
     
@@ -58,6 +59,12 @@ public class DbConstants {
     public static final String AIT_AUTHCODE           = "code";
     
     public static final String PGM_PATH           = "path";
+    
+    public static final String MULT_SYNC_FLAG     = "pgmsyncflag";
+    public static final String MULT_IP            = "groupip";
+    public static final String MULT_PORT          = "groupport";
+    public static final String MULT_LOCAL_PORT    = "localport";
+    public static final String MULT_FOLLOWDELT    = "followdelt";
 
 	public static final Uri CONTENTURI_SYSPARAM = Uri.parse("content://"
 			+ AUTHORITY + "/sysparam");
@@ -77,6 +84,8 @@ public class DbConstants {
 			+ AUTHORITY + "/authinfo");
 	public static final Uri CONTENTURI_PGMPATH = Uri.parse("content://"
 	        + AUTHORITY + "/pgmpath");
+	public static final Uri CONTENTURI_MULTICAST = Uri.parse("content://"
+	        + AUTHORITY + "/multicast");
 
 	public static final String CONTENT_TYPE = "vnd.android.cursor.dir/"
 			+ AUTHORITY + ".type";

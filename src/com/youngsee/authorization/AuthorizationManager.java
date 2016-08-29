@@ -225,7 +225,7 @@ public class AuthorizationManager {
         NetWorkUtil mNetWork = null;
         
         @SuppressLint("HandlerLeak")
-        Handler mHandler = new Handler(){
+		Handler mHandler = new Handler(){
             public void handleMessage(android.os.Message msg){
                 if(msg.arg1 != NetWorkUtil.NETWORK_OK){
                     mIsWaitingResult = false;

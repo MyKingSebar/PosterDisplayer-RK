@@ -4,7 +4,6 @@ import org.json.JSONException;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-
 import com.youngsee.network.JSONUtil;
 
 public class NWResult implements Parcelable{

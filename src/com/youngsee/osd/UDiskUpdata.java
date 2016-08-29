@@ -8,21 +8,24 @@
 package com.youngsee.osd;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
+import android.view.View;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.youngsee.common.DialogUtil;
+import com.youngsee.common.DialogUtil.DialogDoubleButtonListener;
+import com.youngsee.common.DialogUtil.DialogSingleButtonListener;
 import com.youngsee.common.FileUtils;
 import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterOsdActivity;
@@ -33,8 +36,6 @@ import com.youngsee.screenmanager.ScreenManager;
 @SuppressLint({ "SdCardPath", "DefaultLocale" })
 public class UDiskUpdata
 {
-    private final static String USB_COMMON_NAME            = "usb";
-
     private Context             mContext                   = null;
     private ProgressDialog      mProgressDlg               = null;
     
@@ -45,8 +46,21 @@ public class UDiskUpdata
     private final static int    STARTUP_IMG_UPDATE_SUCCESS = 0x6003;
     private final static int    STARTUP_IMG_UPDATE_FAILED  = 0x6004;
     private final static int    STANDBY_IMG_UPDATE_SUCCESS = 0x6005;
-    private final static int    STANDBY_IMG_UPDATE_FAILED  = 0x6006;    
-    private final static int    APK_SW_UPDATE_FAILED  = 0x6008;
+    private final static int    STANDBY_IMG_UPDATE_FAILED  = 0x6006;
+    private final static int    APK_SW_UPDATE_FAILED       = 0x6008;
+    
+    private final static String    STANDBYSCREEN_IMAGE_NAME = "background.jpg";
+    private final static String    STARTSCREEN_ZIP_NAME     = "startup.zip";
+
+//====================================		Dialog		===================================    
+    private 						Dialog 				dlgUDiskUpdateSuccess 										= 		null;
+    private 						Dialog 				dlgUDiskUpdateFailure 											= 		null;
+    private 						Dialog 				dlgStartupImgUpdateFailed 									= 		null;
+    private 						Dialog 				dlgStartupImgUpdSuc 											= 		null;
+    private 						Dialog 				dlgStandbyImgUpdFailed 										= 		null;
+    private 						Dialog 				dlgStbImgUpdSucc 												= 		null;
+    private 						Dialog 				dlgApkSwUpdFad 													= 		null;
+//================================================================================
     public UDiskUpdata(Context context)
     {
         mContext = context;
@@ -70,7 +84,7 @@ public class UDiskUpdata
     public void updateStartupPic()
     {
         String strFileSavePath = PosterApplication.getStartUpScreenImgPath();
-        updateImgFromUDisk("startup.jpg", strFileSavePath);
+        updateImgFromUDisk(STARTSCREEN_ZIP_NAME, strFileSavePath);
     }
     
     /*
@@ -79,123 +93,59 @@ public class UDiskUpdata
     public void updateStandbyPic()
     {
         String strFileSavePath = PosterApplication.getStandbyScreenImgPath();
-        updateImgFromUDisk("background.jpg", strFileSavePath);
+        updateImgFromUDisk(STANDBYSCREEN_IMAGE_NAME, strFileSavePath);
     }
-    
-    private String findSWPath() {
-    	String strExtStorageRoot = Environment.getExternalStorageDirectory().getParent();
-    	if (strExtStorageRoot != null) {
-    		File extFilePath = new File(strExtStorageRoot);
-    		File[] extFiles = extFilePath.listFiles();
-    		if (extFiles != null) {
-	    		for (File extFile : extFiles) {
-	    			if (extFile.isDirectory() && extFile.getName().contains(USB_COMMON_NAME)) {
-	    				if (extFile.getTotalSpace() > 0) {
-	    					File[] usbFiles = extFile.listFiles();
-	    					if (usbFiles != null) {
-		        				for (File usbFile : usbFiles) {
-		        					if (usbFile.isFile()
-		        							&& usbFile.getName().startsWith("YSPosterDisplayer")
-	            							&& "apk".equalsIgnoreCase(FileUtils
-	            							.getFileExtensionName(usbFile.getName()))) {
-		        						return usbFile.getAbsolutePath();
-		        					}
-		        				}
-	    					}
-	    				} else {
-	    					File[] extSubFiles = extFile.listFiles();
-	    					if (extSubFiles != null) {
-		    					for (File extSubFile : extSubFiles) {
-		    						File[] subUsbFiles = extSubFile.listFiles();
-		    						if (subUsbFiles != null) {
-			            				for (File subUsbFile : subUsbFiles) {
-			            					if (subUsbFile.isFile()
-			            							&& subUsbFile.getName().startsWith("YSPosterDisplayer")
-			            							&& "apk".equalsIgnoreCase(FileUtils
-			    	            							.getFileExtensionName(subUsbFile.getName()))) {
-			            						return subUsbFile.getAbsolutePath();
-			            					}
-			            				}
-		    						}
-		    					}
-	    					}
-	    				}
-	    			}
-	    		}
-    		}
-        }
-    	return null;
-    }
-    
-    public void updateSW() {    	
-        String strSWPath = findSWPath();
-        if (strSWPath != null) {
+
+    public void updateSW() 
+    {
+    	String strSWPath = FileUtils.findApkInUdisk();
+        if (!TextUtils.isEmpty(strSWPath)) 
+        {
         	Intent intent = new Intent(Intent.ACTION_VIEW);
-            intent.setDataAndType(Uri.fromFile(new File(strSWPath)),
-                    "application/vnd.android.package-archive");
+        	intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.setDataAndType(Uri.fromFile(new File(strSWPath)), "application/vnd.android.package-archive");
             mContext.startActivity(intent);
-        } else {
+        } 
+        else 
+        {
         	mHandler.sendEmptyMessage(APK_SW_UPDATE_FAILED);
         }
     }
     
     private void updateImgFromUDisk(String imgname, String strFileSavePath)
     {
-        List<File> listPgmFile = new ArrayList<File>();
-        String strExtStorageRoot = Environment.getExternalStorageDirectory().getParent();
-        if (strExtStorageRoot == null)
+    	String strSrcFile = FileUtils.findFilePath(imgname);
+    	if (strSrcFile != null)
+    	{
+    		try 
+    		{
+				if (FileUtils.copyFileTo(new File(strSrcFile), new File(strFileSavePath)))
+				{
+					if (STARTSCREEN_ZIP_NAME.equals(imgname))
+				    {
+				        mHandler.sendEmptyMessage(STARTUP_IMG_UPDATE_SUCCESS);
+				    }
+				    else
+				    {
+				        mHandler.sendEmptyMessage(STANDBY_IMG_UPDATE_SUCCESS);
+				    }
+					
+					return;
+				}
+			} 
+    		catch (IOException e) 
+    		{
+				e.printStackTrace();
+			}
+    	}
+    	
+        if (STARTSCREEN_ZIP_NAME.equals(imgname))
         {
-            if (imgname.equals("startup.jpg"))
-            {
-                mHandler.sendEmptyMessage(STARTUP_IMG_UPDATE_FAILED);
-            }
-            else
-            {
-                mHandler.sendEmptyMessage(STANDBY_IMG_UPDATE_FAILED);
-            }
+            mHandler.sendEmptyMessage(STARTUP_IMG_UPDATE_FAILED);
         }
-        
-        try
+        else
         {
-            File[] extDirs = new File(strExtStorageRoot).listFiles();
-            for (int i = 0; i < extDirs.length; i++)
-            {
-                if (extDirs[i].isDirectory() && extDirs[i].getUsableSpace() > 0
-                        && extDirs[i].getName().contains(USB_COMMON_NAME))
-                {
-                    for (File f : extDirs[i].listFiles())
-                    {
-                        if (f.getName().trim().toLowerCase().endsWith(imgname))
-                        {
-                            FileUtils.copyFileTo(f, new File(strFileSavePath));
-                            listPgmFile.add(f);
-                            if (imgname.equals("startup.jpg"))
-                            {
-                                mHandler.sendEmptyMessage(STARTUP_IMG_UPDATE_SUCCESS);
-                            }
-                            else
-                            {
-                                mHandler.sendEmptyMessage(STANDBY_IMG_UPDATE_SUCCESS);
-                            }
-                        }
-                    }
-                }
-            }
-            if (listPgmFile.size() == 0)
-            {
-                if (imgname.equals("startup.jpg"))
-                {
-                    mHandler.sendEmptyMessage(STARTUP_IMG_UPDATE_FAILED);
-                }
-                else
-                {
-                    mHandler.sendEmptyMessage(STANDBY_IMG_UPDATE_FAILED);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
+            mHandler.sendEmptyMessage(STANDBY_IMG_UPDATE_FAILED);
         }
     }
     
@@ -220,50 +170,59 @@ public class UDiskUpdata
         // 遍历所有U盘中.pgm文件夹
         private List<File> getUsbProgramList()
         {
-            List<File> listPgmFile = new ArrayList<File>();
-            String strExtStorageRoot = Environment.getExternalStorageDirectory().getParent();
-            
-            if (strExtStorageRoot == null)
-            {
-                return null;
-            }
-            File[] extDirs = new File(strExtStorageRoot).listFiles();
-            for (int i = 0; i < extDirs.length; i++)
-            {
-                if (extDirs[i].isDirectory()
-                        && extDirs[i].getName().contains(USB_COMMON_NAME))
-                {
-                	if (extDirs[i].getUsableSpace() > 0)
-                	{
-	                    for (File f : extDirs[i].listFiles())
-	                    {
-	                        if (f.getName().trim().toLowerCase().endsWith(".pgm"))
-	                        {
-	                            listPgmFile.add(f);
-	                        }
-	                    }
-                	} else {
-                		File[] subDirs = extDirs[i].listFiles();
-                		if (subDirs != null)
-                		{
-                			for (File subDir : subDirs)
-                			{
-                				if (subDir.getTotalSpace() > 0)
-                				{
-                					File[] subFiles = subDir.listFiles();
-                					for (File subFile : subFiles) {
-                						if (subFile.getName().trim().toLowerCase().endsWith(".pgm"))
-            	                        {
-            	                            listPgmFile.add(subFile);
-            	                        }
-                					}
-                				}
-                			}
-                		}
-                	}
-                }
-            }
-            
+        	List<String> listUsbPath = FileUtils.getUsbPathList();
+        	if (listUsbPath == null || listUsbPath.isEmpty())
+        	{
+        		Logger.i("getUsbProgramList(): can't find usb path."); 
+        	    return null;	
+        	}
+        	
+        	File usbRootPath = null;
+        	File[] usbPaths = null;
+        	File[] usbSubPaths = null;
+        	List<File> listPgmFile = new ArrayList<File>();
+        	for (int i = 0; i < listUsbPath.size(); i++)
+        	{
+        		usbSubPaths = null;
+        		usbRootPath = new File(listUsbPath.get(i));
+        		usbPaths = usbRootPath.listFiles();   		
+        		if (usbPaths != null)
+    			{
+        		    if (usbRootPath.getTotalSpace() > 0)
+        		    {
+        		        for (File usbFile : usbPaths)
+        				{
+        					if (usbFile.isDirectory() && 
+        						usbFile.getName().trim().toLowerCase().endsWith(".pgm"))
+        					{
+        						listPgmFile.add(usbFile);
+        					}
+        				}
+        		    }
+        		    else
+        		    {    			
+        				for (File usbFile : usbPaths)
+        				{
+        					if (usbFile.isDirectory() && usbFile.getTotalSpace() > 0)
+        					{
+        						usbSubPaths = usbFile.listFiles();
+        						if (usbSubPaths != null)
+        						{
+        							for (File usbSubFile : usbSubPaths)
+        							{
+        								if (usbSubFile.isDirectory() && 
+        									usbSubFile.getName().trim().toLowerCase().endsWith(".pgm")) 
+        								{
+        									listPgmFile.add(usbSubFile);
+    									}
+        							}
+        						}
+        					}
+        				}   			
+        		    }
+    			}
+        	}
+
             return listPgmFile;
         }
         
@@ -273,7 +232,7 @@ public class UDiskUpdata
             List<File> pgmList = getUsbProgramList();
             if (pgmList == null || pgmList.size() <= 0)
             {
-                Logger.i("Didn't found program in th Usb.");
+                Logger.i("Didn't found program in the Usb.");
                 return null;
             }
             
@@ -331,20 +290,26 @@ public class UDiskUpdata
                                        {
                                            mProgressDlg.dismiss();
                                        }
-                                       
-                                       new AlertDialog.Builder(mContext)
-                                               .setTitle(R.string.tools_dialog_u_disk_update_success)
-                                               .setPositiveButton(R.string.enter,
-                                                       new DialogInterface.OnClickListener() {
-                                                           @Override
-                                                           public void onClick(DialogInterface dialog, int which)
-                                                           {
-                                                        	   if (PosterOsdActivity.INSTANCE != null)
-                                                        	   {
-                                                                       PosterOsdActivity.INSTANCE.setDismissTime();
-                                                        	   }
-                                                           }
-                                                       }).show();
+
+                                   dlgUDiskUpdateSuccess = DialogUtil.showTipsDialog(mContext, mContext.getString(R.string.tools_dialog_u_disk_update_success), mContext.getString(R.string.enter), new DialogSingleButtonListener() {
+                                    	
+										@Override
+										public void onSingleClick(Context context , View v , int which) {
+											 if (PosterOsdActivity.INSTANCE != null)
+											 {
+												 PosterOsdActivity.INSTANCE.setDismissTime();
+											 }
+											 if (dlgUDiskUpdateSuccess != null) {
+												 dlgUDiskUpdateSuccess.dismiss();
+												 dlgUDiskUpdateSuccess = null;
+											}
+										}
+									}, false);
+                                   
+                                   dlgUDiskUpdateSuccess.show();
+                                   
+                                   DialogUtil.dialogTimeOff(dlgUDiskUpdateSuccess, 90000);
+
                                        return;
                                        
                                    case PROGRAM_UPDATE_FAILED:
@@ -352,56 +317,79 @@ public class UDiskUpdata
                                        {
                                            mProgressDlg.dismiss();
                                        }
+									   
+                                       dlgUDiskUpdateFailure = DialogUtil.showTipsDialog(mContext, mContext.getString(R.string.tools_dialog_u_disk_update_failure),mContext.getString(R.string.retry1),mContext.getString(R.string.cancel), new DialogDoubleButtonListener() {
+
+                                    	   @Override
+                                    	   public void onLeftClick(Context context , View v , int which) 
+                                    	   {
+                                    		   updateProgram();
+											 
+                                    		   if(dlgUDiskUpdateFailure !=null){
+                                    			   dlgUDiskUpdateFailure.dismiss();
+                                    			   dlgUDiskUpdateFailure = null;
+                                    		   }
+											 
+                                    	   }
+
+                                    	   @Override
+                                    	   public void onRightClick(Context context , View v , int which) 
+                                    	   {
+                                    		   if (PosterOsdActivity.INSTANCE != null) {
+                                    			   PosterOsdActivity.INSTANCE.setDismissTime();
+                                    		   }
+                                    		   if (dlgUDiskUpdateFailure != null) {
+                                    			   dlgUDiskUpdateFailure.dismiss();
+                                    			   dlgUDiskUpdateFailure = null;
+                                    		   }
+                                    	   }
+
+                                       }, false);
                                        
-                                       new AlertDialog.Builder(mContext)
-                                               .setTitle(R.string.tools_dialog_u_disk_update_failure)
-                                               .setPositiveButton(R.string.retry1,
-                                                       new DialogInterface.OnClickListener() {
-                                                           @Override
-                                                           public void onClick(DialogInterface dialog, int which)
-                                                           {
-                                                               updateProgram();
-                                                           }
-                                                       })
-                                               .setNegativeButton(R.string.cancel,
-                                                       new DialogInterface.OnClickListener() {
-                                                           @Override
-                                                           public void onClick(DialogInterface dialog, int which)
-                                                           {
-                                                        	   if (PosterOsdActivity.INSTANCE != null)
-                                                        	   {
-                                                                       PosterOsdActivity.INSTANCE.setDismissTime();
-                                                        	   }
-                                                           }
-                                                       }).show();
+                                       dlgUDiskUpdateFailure.show();
+                                       
+                                       DialogUtil.dialogTimeOff(dlgUDiskUpdateFailure , 90000);
+                 
                                        return;
                                    case STARTUP_IMG_UPDATE_FAILED:
                                        if (mProgressDlg != null && mProgressDlg.isShowing())
                                        {
                                            mProgressDlg.dismiss();
                                        }
+                                      
+                                       dlgStartupImgUpdateFailed =DialogUtil.showTipsDialog(mContext, mContext.getString(R.string.tools_dialog_boot_update_failure), mContext.getString(R.string.retry1), mContext.getString(R.string.cancel), new DialogDoubleButtonListener(){
+
+                                    	   @Override
+                                    	   public void onLeftClick(Context context , View v , int which) 
+                                    	   {
+                                    		   updateStartupPic();
+                                    		   if(dlgStartupImgUpdateFailed !=null)
+                                    		   {
+                                    			   dlgStartupImgUpdateFailed.dismiss();
+                                    			   dlgStartupImgUpdateFailed = null;
+                                    		   }
+                                    	   }
+
+                                    	   @Override
+                                    	   public void onRightClick(Context context , View v , int which) 
+                                    	   {
+                                    		   if (PosterOsdActivity.INSTANCE != null)
+                                    		   {
+                                    			   PosterOsdActivity.INSTANCE.setDismissTime();
+                                    		   }
+                                    		   if(dlgStartupImgUpdateFailed !=null)
+                                    		   {
+                                    			   dlgStartupImgUpdateFailed.dismiss();
+                                    			   dlgStartupImgUpdateFailed = null;
+                                    		   }
+                                    	   }
+                                    	   
+                                       }, false);
                                        
-                                       new AlertDialog.Builder(mContext)
-                                               .setTitle(R.string.tools_dialog_boot_update_failure)
-                                               .setPositiveButton(R.string.retry1,
-                                                       new DialogInterface.OnClickListener() {
-                                                           @Override
-                                                           public void onClick(DialogInterface dialog, int which)
-                                                           {
-                                                               updateStartupPic();
-                                                           }
-                                                       })
-                                               .setNegativeButton(R.string.cancel,
-                                                       new DialogInterface.OnClickListener() {
-                                                           @Override
-                                                           public void onClick(DialogInterface dialog, int which)
-                                                           {
-                                                        	   if (PosterOsdActivity.INSTANCE != null)
-                                                        	   {
-                                                                   PosterOsdActivity.INSTANCE.setDismissTime();
-                                                        	   }
-                                                           }
-                                                       }).show();
+                                       dlgStartupImgUpdateFailed.show();
+                                       
+                                       DialogUtil.dialogTimeOff(dlgStartupImgUpdateFailed,90000);
+  
                                        return;
                                    case STARTUP_IMG_UPDATE_SUCCESS:
                                        if (mProgressDlg != null && mProgressDlg.isShowing())
@@ -409,19 +397,26 @@ public class UDiskUpdata
                                            mProgressDlg.dismiss();
                                        }
                                        
-                                       new AlertDialog.Builder(mContext)
-                                               .setTitle(R.string.tools_dialog_boot_update_success)
-                                               .setPositiveButton(R.string.enter,
-                                                       new DialogInterface.OnClickListener() {
-                                                           @Override
-                                                           public void onClick(DialogInterface dialog, int which)
-                                                           {
-                                                        	   if (PosterOsdActivity.INSTANCE != null)
-                                                        	   {
-                                                                   PosterOsdActivity.INSTANCE.setDismissTime();
-                                                        	   }
-                                                           }
-                                                       }).show();
+                                       dlgStartupImgUpdSuc = DialogUtil.showTipsDialog(mContext, mContext.getString(R.string.tools_dialog_boot_update_success), mContext.getString(R.string.enter), new DialogSingleButtonListener(){
+                                    	   @Override
+                                    	   public void onSingleClick(Context context , View v , int which) {
+                                    		   if (PosterOsdActivity.INSTANCE != null)
+                                    		   {
+                                    			   PosterOsdActivity.INSTANCE.setDismissTime();
+                                    		   }
+                                    		   
+                                    		   if(dlgStartupImgUpdSuc != null)
+                                    		   {
+                                    			   dlgStartupImgUpdSuc.dismiss();
+                                    			   dlgStartupImgUpdSuc = null;
+                                    		   }
+                                    		   
+                                    	   }
+                                       	}, false);
+                                       
+                                       dlgStartupImgUpdSuc.show();
+                                       
+                                       	DialogUtil.dialogTimeOff(dlgStartupImgUpdSuc,90000);
                                        return;
                                    case STANDBY_IMG_UPDATE_FAILED:
                                        if (mProgressDlg != null && mProgressDlg.isShowing())
@@ -429,27 +424,36 @@ public class UDiskUpdata
                                            mProgressDlg.dismiss();
                                        }
                                        
-                                       new AlertDialog.Builder(mContext)
-                                               .setTitle(R.string.tools_dialog_standby_update_failure)
-                                               .setPositiveButton(R.string.retry1,
-                                                       new DialogInterface.OnClickListener() {
-                                                           @Override
-                                                           public void onClick(DialogInterface dialog, int which)
-                                                           {
-                                                               updateStandbyPic();
-                                                           }
-                                                       })
-                                               .setNegativeButton(R.string.cancel,
-                                                       new DialogInterface.OnClickListener() {
-                                                           @Override
-                                                           public void onClick(DialogInterface dialog, int which)
-                                                           {
-                                                        	   if (PosterOsdActivity.INSTANCE != null)
-                                                        	   {
-                                                                   PosterOsdActivity.INSTANCE.setDismissTime();
-                                                        	   }
-                                                           }
-                                                       }).show();
+                                       dlgStandbyImgUpdFailed = DialogUtil.showTipsDialog(mContext, mContext.getString(R.string.tools_dialog_standby_update_failure), mContext.getString(R.string.retry1), mContext.getString(R.string.cancel), new DialogDoubleButtonListener(){
+
+										@Override
+										public void onLeftClick(Context context , View v , int which) {
+											updateStandbyPic();
+											
+											if(dlgStandbyImgUpdFailed != null)
+											{
+												dlgStandbyImgUpdFailed.dismiss();
+												dlgStandbyImgUpdFailed = null;
+											}
+											
+										}
+
+										@Override
+										public void onRightClick(Context context , View v , int which) {
+											 if (PosterOsdActivity.INSTANCE != null){
+                                                 PosterOsdActivity.INSTANCE.setDismissTime();
+											 }
+												if(dlgStandbyImgUpdFailed != null)
+												{
+													dlgStandbyImgUpdFailed.dismiss();
+													dlgStandbyImgUpdFailed = null;
+												}
+										}}, false);
+                                       
+                                       dlgStandbyImgUpdFailed.show();
+                                       
+                                       DialogUtil.dialogTimeOff(dlgStandbyImgUpdFailed,90000);
+  
                                        return;
                                    case STANDBY_IMG_UPDATE_SUCCESS:
                                        if (mProgressDlg != null && mProgressDlg.isShowing())
@@ -457,47 +461,65 @@ public class UDiskUpdata
                                            mProgressDlg.dismiss();
                                        }
                                        
-                                       new AlertDialog.Builder(mContext)
-                                               .setTitle(R.string.tools_dialog_standby_update_success)
-                                               .setPositiveButton(R.string.enter,
-                                                       new DialogInterface.OnClickListener() {
-                                                           @Override
-                                                           public void onClick(DialogInterface dialog, int which)
-                                                           {
-                                                        	   if (PosterOsdActivity.INSTANCE != null)
-                                                        	   {
-                                                                   PosterOsdActivity.INSTANCE.setDismissTime();
-                                                        	   }
-                                                           }
-                                                       }).show();
+                                       dlgStbImgUpdSucc = DialogUtil.showTipsDialog(mContext, mContext.getString(R.string.tools_dialog_standby_update_success), mContext.getString(R.string.enter), new DialogSingleButtonListener(){
+
+										@Override
+										public void onSingleClick(Context context , View v , int which) {
+											 if (PosterOsdActivity.INSTANCE != null){
+                                                 PosterOsdActivity.INSTANCE.setDismissTime();
+											 }
+											 
+											 if(dlgStbImgUpdSucc != null)
+											 {
+												 dlgStbImgUpdSucc.dismiss();
+												 dlgStbImgUpdSucc = null;
+											 }
+											 
+										}
+                                       	}, false);
+                                       
+                                       dlgStbImgUpdSucc.show();
+                                       
+                                       DialogUtil.dialogTimeOff(dlgStbImgUpdSucc,90000);
                                        return;
+                                       
                                    case APK_SW_UPDATE_FAILED:
                                        if (mProgressDlg != null && mProgressDlg.isShowing())
                                        {
                                            mProgressDlg.dismiss();
                                        }
+                                       dlgApkSwUpdFad = DialogUtil.showTipsDialog(mContext, mContext.getString(R.string.tools_dialog_sw_update_failure), mContext.getString(R.string.retry1), mContext.getString(R.string.cancel), new DialogDoubleButtonListener(){
+
+										@Override
+										public void onLeftClick(Context context , View v , int which) {
+											updateSW();
+											
+											if(dlgApkSwUpdFad != null)
+											{
+												dlgApkSwUpdFad.dismiss();
+												dlgApkSwUpdFad = null;
+											}
+											
+										}
+
+										@Override
+										public void onRightClick(Context context , View v , int which) {
+											 if (PosterOsdActivity.INSTANCE != null){
+                                                 PosterOsdActivity.INSTANCE.setDismissTime();
+											 }
+											 
+												if(dlgApkSwUpdFad != null)
+												{
+													dlgApkSwUpdFad.dismiss();
+													dlgApkSwUpdFad = null;
+												}
+											 
+										}}, false);
                                        
-                                       new AlertDialog.Builder(mContext)
-                                               .setTitle(R.string.tools_dialog_sw_update_failure)
-                                               .setPositiveButton(R.string.retry1,
-                                                       new DialogInterface.OnClickListener() {
-                                                           @Override
-                                                           public void onClick(DialogInterface dialog, int which)
-                                                           {
-                                                               updateSW();
-                                                           }
-                                                       })
-                                               .setNegativeButton(R.string.cancel,
-                                                       new DialogInterface.OnClickListener() {
-                                                           @Override
-                                                           public void onClick(DialogInterface dialog, int which)
-                                                           {
-                                                        	   if (PosterOsdActivity.INSTANCE != null)
-                                                        	   {
-                                                                   PosterOsdActivity.INSTANCE.setDismissTime();
-                                                        	   }
-                                                           }
-                                                       }).show();
+                                       dlgApkSwUpdFad.show();
+                                       
+                                       DialogUtil.dialogTimeOff(dlgApkSwUpdFad,90000);
+
                                        return;
                                    }
                                    

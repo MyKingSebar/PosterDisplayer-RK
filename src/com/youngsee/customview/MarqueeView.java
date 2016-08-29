@@ -14,6 +14,7 @@ import com.youngsee.common.FileUtils;
 import com.youngsee.common.MediaInfoRef;
 import com.youngsee.logmanager.LogUtils;
 import com.youngsee.logmanager.Logger;
+import com.youngsee.multicast.MulticastManager;
 import com.youngsee.posterdisplayer.R;
 
 import android.annotation.SuppressLint;
@@ -292,10 +293,8 @@ public class MarqueeView extends PosterBaseView
                     
                     if (!mIsMoving)
                     {
-                        mCurrentMedia = null;
-                        
-                        // Get the Media Info
-                        media = findNextMedia();
+                    	media = findNextOrSyncMedia();
+                    	
                         if (media == null)
                         {
                             Logger.i("No media can be found, current index is: " + mCurrentIdx);
@@ -325,6 +324,13 @@ public class MarqueeView extends PosterBaseView
                         else
                         {
                             mCurrentMedia = media;
+                            
+                            // 同步加载素材
+                            if (MulticastManager.getInstance().isSyncPlay())
+                            {
+                            	syncLoadMedia();
+                            }
+                            
                             showMarqueeTextView();
                             mIsMoving = initScrollViewParam(mCurrentMedia);
                             Thread.sleep(MOVE_INTERVAL);
@@ -382,7 +388,7 @@ public class MarqueeView extends PosterBaseView
             }
         }
         
-        private boolean initScrollViewParam(MediaInfoRef mediaInfo)
+        private boolean initScrollViewParam(MediaInfoRef mediaInfo) throws InterruptedException
         {
             boolean ret = false;
             if (mTextView != null)
@@ -403,6 +409,12 @@ public class MarqueeView extends PosterBaseView
                     paint.setTypeface(getFont(mediaInfo)); // 字体
                     paint.setAntiAlias(true); // 去除锯齿
                     paint.setFilterBitmap(true); // 对位图进行滤波处理
+                    
+                    // 同步播放素材
+                    if (MulticastManager.getInstance().isSyncPlay())
+                    {
+                    	syncPlayMedia();
+                    }
                     
                     // 初始化参数
                     float xPos = 0.0f;

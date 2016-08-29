@@ -20,7 +20,9 @@ import java.io.OutputStreamWriter;
 import java.lang.reflect.Method;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -28,6 +30,9 @@ import org.apache.http.util.EncodingUtils;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Environment;
 import android.os.storage.StorageManager;
 import android.text.TextUtils;
@@ -39,8 +44,6 @@ import com.youngsee.posterdisplayer.PosterMainActivity;
 @SuppressLint("DefaultLocale")
 public class FileUtils
 {
-    private final static String USB_COMMON_NAME = "usb";
-    
     public final static String    ENCODING = "UTF-8";
     
     private final static Object mKeyLock      = new Object();
@@ -88,11 +91,11 @@ public class FileUtils
     {
         if (FileUtils.isSDCardMount())
         {
-            return Environment.getExternalStorageDirectory().getPath();
+            return Environment.getExternalStorageDirectory().getAbsolutePath();
         }
         else
         {
-            return PosterApplication.getInstance().getFilesDir().getPath();
+            return PosterApplication.getInstance().getFilesDir().getAbsolutePath();
         }
     }
     
@@ -102,23 +105,29 @@ public class FileUtils
     public static String getLargestExtStorage()
     {
         String temp = Environment.getExternalStorageDirectory().getAbsolutePath();
-        if(PosterMainActivity.INSTANCE != null){
-            try{
+        if(PosterMainActivity.INSTANCE != null)
+        {
+            try
+            {
                 // 获取所有的存储设备
                 StorageManager storageManager = (StorageManager)PosterMainActivity.INSTANCE.getSystemService(Context.STORAGE_SERVICE);
                 Method method = StorageManager.class.getDeclaredMethod("getVolumePaths");
                 method.setAccessible(true);
                 Object result = method.invoke(storageManager);
-                if(result != null && result instanceof String[]){
+                if(result != null && result instanceof String[])
+                {
                     File f = null;
                     long maxDiskSpace = 0;
                     String[] pathes = (String[])result;
-                    for(String path : pathes){
-                        if(!TextUtils.isEmpty(path) && !path.contains("usb")) // U盘不能当作存储盘
+                    for(String path : pathes)
+                    {
+                        if(!isUsbPath(path)) // U盘不能当作存储盘
                         {
                             f = new File(path);
-                            if(f.exists() && f.canWrite()){
-                                if(f.getTotalSpace() > maxDiskSpace){
+                            if(f.exists() && f.canWrite())
+                            {
+                                if(f.getTotalSpace() > maxDiskSpace)
+                                {
                                     maxDiskSpace = f.getTotalSpace();
                                     temp = path;
                                 }
@@ -127,7 +136,8 @@ public class FileUtils
                     }
                 }
             }
-            catch(Exception e){
+            catch(Exception e)
+            {
                 e.printStackTrace();
             }
         }
@@ -141,6 +151,62 @@ public class FileUtils
     public static String getExternalStorage()
     {
         return Environment.getExternalStorageDirectory().getAbsolutePath();
+    }
+    
+    /*
+     * 获取U盘路径列表
+     */
+    public static List<String> getUsbPathList()
+    {
+    	List<String> usbPathList = null;
+    	if(PosterMainActivity.INSTANCE != null)
+        {
+            try
+            {
+                // 获取所有的存储设备
+                StorageManager storageManager = (StorageManager)PosterMainActivity.INSTANCE.getSystemService(Context.STORAGE_SERVICE);
+                Method method = StorageManager.class.getDeclaredMethod("getVolumePaths");
+                method.setAccessible(true);
+                Object result = method.invoke(storageManager);
+                if(result != null && result instanceof String[])
+                {
+                    String[] pathes = (String[])result;
+                    for(String path : pathes)
+                    {
+                        if(isUsbPath(path)) // U盘路径
+                        {
+                        	if (usbPathList == null)
+                        	{
+                        		usbPathList = new ArrayList<String>();
+                        	}
+                        	usbPathList.add(path);
+                        }
+                    }
+                }
+            }
+            catch(Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
+    	return usbPathList;
+    }
+    
+    public static boolean isUsbPath(String path)
+    {
+    	if (TextUtils.isEmpty(path))
+    	{
+    		return false;
+    	}
+    	
+    	File f = new File(path);
+    	
+    	return (f.isDirectory() &&
+    			f.getTotalSpace() > 0 &&
+    			(path.contains(Contants.UDISK_NAME_PREFIX1) ||
+    			(path.contains(Contants.UDISK_NAME_PREFIX2) && 
+    			 !path.contains("sdcard") &&
+    			 !path.contains("internal_sd"))));
     }
     
     /**
@@ -1195,44 +1261,133 @@ public class FileUtils
         return FileUtils.delDir(PosterApplication.getProgramPath());  // 删除节目内容
     }
     
-    public static String findFilePath(String filename) {
-        String strExtStorageRoot = Environment.getExternalStorageDirectory().getParent();
-        if (strExtStorageRoot != null) {
-            File extFilePath = new File(strExtStorageRoot);
-            File[] extFiles = extFilePath.listFiles();
-            if (extFiles != null) {
-                for (File extFile : extFiles) {
-                    if (extFile.isDirectory() && extFile.getName().contains(USB_COMMON_NAME)) {
-                        if (extFile.getTotalSpace() > 0) {
-                            File[] usbFiles = extFile.listFiles();
-                            if (usbFiles != null) {
-                                for (File usbFile : usbFiles) {
-                                    if (usbFile.isFile()
-                                            && usbFile.getName().equals(filename)) {
-                                        return usbFile.getAbsolutePath();
-                                    }
-                                }
-                            }
-                        } else {
-                            File[] extSubFiles = extFile.listFiles();
-                            if (extSubFiles != null) {
-                                for (File extSubFile : extSubFiles) {
-                                    File[] subUsbFiles = extSubFile.listFiles();
-                                    if (subUsbFiles != null) {
-                                        for (File subUsbFile : subUsbFiles) {
-                                            if (subUsbFile.isFile()
-                                                    && subUsbFile.getName().equals(filename)) {
-                                                return subUsbFile.getAbsolutePath();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    public static String findFilePath(String filename) 
+    {
+    	List<String> listUsbPath = getUsbPathList();
+    	if (listUsbPath == null || listUsbPath.isEmpty())
+    	{
+    		Logger.i("findFilePath(): can't find usb path."); 
+    	    return null;	
+    	}
+    	
+    	File usbRootPath = null;
+    	File[] usbPaths = null;
+    	File[] usbSubPaths = null;
+    	for (int i = 0; i < listUsbPath.size(); i++)
+    	{
+    		usbSubPaths = null;
+    		usbRootPath = new File(listUsbPath.get(i));
+    		usbPaths = usbRootPath.listFiles();   		
+    		if (usbPaths != null)
+			{
+    		    if (usbRootPath.getTotalSpace() > 0)
+    		    {
+    		        for (File usbFile : usbPaths)
+    				{
+    					if (usbFile.isFile() && usbFile.getName().equalsIgnoreCase(filename))
+    					{
+    						return usbFile.getAbsolutePath();
+    					}
+    				}
+    		    }
+    		    else
+    		    {    			
+    				for (File usbFile : usbPaths)
+    				{
+    					if (usbFile.isDirectory() && usbFile.getTotalSpace() > 0)
+    					{
+    						usbSubPaths = usbFile.listFiles();
+    						if (usbSubPaths != null)
+    						{
+    							for (File usbSubFile : usbSubPaths)
+    							{
+    								if (usbSubFile.isFile() && usbSubFile.getName().equalsIgnoreCase(filename)) 
+    								{
+										return usbSubFile.getAbsolutePath();
+									}
+    							}
+    						}
+    					}
+    				}   			
+    		    }
+			}
+    	}
+    	
         return null;
+    }
+    
+    public static String findApkInUdisk()
+    {
+    	List<String> listUsbPath = getUsbPathList();
+    	if (listUsbPath == null || listUsbPath.isEmpty())
+    	{
+    		Logger.i("findFilePath(): can't find usb path."); 
+    	    return null;	
+    	}
+    	
+    	File usbRootPath = null;
+    	File[] usbPaths = null;
+    	File[] usbSubPaths = null;
+    	for (int i = 0; i < listUsbPath.size(); i++)
+    	{
+    		usbSubPaths = null;
+    		usbRootPath = new File(listUsbPath.get(i));
+    		usbPaths = usbRootPath.listFiles();   		
+    		if (usbPaths != null)
+			{
+    		    if (usbRootPath.getTotalSpace() > 0)
+    		    {
+    		        for (File usbFile : usbPaths)
+    				{
+    					if (usbFile.isFile() && 
+    						usbFile.getName().trim().toLowerCase().endsWith(".apk") &&
+    						isPosterApk(usbFile.getAbsolutePath()))
+    					{
+    						return usbFile.getAbsolutePath();
+    					}
+    				}
+    		    }
+    		    else
+    		    {    			
+    				for (File usbFile : usbPaths)
+    				{
+    					if (usbFile.isDirectory() && usbFile.getTotalSpace() > 0)
+    					{
+    						usbSubPaths = usbFile.listFiles();
+    						if (usbSubPaths != null)
+    						{
+    							for (File usbSubFile : usbSubPaths)
+    							{
+    								if (usbSubFile.isFile() && 
+    									usbSubFile.getName().trim().toLowerCase().endsWith(".apk") &&
+    									isPosterApk(usbFile.getAbsolutePath())) 
+    								{
+										return usbSubFile.getAbsolutePath();
+									}
+    							}
+    						}
+    					}
+    				}   			
+    		    }
+			}
+    	}
+    	return null;
+    }
+    
+    public static boolean isPosterApk(String archiveFilePath)
+    {
+    	PackageManager pm = PosterApplication.getInstance().getPackageManager();    
+        PackageInfo info = pm.getPackageArchiveInfo(archiveFilePath, PackageManager.GET_ACTIVITIES); 
+        if(info != null)
+        {    
+            ApplicationInfo appInfo = info.applicationInfo;    
+            //String appName = pm.getApplicationLabel(appInfo).toString();    
+            String packageName = appInfo.packageName;  //得到安装包名称  
+            //String version=info.versionName;           //得到版本信息       
+            
+            return (Contants.POSTER_PACKAGENAME.equals(packageName));
+        } 
+        
+    	return false;
     }
 }

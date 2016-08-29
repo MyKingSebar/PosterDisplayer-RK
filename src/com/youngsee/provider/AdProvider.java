@@ -31,6 +31,8 @@ public class AdProvider extends ContentProvider {
     private static final int        URL_AUTHINFO_ID  = 16;
     private static final int        URL_PGMPATH      = 17;
     private static final int        URL_PGMPATH_ID   = 18;
+    private static final int        URL_MULTICAST    = 19;
+    private static final int        URL_MULTICAST_ID = 20;
     
     private AdDbHelper              mDbHelper       = null;
 
@@ -56,6 +58,14 @@ public class AdProvider extends ContentProvider {
 		s_urlMatcher.addURI(DbConstants.AUTHORITY, "authinfo/#", URL_AUTHINFO_ID);
 		s_urlMatcher.addURI(DbConstants.AUTHORITY, "pgmpath", URL_PGMPATH);
 		s_urlMatcher.addURI(DbConstants.AUTHORITY, "pgmpath/#", URL_PGMPATH_ID);
+		s_urlMatcher.addURI(DbConstants.AUTHORITY, "multicast", URL_MULTICAST);
+		s_urlMatcher.addURI(DbConstants.AUTHORITY, "multicast/#", URL_MULTICAST_ID);
+	}
+	
+	@Override
+	public boolean onCreate() {
+		mDbHelper = new AdDbHelper(getContext());
+		return true;
 	}
 	
 	@Override
@@ -160,6 +170,7 @@ public class AdProvider extends ContentProvider {
 					+ (!TextUtils.isEmpty(where) ? " AND " + where : ""), whereArgs);
 			deleteUri = DbConstants.CONTENTURI_AUTHINFO;
 			break;
+			
 		case URL_PGMPATH:
 		    count = db.delete(DbConstants.TABLE_PGM_PATH, where, whereArgs);
 		    deleteUri = DbConstants.CONTENTURI_PGMPATH;
@@ -172,6 +183,18 @@ public class AdProvider extends ContentProvider {
 		    deleteUri = DbConstants.CONTENTURI_PGMPATH;
 		    break;
 
+		case URL_MULTICAST:
+		    count = db.delete(DbConstants.TABLE_MULTICAST, where, whereArgs);
+		    deleteUri = DbConstants.CONTENTURI_MULTICAST;
+		    break;
+		    
+		case URL_MULTICAST_ID:
+		    count = db.delete(DbConstants.TABLE_MULTICAST,
+		            DbConstants._ID + "=" + uri.getPathSegments().get(1)
+		            + (!TextUtils.isEmpty(where) ? " AND " + where : ""), whereArgs);
+		    deleteUri = DbConstants.CONTENTURI_MULTICAST;
+		    break;
+		    
 		default:
 			throw new IllegalArgumentException("Unknown URI " + uri);
 		}
@@ -195,6 +218,7 @@ public class AdProvider extends ContentProvider {
 		case URL_OFFDL:
 		case URL_AUTHINFO:
 		case URL_PGMPATH:
+		case URL_MULTICAST:
 			return DbConstants.CONTENT_TYPE;
 
 		case URL_SYSPARAM_ID:
@@ -206,6 +230,7 @@ public class AdProvider extends ContentProvider {
         case URL_OFFDL_ID:
 		case URL_AUTHINFO_ID:
 		case URL_PGMPATH_ID:
+		case URL_MULTICAST_ID:
 			return DbConstants.CONTENT_TYPE_ITME;
 
 		default:
@@ -289,7 +314,14 @@ public class AdProvider extends ContentProvider {
 		        insertUri = ContentUris.withAppendedId(DbConstants.CONTENTURI_PGMPATH, rowId);
 		    }
 		    break;
-
+		    
+		case URL_MULTICAST:
+		    rowId = db.insert(DbConstants.TABLE_MULTICAST, null, values);
+		    if (rowId > 0) {
+		        insertUri = ContentUris.withAppendedId(DbConstants.CONTENTURI_MULTICAST, rowId);
+		    }
+		    break;
+		    
 		default:
 			throw new IllegalArgumentException("Unknown URI " + uri);
 		}
@@ -300,12 +332,6 @@ public class AdProvider extends ContentProvider {
 		}
 
 		throw new SQLException("Failed to insert row into " + uri);
-	}
-
-	@Override
-	public boolean onCreate() {
-		mDbHelper = new AdDbHelper(getContext());
-		return true;
 	}
 
 	@Override
@@ -395,6 +421,15 @@ public class AdProvider extends ContentProvider {
 		    qb.appendWhere(DbConstants._ID + "=" + uri.getPathSegments().get(1));
 		    break;
 
+		case URL_MULTICAST:
+		    qb.setTables(DbConstants.TABLE_MULTICAST);
+		    break;
+		
+		case URL_MULTICAST_ID:
+		    qb.setTables(DbConstants.TABLE_MULTICAST);
+		    qb.appendWhere(DbConstants._ID + "=" + uri.getPathSegments().get(1));
+		    break;
+		    
 		default:
 			throw new IllegalArgumentException("Unknown URI " + uri);
 		}
@@ -530,6 +565,19 @@ public class AdProvider extends ContentProvider {
 		            Long.parseLong(uri.getPathSegments().get(1)));
 		    break;
 
+		case URL_MULTICAST:
+		    count = db.update(DbConstants.TABLE_MULTICAST, values, where, whereArgs);
+		    updateUri = DbConstants.CONTENTURI_MULTICAST;
+		    break;
+		   
+		case URL_MULTICAST_ID:
+		    count = db.update(DbConstants.TABLE_MULTICAST, values,
+		            DbConstants._ID + "=" + uri.getPathSegments().get(1)
+		            + (!TextUtils.isEmpty(where) ? " AND " + where : ""), whereArgs);
+		    updateUri = ContentUris.withAppendedId(DbConstants.CONTENTURI_MULTICAST,
+		            Long.parseLong(uri.getPathSegments().get(1)));
+		    break;
+		    
 		default:
 			throw new IllegalArgumentException("Unknown URI " + uri);
 		}

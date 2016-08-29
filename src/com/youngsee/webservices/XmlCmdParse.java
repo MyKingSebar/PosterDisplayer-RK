@@ -25,6 +25,7 @@ import android.graphics.Matrix;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.text.TextUtils;
 import android.util.Xml;
 
 import com.youngsee.ftpoperation.FtpFileInfo;
@@ -32,11 +33,15 @@ import com.youngsee.ftpoperation.FtpHelper;
 import com.youngsee.ftpoperation.FtpOperationInterface;
 import com.youngsee.authorization.AuthorizationManager;
 import com.youngsee.common.Actions;
+import com.youngsee.common.DbHelper;
 import com.youngsee.common.FileUtils;
 import com.youngsee.common.Md5;
 import com.youngsee.common.RuntimeExec;
 import com.youngsee.common.SysParamManager;
 import com.youngsee.logmanager.LogManager;
+import com.youngsee.multicast.MulticastCommon;
+import com.youngsee.multicast.MulticastManager;
+import com.youngsee.multicast.MulticastSyncInfoRef;
 import com.youngsee.osd.OsdSubMenuFragment;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.power.PowerOnOffManager;
@@ -166,7 +171,6 @@ public class XmlCmdParse
                 }*/
                 if ((strValue = GetValueFromTag(strRspCommand, XmlCmdInfoRef.CMD_KEYWORDS_TIME)) != null)
                 {
-                    //PosterApplication.getInstance().setTime(strValue);
                 	strValue = strValue.replaceAll("-", "");
                     strValue = strValue.replaceAll(":", "");
                     strValue = strValue.replaceAll(" ", ".");
@@ -226,7 +230,7 @@ public class XmlCmdParse
                     height = Integer.parseInt(strValue);
                 }
 
-                if (width != 0 && height != 0)
+                if (width > 0 && height > 0)
                 {
                 	RuntimeExec.getInstance().runRootCmd("rm -f " + PosterApplication.getScreenCaptureImgPath() + "*");
                 	
@@ -631,6 +635,7 @@ public class XmlCmdParse
                     else if (update == 3) // 开机画面更新
                     {
                         // TBD
+                    	WsClient.getInstance().postResultBack(XmlCmdInfoRef.CMD_PTL_SYSUPDATE, nSysUpdateRegCode, 1, "");
                     }
                     else if (update == 4)  // 待机画面更新
                     {
@@ -923,6 +928,80 @@ public class XmlCmdParse
             case XmlCmdInfoRef.CMD_PTL_AUTHKEYUPDATE:
                 AuthorizationManager.getInstance().updateKey(regCode);
                 break;
+                
+            case XmlCmdInfoRef.CMD_PTL_MULTICASTMANAGER: // 同步播放
+            	if ((strValue = GetValueFromTag(strRspCommand, XmlCmdInfoRef.CMD_KEYWORDS_MULTICAST_PROGSYNC)) != null)
+                {
+                    int port = 0;
+                    int localPort = 0;
+                    int followed = 0;
+                    int progsync = Integer.parseInt(strValue);
+                    
+                    // 获取服务器下发的同步参数
+                    if ((strValue = GetValueFromTag(strRspCommand, XmlCmdInfoRef.CMD_KEYWORDS_MULTICAST_BCASTPORT)) != null)
+                    {
+                    	port = Integer.parseInt(strValue);
+                    }
+                    if ((strValue = GetValueFromTag(strRspCommand, XmlCmdInfoRef.CMD_KEYWORDS_MULTICAST_BLOCALPORT)) != null)
+                    {
+                    	localPort = Integer.parseInt(strValue);
+                    }
+                    if ((strValue = GetValueFromTag(strRspCommand, XmlCmdInfoRef.CMD_KEYWORDS_MULTICAST_FOLLOWDELT)) != null)
+                    {
+                    	followed = Integer.parseInt(strValue);
+                    }
+                    String strBcastIp = GetValueFromTag(strRspCommand, XmlCmdInfoRef.CMD_KEYWORDS_MULTICAST_BCASTIP);
+                    
+                    // 保存同步参数
+                    DbHelper.getInstance().saveBcastParamToDB(progsync, port, localPort, followed, strBcastIp);
+                    
+                    // 获取当前使用的同步参数
+                    int currentProgsync = MulticastManager.getInstance().getCurrentSynIdicate();
+                    int currentLocalPort = MulticastManager.getInstance().getCurrentLocalPort();
+                    int currentPort = MulticastManager.getInstance().getCurrentPort();
+                    String currentIp = MulticastManager.getInstance().getCurrentGroupIp();
+                    
+                    if (progsync != MulticastCommon.MC_VALUE_PROGSYNC_CLOSE && 
+                    	currentProgsync == MulticastCommon.MC_VALUE_PROGSYNC_CLOSE)
+                    {
+                        // 启动同步
+                    	MulticastManager.getInstance().startWork();
+                    }
+                    else if (progsync == MulticastCommon.MC_VALUE_PROGSYNC_CLOSE && 
+                    		 currentProgsync != MulticastCommon.MC_VALUE_PROGSYNC_CLOSE)
+                    {
+                        // 关闭同步
+                    	if (currentProgsync == MulticastCommon.MC_VALUE_PROGSYNC_OPEN_GROUP_LEADER)
+                    	{
+                    	    MulticastSyncInfoRef syncInfo = new MulticastSyncInfoRef();
+                    	    syncInfo.SyncFlag = MulticastCommon.MC_SYNCFLAG_CLOSE;
+                    	    syncInfo.ProgramState = 0;
+                		    syncInfo.ProgramId = "0";
+                		    syncInfo.PgmVerifyCode = "0";
+                		    syncInfo.WndName = "0";
+                    	    syncInfo.MediaFullName = "0";
+                    	    syncInfo.MediaSource = "0";
+                    	    syncInfo.MediaVerifyCode = "0";
+                    	    syncInfo.MediaPosition = 0;
+                    	    MulticastManager.getInstance().sendSyncInfo(syncInfo);
+                    	}
+                    	MulticastManager.getInstance().stopWork();
+                    }
+                    else if (progsync != MulticastCommon.MC_VALUE_PROGSYNC_CLOSE &&
+                    		 currentProgsync != MulticastCommon.MC_VALUE_PROGSYNC_CLOSE &&
+                    		 progsync != currentProgsync)
+                    {
+                    	// 改变组长或组员的身份
+                    	MulticastManager.getInstance().restartWork();
+                    }
+                    else if(port != currentPort || localPort != currentLocalPort || 
+                            (!TextUtils.isEmpty(strBcastIp) && !strBcastIp.equals(currentIp)))
+                    {
+                    	// 改变同步参数
+                    	MulticastManager.getInstance().restartWork();
+                    }
+                }
+                break;
             }
         }
         catch (Exception e)
@@ -966,8 +1045,9 @@ public class XmlCmdParse
             int eventType = parser.getEventType();
             while (eventType != XmlPullParser.END_DOCUMENT)
             {
-                if (eventType == XmlPullParser.START_TAG && parser.getName().equals(strCmdTag)
-                        && parser.next() == XmlPullParser.TEXT)
+                if (eventType == XmlPullParser.START_TAG && 
+                	parser.getName().equals(strCmdTag) && 
+                	parser.next() == XmlPullParser.TEXT)
                 {
                     return parser.getText();
                 }

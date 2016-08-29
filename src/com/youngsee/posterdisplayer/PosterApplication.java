@@ -39,6 +39,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 
+import com.youngsee.common.Actions;
 import com.youngsee.common.Contants;
 import com.youngsee.common.DiskLruCache;
 import com.youngsee.common.FileUtils;
@@ -74,8 +75,6 @@ import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.Environment;
-import android.provider.MediaStore.Files;
 import android.provider.Settings;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
@@ -268,14 +267,10 @@ public class PosterApplication extends Application
     	
     	if (PosterMainActivity.INSTANCE != null)
     	{
-    	    // 获取状态栏的高度
-	        int resourceId = PosterMainActivity.INSTANCE.getResources().getIdentifier("navigation_bar_height", "dimen", "android");
-	        int height = PosterMainActivity.INSTANCE.getResources().getDimensionPixelSize(resourceId);
-	    
 		    // 获取屏幕实际大小(以像素为单位)
 		    DisplayMetrics metric = new DisplayMetrics();
 		    PosterMainActivity.INSTANCE.getWindowManager().getDefaultDisplay().getMetrics(metric);
-		    screenHeight = metric.heightPixels + height;
+		    screenHeight = metric.heightPixels;
     	}
 				
         return screenHeight;
@@ -479,7 +474,7 @@ public class PosterApplication extends Application
         sysParam.delFilePeriodtime = 30;
         sysParam.timeZonevalue = "-8";
         sysParam.passwdvalue = "";
-        sysParam.syspasswdvalue = "";
+        sysParam.syspasswdvalue = "123456";
         sysParam.brightnessvalue = 60;
         sysParam.volumevalue = 60;
         sysParam.hwVervalue = "1.0.0.0";
@@ -517,38 +512,54 @@ public class PosterApplication extends Application
         return path;
     }
     
-    public static boolean existsPgmInUdisk(String path) {
-    	if ((path == null)
-    			|| (path.length() < 13)
-    			|| !path.substring(5).startsWith(Contants.UDISK_NAME_PREFIX)) {
+    public static boolean existsPgmInUdisk(String path) 
+    {
+    	if (!FileUtils.isUsbPath(path)) 
+    	{
     		return false;
     	}
+    	
     	File udisk = new File(path);
-    	if (udisk.getTotalSpace() > 0) {
-    		File[] files = udisk.listFiles();
-    		for (File file : files) {
-    			if (file.isDirectory() && file.getName().endsWith(".pgm")) {
-    				return true;
-    			}
-    		}
-    	} else {
-    		File[] files = udisk.listFiles();
-    		if (files != null) {
-    			for (File file : files) {
-    				if (file.getTotalSpace() > 0) {
+    	File[] files = udisk.listFiles();
+    	if (files != null) 
+		{
+    	    if (udisk.getTotalSpace() > 0) 
+    	    {
+    		    for (File file : files) 
+    		    {
+    			    if (file.isDirectory() && 
+    			    	file.getName().trim().toLowerCase().endsWith(".pgm")) 
+    			    {
+    				    return true;
+    			    }
+    		    }
+    	    } 
+    	    else 
+    	    {
+    			for (File file : files) 
+    			{
+    				if (file.getTotalSpace() > 0) 
+    				{
     					File[] subFiles = file.listFiles();
-    					for (File subFile : subFiles) {
-    		    			if (subFile.isDirectory() && subFile.getName().endsWith(".pgm")) {
-    		    				return true;
-    		    			}
-    		    		}
+    					if (subFiles != null)
+    					{
+    					    for (File subFile : subFiles) 
+    					    {
+    		    			    if (subFile.isDirectory() && 
+    		    			    	subFile.getName().trim().toLowerCase().endsWith(".pgm")) 
+    		    			    {
+    		    				    return true;
+    		    			    }
+    		    		    }
+    					}
     				}
     			}
     		}
     	}
+    	
     	return false;
     }
-    
+
     public static String getGifImagePath(String subDirName)
     {
         StringBuilder sb = new StringBuilder();
@@ -1034,7 +1045,8 @@ public class PosterApplication extends Application
     	}
     }
     
-    public void setTime(String time) {
+    public void setTime(String time)
+    {
     	Pattern p = Pattern.compile("^(\\d{4})-(\\d{1,2})-(\\d{1,2})\\s+(\\d{1,2}):(\\d{1,2}):(\\d{1,2})$");
     	Matcher m = p.matcher(time);
     	
@@ -1065,10 +1077,17 @@ public class PosterApplication extends Application
     		}
     		t.normalize(true);
     		
-    		StringBuilder sb = new StringBuilder();
-    		sb.append("date -s ").append(String.format("%d%02d%02d.%02d%02d%02d", t.year, t.month+1, t.monthDay,
-                    t.hour, t.minute, t.second));
-            RuntimeExec.getInstance().runRootCmd(sb.toString());
+            try 
+            {
+            	StringBuilder sb = new StringBuilder();
+        		sb.append("date -s ").append(String.format("%d%02d%02d.%02d%02d%02d", t.year, t.month+1, t.monthDay,
+                        t.hour, t.minute, t.second));
+				RuntimeExec.getInstance().runRootCmd(sb.toString());
+			} catch (IOException e) {
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
     	}
     }
     
@@ -1618,6 +1637,7 @@ public class PosterApplication extends Application
     public YSConfiguration getConfiguration(){
         return mConfiguration;
     }
+    
     
     public static boolean isServiceRunning(Context context, String srvName)
     {

@@ -35,13 +35,13 @@
             android:inputType="textPassword"
             android:textColor="@color/black"
             android:textSize="20sp" />
-        
+
         <ImageView
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="0.15"
             android:background="@android:color/transparent" />
-        
+
         <CheckBox
             android:id="@+id/memory_password"
             android:layout_width="0dp"

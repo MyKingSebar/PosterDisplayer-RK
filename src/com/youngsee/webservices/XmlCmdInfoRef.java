@@ -51,6 +51,7 @@ public class XmlCmdInfoRef
     public static final int    CMD_PTL_GETDTVCONFIG           = 38;
     public static final int    CMD_PTL_AUTOUPGRADE            = 39;
     public static final int    CMD_PTL_FORBIDDOWNLOADTIME     = 40;
+    public static final int    CMD_PTL_MULTICASTMANAGER       = 41;
     
     public static final int    CMD_PTL_AUTHKEYUPDATE          = 50;
     
@@ -137,6 +138,11 @@ public class XmlCmdInfoRef
     public static final String CMD_KEYWORDS_CPEPRSCRN_HEIGHT  = ("HEIGHT");
     public static final String CMD_KEYWORDS_CPEPRSCRN_FTPPATH = ("FILE");
     public static final String CMD_KEYWORDS_CPEPRSCRN_VERCODE = ("VERCODE");
+    public static final String CMD_KEYWORDS_MULTICAST_PROGSYNC   = ("PROGSYNC"); //BEGIN multicast 
+    public static final String CMD_KEYWORDS_MULTICAST_BCASTIP    = ("BCASTIP");
+    public static final String CMD_KEYWORDS_MULTICAST_BCASTPORT  = ("BCASTPORT");
+    public static final String CMD_KEYWORDS_MULTICAST_BLOCALPORT = ("BLOCALPORT");
+    public static final String CMD_KEYWORDS_MULTICAST_FOLLOWDELT = ("FOLLOWDELT");//END multicast
     
     /* Defined exception strings */
     public static final String IS_STR_OK                      = ("OK");

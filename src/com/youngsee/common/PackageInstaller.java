@@ -16,25 +16,47 @@ public class PackageInstaller {
 			RuntimeExec.getInstance().runRootCmd("rm -f " + destPath);
 			RuntimeExec.getInstance().runRootCmd("cp " + fileName + " " + destPath);
 			RuntimeExec.getInstance().runRootCmd("chmod 777 " + destPath);
-			RuntimeExec.getInstance().runRootCmd("pm install -r " + destPath);
 			RuntimeExec.getInstance().runRootCmd("mount -o remount,ro /system");
+			RuntimeExec.getInstance().runRootCmd("rm -f " + fileName);
 			ret = true;
 		} catch (Exception e) {
+			ret = false;
 			e.printStackTrace();
 		}
 
 		return ret;
 	}
 
+	public boolean installSysLib(String fileName, String packageName) {
+		boolean ret = false;
+        try {
+        	String destPath = "/system/lib/" + packageName;
+            RuntimeExec.getInstance().runRootCmd("mount -o remount,rw /system");
+            RuntimeExec.getInstance().runRootCmd("rm -f " + destPath);
+            RuntimeExec.getInstance().runRootCmd("cp " + fileName + " " + destPath);
+            RuntimeExec.getInstance().runRootCmd("chmod 777 " + destPath);
+            RuntimeExec.getInstance().runRootCmd("mount -o remount,ro /system");
+            RuntimeExec.getInstance().runRootCmd("rm -f " + fileName);
+            ret = true;
+        } catch (Exception e) {
+        	ret = false;
+            e.printStackTrace();
+        }
+
+        return ret;
+    }
+	
 	public String retrieveSourceFromAssets(String packageName){
-        File filePath = PosterApplication.getInstance().getFilesDir();
-        StringBuilder cachePath = new StringBuilder();
-        cachePath.append(filePath.getAbsolutePath());
-        cachePath.append("/");
-        cachePath.append(packageName);
-        
+		String strRet = null;
+
         try{
-            File file = new File(cachePath.toString());
+            StringBuilder cachePath = new StringBuilder();
+            cachePath.append(FileUtils.getHardDiskPath());
+            cachePath.append(File.separator);
+            cachePath.append(packageName);
+        	strRet = cachePath.toString();
+        	
+            File file = new File(strRet);
             if(!file.exists()){
                 file.createNewFile();
             }
@@ -51,9 +73,10 @@ public class PackageInstaller {
             is.close();
         }
         catch(IOException e){
+        	strRet = null;
             e.printStackTrace();
         }
         
-        return cachePath.toString();
+        return strRet;
     }
 }

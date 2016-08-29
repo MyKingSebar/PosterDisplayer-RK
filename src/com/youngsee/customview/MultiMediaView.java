@@ -24,6 +24,8 @@ import com.youngsee.gifdecode.GifDecoder;
 import com.youngsee.gifdecode.GifFrame;
 import com.youngsee.logmanager.LogUtils;
 import com.youngsee.logmanager.Logger;
+import com.youngsee.multicast.MulticastCommon;
+import com.youngsee.multicast.MulticastManager;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.posterdisplayer.PosterMainActivity;
 import com.youngsee.posterdisplayer.R;
@@ -48,6 +50,7 @@ import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.Gravity;
@@ -360,7 +363,7 @@ public class MultiMediaView extends PosterBaseView
         public void onPrepared(MediaPlayer mp)
         {
             Logger.i("Media player prepared.");
-            
+
             if (mMediaPosition != -1)
             {
                 mMediaPlayer.seekTo(mMediaPosition);
@@ -432,7 +435,6 @@ public class MultiMediaView extends PosterBaseView
     @Override
     public void onViewPause()
     {
-    	
         pauseUpdateThread();
         cleanupMsg();
         
@@ -642,6 +644,8 @@ public class MultiMediaView extends PosterBaseView
     private void playVideo(MediaInfoRef media)
     {
         Logger.i("Play video '" + media.filePath + "'.");
+        // sync play: start load video
+        
         Message msg = mHandler.obtainMessage();
         msg.what = EVENT_PLAYVIDEO;
         msg.obj = media;
@@ -657,12 +661,19 @@ public class MultiMediaView extends PosterBaseView
         msg.sendToTarget();
     }
     
-    private void playImage(MediaInfoRef media)
+    private void playImage(MediaInfoRef media) throws InterruptedException
     {
         Logger.i("Play image '" + media.filePath + "'.");
-        
+
         boolean bIsUseCache = mViewType.contains("Weather") ? false : true;
         Bitmap img = getBitMap(media, bIsUseCache);
+        
+        // 同步播放素材
+        if (MulticastManager.getInstance().isSyncPlay())
+        {
+        	syncPlayMedia();
+        }
+        
         showPicture(img, media.mode);
     }
 
@@ -712,6 +723,12 @@ public class MultiMediaView extends PosterBaseView
         // 创建canvas
         Bitmap bmp = Bitmap.createBitmap(nWidth, nHeight, Bitmap.Config.ARGB_4444);
         Canvas canvas = new Canvas(bmp);
+        
+        // 同步播放素材
+        if (MulticastManager.getInstance().isSyncPlay())
+        {
+        	syncPlayMedia();
+        }
         
         // 画文本
         float x = 5; 
@@ -840,7 +857,9 @@ public class MultiMediaView extends PosterBaseView
         {
             Logger.i("New multimedia thread, id is: " + currentThread().getId());
             
-            MediaInfoRef media = null;
+            int   nPos = 0;
+            long  lastSendSyncInfoTime = 0;
+            MediaInfoRef media          = null;
             
             while (mIsRun)
             {
@@ -853,7 +872,7 @@ public class MultiMediaView extends PosterBaseView
                             mPauseLock.wait();
                         }
                     }
-                    
+
                     if (mMediaList == null)
                     {
                         Logger.i("Media list is null, thread exit.");
@@ -877,9 +896,8 @@ public class MultiMediaView extends PosterBaseView
                     
                     if (!mIsPlayingVideo)
                     {
-                        //mCurrentMedia = null;
-                        
-                        media = findNextMedia();
+                    	media = findNextOrSyncMedia();
+                    	
                         if (media == null)
                         {
                             Logger.i("No media can be found, current index is: " + mCurrentIdx);
@@ -907,9 +925,19 @@ public class MultiMediaView extends PosterBaseView
                             Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
                             continue;
                         }
-                        else if (FileUtils.mediaIsVideo(media))
+                        
+                        if (FileUtils.mediaIsVideo(media))
                         {
-                            mCurrentMedia = media;
+                        	mCurrentMedia = media;
+                        	
+                        	// 同步加载素材
+                        	if (MulticastManager.getInstance().isSyncPlay())
+                        	{
+                        		nPos = 0;
+								lastSendSyncInfoTime = 0;
+                        		syncLoadMedia();
+                        	}
+
                             mIsPlayingVideo = true;
                             if (mViewType.contains("Main"))
                             {
@@ -930,6 +958,13 @@ public class MultiMediaView extends PosterBaseView
                         else if (FileUtils.mediaIsGifFile(media))
                         {
                             mCurrentMedia = media;
+                            
+                            // 同步加载素材
+                        	if (MulticastManager.getInstance().isSyncPlay())
+                        	{
+                        		syncLoadMedia();
+                        	}
+                        	                          
                             if (mViewType.contains("Main"))
                             {
                                 informStartAudio();
@@ -941,7 +976,7 @@ public class MultiMediaView extends PosterBaseView
                             }
                             
                             LogUtils.getInstance().toAddPLog(Contants.INFO, Contants.PlayMediaStart, mCurrentMedia.mid, mViewName, "");
-                            if (displayGif(mCurrentMedia))
+                            if (playGif(mCurrentMedia))
                             {
                                 LogUtils.getInstance().toAddPLog(Contants.INFO, Contants.PlayMediaEnd, mCurrentMedia.mid, mViewName, Contants.NOMALSTOP);
                             }
@@ -961,7 +996,14 @@ public class MultiMediaView extends PosterBaseView
                         		continue;
                         	}
                         	
-                            mCurrentMedia = media;
+                        	mCurrentMedia = media;
+                        	
+                        	// 同步加载素材
+                        	if (MulticastManager.getInstance().isSyncPlay())
+                        	{
+                        		syncLoadMedia();
+                        	}
+                            
                             if (mViewType.contains("Main"))
                             {
                                 informStartAudio();
@@ -972,34 +1014,41 @@ public class MultiMediaView extends PosterBaseView
                         		// 如果待机画面不存在，则播放默认的待机画面
                         		Bitmap img = PosterApplication.getInstance().getDefaultScreenImg();
                                 showPicture(img, media.mode);
-                                Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
+                                if (!MulticastManager.getInstance().memberIsValid())
+                                {
+                                    Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
+                                }
                         	}
                             else
                             {
                                 playImage(mCurrentMedia);
                                 FileUtils.updateFileLastTime(mCurrentMedia.filePath);
-                                if (mViewName.startsWith("Weather"))
+                                if (!MulticastManager.getInstance().memberIsValid())
                                 {
-                                    Thread.sleep(Math.max(mCurrentMedia.duration, DEFAULT_MEDIA_DURATION));
+                                    if (mViewName.startsWith("Weather"))
+                                    {
+                                        Thread.sleep(Math.max(mCurrentMedia.duration, DEFAULT_MEDIA_DURATION));
+                                    }
+                                    else
+                                    {
+                                        Thread.sleep(Math.max(mCurrentMedia.durationPerPage, DEFAULT_MEDIA_DURATION));
+                                    }
                                 }
-                                else
-                                {
-                                    Thread.sleep(Math.max(mCurrentMedia.durationPerPage, DEFAULT_MEDIA_DURATION));
-                                }
-                                mCurrentMedia.playedtimes++;
-                                LogUtils.getInstance().toAddPLog(Contants.INFO, Contants.PlayMediaEnd, mCurrentMedia.mid, mViewName, Contants.NOMALSTOP);
                             }
+                            mCurrentMedia.playedtimes++;
+                            LogUtils.getInstance().toAddPLog(Contants.INFO, Contants.PlayMediaEnd, mCurrentMedia.mid, mViewName, Contants.NOMALSTOP);
                             continue;
                         }
                         else if (FileUtils.mediaIsTextFromFile(media) || FileUtils.mediaIsTextFromNet(media))
                         {
-                        	if (mCurrentMedia != null && mCurrentMedia.filePath.equals(media.filePath))
-                        	{
-                        		Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
-                        		continue;
-                        	}
+                        	mCurrentMedia = media;
                         	
-                            mCurrentMedia = media;
+                        	// 同步加载素材
+                        	if (MulticastManager.getInstance().isSyncPlay())
+                        	{
+                        		syncLoadMedia();
+                        	}
+                            
                             if (mViewType.contains("Main"))
                             {
                                 informStartAudio();
@@ -1012,17 +1061,73 @@ public class MultiMediaView extends PosterBaseView
                             continue;
                         }
 
-                        Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
+                        if (!MulticastManager.getInstance().memberIsValid())
+                        {
+                            Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
+                        }
                     }
                     else
                     {
+                    	// 定时同步视频帧
+                    	if (MulticastManager.getInstance().isSyncPlay())
+                    	{
+                            if (MulticastManager.getInstance().leaderIsValid())
+                            {
+                        	    // 播放视频时，组长每隔15秒，发送一次同步信息
+                        	    if (mMediaPlayer != null && mMediaPlayer.isPlaying() && (SystemClock.uptimeMillis() - lastSendSyncInfoTime > 15000))
+                        	    {
+                        		    nPos = mMediaPlayer.getCurrentPosition();
+                        		    if (lastSendSyncInfoTime == 0)
+                        		    {
+                        			    mMediaPlayer.pause();
+                        		        sendMediaSyncInfo(MulticastCommon.MC_SYNCFLAG_START_PLAY_VIDEO, nPos);
+                        		        Thread.sleep(150);
+                        		        mMediaPlayer.start();
+                        		    }
+                        		    else
+                        		    {
+                        			    sendMediaSyncInfo(MulticastCommon.MC_SYNCFLAG_PLAY_MEDIA, nPos);
+                        		    }
+                        		    lastSendSyncInfoTime = SystemClock.uptimeMillis();
+                        	    }
+                            }
+                            else if (MulticastManager.getInstance().memberIsValid())
+                            {
+                        	    if (mIsSyncLoadMedia && !syncMediaIsSame(mCurrentMedia))
+                        	    {
+                        		    // 播放视频中收到组长更换视频的消息, 马上切换
+                        		    releaseMediaPlayer();
+                        		    mIsPlayingVideo = false;
+                        		    continue;
+                        	    }
+                        	    else if (mIsSyncStartPlayVideo && mMediaPlayer != null && mMediaPlayer.isPlaying())
+                        	    {
+                        		    // 播放视频时, 组员收到组长的开始播放位置，需要和组长播放同步
+                        		    if (Math.abs(mSyncMediaPos - mMediaPlayer.getCurrentPosition()) > 100)
+                        		    {
+                        			    mMediaPlayer.seekTo(mSyncMediaPos);
+                        		    }
+                        		    mIsSyncStartPlayVideo = false;
+                        	    }
+                        	    else if (mIsSyncPlayMedia && mMediaPlayer != null && mMediaPlayer.isPlaying())
+                        	    {
+                        		    // 播放视频时, 组员需要和组长播放同步
+                        		    if (Math.abs(mSyncMediaPos - mMediaPlayer.getCurrentPosition()) > 3000)
+                        		    {
+                        			    mMediaPlayer.seekTo(mSyncMediaPos);
+                        		    }
+                        		    mIsSyncPlayMedia = false;
+                        	    }
+                            }
+                    	}
+                        
                         if (mMediaPlayer != null && mMediaPlayer.isPlaying() && mControlWindow.isShowing())
                         {
                             updateVideoProgress();
                             Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
                             continue;
                         }
-                        
+
                         Thread.sleep(DEFAULT_THREAD_PERIOD);
                     }
                 }
@@ -1233,10 +1338,10 @@ public class MultiMediaView extends PosterBaseView
             {
                 mProgressbar.setVisibility(View.GONE);
                 mSurfaceView.setVisibility(View.GONE);
-                mImageSwitcher.setVisibility(View.VISIBLE);
-                mCurrentShowType = SHOWTYPE_PICTURE;
+                mImageSwitcher.setVisibility(View.VISIBLE);                
             }
             
+            mCurrentShowType = SHOWTYPE_PICTURE;
             BitmapDrawable imgdwb = new BitmapDrawable(mContext.getResources(), img);
             if (imgdwb != null && mImageSwitcher.getNextView() != null)
             {
@@ -1303,7 +1408,7 @@ public class MultiMediaView extends PosterBaseView
             super.handleMessage(msg);
         }
     }; 
-    
+
     public boolean needCombineCap()
     {
         return (mCurrentMedia != null && mCurrentMedia.vType != null && !mCurrentMedia.vType.endsWith("BroadcastVideo") && mMediaPlayer != null && mMediaPlayer.isPlaying());
@@ -1438,7 +1543,7 @@ public class MultiMediaView extends PosterBaseView
         return mDecodeInfo;
     }
     
-    private boolean displayGif(MediaInfoRef picInfo) throws InterruptedException
+    private boolean playGif(MediaInfoRef picInfo) throws InterruptedException
     {            
         // decode for GIF
         boolean isComplated = isDecodeComplated(picInfo);
@@ -1487,6 +1592,12 @@ public class MultiMediaView extends PosterBaseView
             tempMedia.timetype = picInfo.timetype;
             tempMedia.containerwidth = picInfo.containerwidth;
             tempMedia.containerheight = picInfo.containerheight;
+            
+            // 同步播放素材
+            if (MulticastManager.getInstance().isSyncPlay())
+            {
+            	syncPlayMedia();
+            }
             
             Bitmap srcBmp = null;
             StringBuilder sbImgFile = new StringBuilder();

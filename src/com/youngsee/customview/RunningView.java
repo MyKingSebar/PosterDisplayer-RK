@@ -15,6 +15,7 @@ public class RunningView extends FrameLayout {
 	private String mLoadingTip;
 	private TextView mLoadingTv;
 	private AnimationDrawable mAnimation;
+	
 	public RunningView(Context context) {
 		super(context);
 		initView(context);
@@ -26,9 +27,6 @@ public class RunningView extends FrameLayout {
         inflater.inflate(R.layout.view_pro_running, this);
 		mImageView=(ImageView) this.findViewById(R.id.loadingIv);
 		mLoadingTv=(TextView) this.findViewById(R.id.loadingTv);
-		
-		
-		
 	}
 	
 	private void initData(){
@@ -42,11 +40,9 @@ public class RunningView extends FrameLayout {
 			@Override
 			public void run() {
 				mAnimation.start();
-
 			}
 		});
-			mLoadingTv.setText(mLoadingTip);
-		
+		mLoadingTv.setText(mLoadingTip);
 	}
 
 	public RunningView(Context context, AttributeSet attrs) {
@@ -54,14 +50,10 @@ public class RunningView extends FrameLayout {
 		initView(context);
 		initData();
 	}
+	
 	public RunningView(Context context, AttributeSet attrs, int defStyleAttr) {
 		super(context, attrs, defStyleAttr);
 		initView(context);
 		initData();
 	}
-
-
-	
-	
-	
 }

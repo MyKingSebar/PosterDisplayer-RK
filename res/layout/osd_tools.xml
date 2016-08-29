@@ -81,11 +81,11 @@
                     android:text="@string/tools_boot_screen_update" /> -->
 		    
                 <Button
-                    android:id="@+id/tools_cancel_savepwd"
+                    android:id="@+id/tools_boot_screen_update"
                     style="@style/osd_tools_text"
                     android:layout_width="200dp"
                     android:layout_height="70dp"
-                    android:text="@string/tools_cancel_savepwd" />
+                    android:text="@string/tools_boot_screen_update" />
             </TableRow>
 
             <TableRow>
@@ -95,7 +95,7 @@
                     style="@style/osd_tools_text"
                     android:layout_width="200dp"
                     android:layout_height="70dp"
-                    android:text="@string/tools_restore_factoty_setting" />
+                    android:text="@string/tools_restore_factory_setting" />
 
                 <Button
                     android:id="@+id/tools_upgrage_app"
@@ -115,11 +115,29 @@
                     android:text="@string/tools_check_conn" />
 
                 <Button
+                    android:id="@+id/tools_cancel_savepwd"
+                    style="@style/osd_tools_text"
+                    android:layout_width="200dp"
+                    android:layout_height="70dp"
+                    android:text="@string/tools_cancel_savepwd" />
+
+            </TableRow>
+            
+            <TableRow>
+				
+                <Button
                     android:id="@+id/tools_log_manager"
                     style="@style/osd_tools_text"
                     android:layout_width="200dp"
                     android:layout_height="70dp"
                     android:text="@string/tools_log_manager" />
+				
+                <Button
+                    android:id="@+id/multicast_display_control"
+                    style="@style/osd_tools_text"
+                    android:layout_width="200dp"
+                    android:layout_height="70dp"
+                    android:text="@string/multicast_display_control" />
             </TableRow>
 
             <!-- <TableRow>

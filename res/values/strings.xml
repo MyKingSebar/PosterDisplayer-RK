@@ -19,6 +19,15 @@
     <string name="server_ftp_id">Ftp 账号:&#160;</string>
     <string name="server_ftp_pwd">Ftp 密码:&#160;</string>
     <string name="server_ntp_port">Ntp 端口:&#160;</string>
+    <!-- 同步播放 -->
+    <string name="multicast_display_control">同步播放控制</string>
+    <string name="multicast_group_leader">组长</string>
+    <string name="multicast_group_member">组员</string>
+    <string name="multicast_close">关闭</string>
+    <string name="multicast_ip_address">组播地址:</string>
+    <string name="multicast_local_port">本地端口:</string>
+    <string name="multicast_port">组播端口:</string>
+    
 
     <!-- 系统工具 -->
     <string name="tools_format_disk">清空磁盘节目</string>
@@ -29,7 +38,7 @@
     <string name="tools_upgrage_app">升级应用软件</string>
     <string name="tools_boot_screen_update">开机画面更新</string>
     <string name="tools_standby_screen_update">待机画面更新</string>
-    <string name="tools_restore_factoty_setting">恢复出厂设置</string>
+    <string name="tools_restore_factory_setting">恢复出厂设置</string>
     <string name="tools_DVB_auto_searching">DVB自动搜台</string>
     <string name="tools_check_conn">检测网络</string>
     <string name="tools_log_manager">日志管理</string>
@@ -80,7 +89,7 @@
     <string name="tools_dialog_backup_warn_success">配置文件备份成功！</string>
     <string name="tools_dialog_backup_warn_failure">配置文件备份失败！</string>
     <string name="tools_dialog_u_disk_update_titles">节目更新</string>
-    <string name="tools_dialog_u_disk_update_message">正在更新节目, 请稍等...</string>
+    <string name="tools_dialog_u_disk_update_message">正在更新, 请稍等...</string>
     <string name="tools_dialog_u_disk_update_success">节目更新成功！</string>
     <string name="tools_dialog_u_disk_update_failure">节目更新失败，请重试！</string>
     <string name="tools_dialog_factory_titles">恢复出厂设置</string>
@@ -90,9 +99,9 @@
     <string name="tools_dialog_boot_update_success">开机画面更新成功！</string>
     <string name="tools_dialog_standby_update_failure">待机画面更新失败，请重试！</string>
     <string name="tools_dialog_standby_update_success">待机画面更新成功！</string>
-    <string name="tools_dialog_sw_update_failure">应用软件升级失败，请将升级用的YSPostDisplayer.apk拷贝到U盘！</string>
-    <string name="tools_dialog_sw_update_success">从U盘软件更新成功</string>
-    <string name="tools_dialog_cancel_title">注意：该操作将清除密码的记录状态</string>
+    <string name="tools_dialog_sw_update_failure">软件更新失败，请重试！</string>
+    <string name="tools_dialog_sw_update_success">软件更新成功</string>
+    <string name="tools_dialog_cancel_title">注意：该操作将清除密码的记录</string>
     <string name="tools_dialog_cancel_success">取消记住密码成功</string>
 
     <!-- tools clear pgm -->
@@ -156,6 +165,7 @@
     <string name="close">关闭</string>
     <string name="update">更新</string>
     <string name="wait1">请稍候...</string>
+    <string name="dialog_quit">退出</string>
 
     <!-- 下载节目进度 -->
     <string name="downnomaltitle">正在下载普通节目</string>
@@ -247,5 +257,8 @@
     <string name="udisk_content">检测到U盘中存在节目素材，是否更新节目？</string>
     <string name="udisk_title">更新</string>
     <string name="udisk_btn_cancel">取消</string>
+    
+    <string name="udisk_update_apk">软件更新</string>
+    <string name="udisk_content_apk">检测到U盘中有新的软件版本，是否更新软件？</string>
     
 </resources>

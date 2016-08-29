@@ -339,7 +339,15 @@ public class WsClient
         // 重启设备，参数立即生效
         if (mServerConfigChanged)
         {
-            RuntimeExec.getInstance().runRootCmd("reboot");
+            try {
+				RuntimeExec.getInstance().runRootCmd("reboot");
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }
 
         return true;

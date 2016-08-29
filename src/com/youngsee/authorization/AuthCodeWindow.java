@@ -2,7 +2,6 @@ package com.youngsee.authorization;
 
 import com.youngsee.posterdisplayer.R;
 
-import android.content.Context;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup.LayoutParams;
@@ -11,15 +10,13 @@ import android.widget.EditText;
 import android.widget.PopupWindow;
 
 public class AuthCodeWindow extends PopupWindow implements OnClickListener{
-	private Context mContext;
-
+	
 	private View mView;
     private OnCodeListener mListener;
     
-    public AuthCodeWindow(Context context, View view, OnCodeListener listener){
+    public AuthCodeWindow(View view, OnCodeListener listener){
         super(view, LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
 
-    	mContext = context;
     	mView = view;
     	mListener = listener;
     	

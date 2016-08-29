@@ -21,6 +21,7 @@ import android.webkit.CookieManager;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
+import android.webkit.WebSettings.PluginState;
 import android.webkit.WebSettings.RenderPriority;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
@@ -104,10 +105,12 @@ public class YSWebView extends PosterBaseView
             webSettings.setAppCacheEnabled(true);
             webSettings.setDatabaseEnabled(true);
             webSettings.setDomStorageEnabled(true);
-            
+            webSettings.setPluginsEnabled(true);
+            webSettings.setPluginState(PluginState.ON);
             // 滚动条风格，为0就是不给滚动条留空间，滚动条覆盖在网页上
             mWv.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);  
             mWv.setLongClickable(true);
+            mWv.setClickable(true);
             mWv.setScrollbarFadingEnabled(true);
             mWv.setDrawingCacheEnabled(true);
             
@@ -193,9 +196,8 @@ public class YSWebView extends PosterBaseView
                             PosterMainActivity.INSTANCE.showOsd();
         					mLastClickTime = 0;
         					mCurrentClickCnts = 0;
+        					return true;
         				}
-        				
-                        return true;
                     }
                    return false;           
                 }
