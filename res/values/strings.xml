@@ -36,6 +36,7 @@
     <string name="tools_configuration_file_restore">配置文件恢复</string>
     <string name="tools_upgrage_kernel">升级平台软件</string>
     <string name="tools_upgrage_app">升级应用软件</string>
+    <string name="tools_reload_webview">网页刷新控制</string>
     <string name="tools_boot_screen_update">开机画面更新</string>
     <string name="tools_standby_screen_update">待机画面更新</string>
     <string name="tools_restore_factory_setting">恢复出厂设置</string>
@@ -110,10 +111,13 @@
     <string name="tools_dialog_clear_success">节目已清空！</string>
     <string name="tools_dialog_clear_failure">节目清空失败，请重试！</string>
 
-    <!-- tools log -->
+    <!-- tools log manager	-->
     <string name="tools_dialog_log_header">日志管理</string>
     <string name="tools_dialog_log_playlog">记录播放日志</string>
     <string name="tools_dialog_log_commonlog">记录系统日志</string>
+    <string name="tools_dialog_log_upload">上传</string>
+    <string name="tools_dialog_log_clear">清除日志</string>
+    
 
     <!-- tools checknet -->
     <string name="tools_dialog_checknet_header">网络检测</string>
@@ -143,6 +147,11 @@
     <string name="tools_dialog_apkupdate_failure_downfailure">软件更新失败，下载失败</string>
     <string name="tools_dialog_apkupdate_failure_detectfailure">检测更新软件失败</string>
     <string name="tools_dialog_apkupdate_update_remind">软件更新提醒</string>
+    
+    <!-- reload webview -->
+    <string name="reload_webview_for_period">网页刷新：</string>
+    <string name="reload_period">刷新时间（秒）</string>
+    <string name="reload_webview">网页区刷新</string>
 
     <!-- osd login -->
     <string name="login_hint">请输入密码</string>

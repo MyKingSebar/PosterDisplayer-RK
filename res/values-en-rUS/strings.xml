@@ -27,9 +27,10 @@
     <string name="tools_configuration_file_restore">configuration file restore</string>
     <string name="tools_upgrage_kernel">Upgrade platform software</string>
     <string name="tools_upgrage_app">software upgrade</string>
-    <string name="tools_boot_screen_update">Boot screen update</string>
+    <string name="tools_reload_webview">reload weburl</string>
+   	<string name="tools_boot_screen_update">Boot screen update</string>
     <string name="tools_standby_screen_update">Standby screen update</string>
-    <string name="tools_restore_factoty_setting">Restore the factory Settings</string>
+    <string name="tools_restore_factory_setting">Restore the factory Settings</string>
     <string name="tools_DVB_auto_searching">DVB automatic searching</string>
     <string name="tools_check_conn">Detect network</string>
     <string name="tools_log_manager">Log management</string>
@@ -105,6 +106,8 @@
     <string name="tools_dialog_log_header">log management</string>
     <string name="tools_dialog_log_playlog">Recorded broadcast log</string>
     <string name="tools_dialog_log_commonlog">Recording system log</string>
+    <string name="tools_dialog_log_upload">upload</string>
+    <string name="tools_dialog_log_clear">clear</string>
 
     <!-- tools checknet -->
     <string name="tools_dialog_checknet_header">network detection</string>
@@ -250,5 +253,19 @@
     
     <string name="udisk_update_apk">Update Software</string>
     <string name="udisk_content_apk">There is a new software in the U-DISK, do you want update it?</string>
+    
+    <!-- sync play -->
+    <string name="multicast_display_control">sync play control</string>
+    <string name="multicast_group_leader">leader</string>
+    <string name="multicast_group_member">member</string>
+    <string name="multicast_close">close</string>
+    <string name="multicast_ip_address">ip address:</string>
+    <string name="multicast_local_port">local port:</string>
+    <string name="multicast_port">multicast port:</string>
+    
+    <!-- reload webview -->
+    <string name="reload_webview_for_period">web refresh:</string>
+    <string name="reload_period">refresh time(s)</string>
+    <string name="reload_webview">web area refresh</string>
     
 </resources>

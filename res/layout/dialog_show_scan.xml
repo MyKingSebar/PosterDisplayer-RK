@@ -76,7 +76,7 @@
         <Button
             android:id="@+id/btn_second"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="@drawable/alertdialog_right_selector"
             android:text="按钮二"
@@ -95,7 +95,7 @@
         <Button
             android:id="@+id/btn_third"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:background="@drawable/alertdialog_right_selector"
             android:padding="10dp"

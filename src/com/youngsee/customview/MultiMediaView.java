@@ -421,9 +421,13 @@ public class MultiMediaView extends PosterBaseView
             {
                 mMediaPlayer.stop();
             }
-            mMediaPlayer.reset();
-            mMediaPlayer.release();
-            mMediaPlayer = null;
+            try {
+				mMediaPlayer.reset();
+				mMediaPlayer.release();
+				mMediaPlayer = null;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
         }
         
         if (mMediaRetriever != null)
@@ -537,7 +541,7 @@ public class MultiMediaView extends PosterBaseView
     private void startUpdateThread()
     {
         cancelUpdateThread();
-        mMyThread = new MyThread();
+        mMyThread = new MyThread("multiMediaThread");
         mMyThread.start();
     }
     
@@ -776,8 +780,9 @@ public class MultiMediaView extends PosterBaseView
         private Object  mPauseLock  = new Object();
         private boolean mPauseFlag  = false;
         
-        public MyThread()
+        public MyThread(String threadName)
         {
+        	super(threadName);
             mIsRun = true;
         }
         
@@ -990,20 +995,28 @@ public class MultiMediaView extends PosterBaseView
                         }
                         else if (FileUtils.mediaIsPicFromFile(media) || FileUtils.mediaIsPicFromNet(media))
                         {
-                        	if (mCurrentMedia != null && mCurrentMedia.filePath.equals(media.filePath))
+                        	if (mCurrentMedia != null && 
+                        		FileUtils.mediaIsFile(media) &&
+                        		mCurrentMedia.filePath.equals(media.filePath))
                         	{
+                        		// 同步加载素材
+                             	if (MulticastManager.getInstance().isSyncPlay())
+                             	{
+                             		syncLoadMedia();
+                             	}
+                             	
                         		Thread.sleep(DEFAULT_THREAD_QUICKPERIOD);
                         		continue;
                         	}
-                        	
-                        	mCurrentMedia = media;
-                        	
-                        	// 同步加载素材
-                        	if (MulticastManager.getInstance().isSyncPlay())
-                        	{
-                        		syncLoadMedia();
-                        	}
-                            
+
+                        	 mCurrentMedia = media;
+                         	
+                         	// 同步加载素材
+                         	if (MulticastManager.getInstance().isSyncPlay())
+                         	{
+                         		syncLoadMedia();
+                         	}
+                         	
                             if (mViewType.contains("Main"))
                             {
                                 informStartAudio();
@@ -1096,7 +1109,7 @@ public class MultiMediaView extends PosterBaseView
                         	    if (mIsSyncLoadMedia && !syncMediaIsSame(mCurrentMedia))
                         	    {
                         		    // 播放视频中收到组长更换视频的消息, 马上切换
-                        		    releaseMediaPlayer();
+                        		    //releaseMediaPlayer();
                         		    mIsPlayingVideo = false;
                         		    continue;
                         	    }
@@ -1134,6 +1147,8 @@ public class MultiMediaView extends PosterBaseView
                 catch (InterruptedException e)
                 {
                     break;
+                }catch(Exception e){
+                	e.printStackTrace();
                 }
             }
             
@@ -1213,8 +1228,8 @@ public class MultiMediaView extends PosterBaseView
         {
             stopVideo();
             mMediaPlayer.reset();
-            mMediaPlayer.setDataSource(media.filePath);
             mMediaPlayer.setDisplay(mSurfaceHolder);
+            mMediaPlayer.setDataSource(media.filePath);
             mMediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
             mMediaPlayer.setScreenOnWhilePlaying(true);
             mMediaPlayer.prepareAsync();
@@ -1226,7 +1241,7 @@ public class MultiMediaView extends PosterBaseView
                 mMediaRetriever.setDataSource(media.filePath);
             }
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             e.printStackTrace();
             mIsPlayingVideo = false;

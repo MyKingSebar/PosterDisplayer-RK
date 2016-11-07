@@ -16,8 +16,6 @@ import android.app.Dialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
@@ -33,7 +31,6 @@ public class LogManagerDialog extends Dialog {
 	private Context mContext = null;
 	private CheckBox mPlaycb = null;
 	private CheckBox mSystemcb = null;
-	private Button mClosebtn = null;
 
 	private final static int CHANGEPALYSET = 0xa000;
 	private final static int CHANGESYSTEMSET = 0xa001;
@@ -56,21 +53,13 @@ public class LogManagerDialog extends Dialog {
 		setContentView(R.layout.logmanager_dialog);
 
 		mPlaycb = (CheckBox) this.findViewById(R.id.logmanager_dialog_palycbox);
-		mSystemcb = (CheckBox) this
-				.findViewById(R.id.logmanager_dialog_systemcbox);
-
-		mClosebtn = (Button) this.findViewById(R.id.logmanager_dialog_closebtn);
+		mSystemcb = (CheckBox) this.findViewById(R.id.logmanager_dialog_systemcbox);
 
 		mSpf = mContext.getSharedPreferences("logset", Activity.MODE_PRIVATE);
 		initView();
 		mPlaycb.setOnCheckedChangeListener(onCheckedChangeListener);
 		mSystemcb.setOnCheckedChangeListener(onCheckedChangeListener);
-		mClosebtn.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View arg0) {
-				LogManagerDialog.this.dismiss();
-			}
-		});
+		
 	}
 
 	/**
@@ -116,15 +105,13 @@ public class LogManagerDialog extends Dialog {
 		SharedPreferences.Editor edi = mSpf.edit();
 		switch (which) {
 		case CHANGEPALYSET:
-			isresult = isselected == mSpf.getBoolean("play", true) ? isselected
-					: isselected;
+			isresult = isselected == mSpf.getBoolean("play", true) ? isselected : isselected;
 			edi.putBoolean("play", isresult);
 			LogUtils.getInstance().setPlayLogFlag(isresult);
 
 			break;
 		case CHANGESYSTEMSET:
-			isresult = isselected == mSpf.getBoolean("system", true) ? isselected
-					: isselected;
+			isresult = isselected == mSpf.getBoolean("system", true) ? isselected : isselected;
 			edi.putBoolean("system", isresult);
 			LogUtils.getInstance().setSysLogFlag(isresult);
 			break;

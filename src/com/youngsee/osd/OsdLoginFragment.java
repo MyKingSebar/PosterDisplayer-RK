@@ -112,11 +112,11 @@ public class OsdLoginFragment extends Fragment
     @Override
     public void onDestroy()
     {
-        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
-        if (mEnterPwd != null && imm.isActive())
-        {
-            imm.hideSoftInputFromWindow(mEnterPwd.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
-        }
+//        InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Activity.INPUT_METHOD_SERVICE);
+//        if (mEnterPwd != null && imm.isActive())
+//        {
+//            imm.hideSoftInputFromWindow(mEnterPwd.getApplicationWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+//        }
         super.onDestroy();
     }
     
@@ -180,11 +180,15 @@ public class OsdLoginFragment extends Fragment
                         boolean softInputIsVisible = (double) displayHight / hight < 0.8;
                         if (softInputIsVisible)
                         {
+                        	if(PosterOsdActivity.INSTANCE!=null){
                             PosterOsdActivity.INSTANCE.cancelDismissTime();
+                        	}
                         }
                         else
                         {
+                        	if(PosterOsdActivity.INSTANCE!=null){
                             PosterOsdActivity.INSTANCE.setDismissTime();
+                        	}
                         }
                         
                        //获取rootInvisibleHeight在窗体的不可视区域高度(被其他View遮挡的区域高度)  
@@ -331,7 +335,7 @@ public class OsdLoginFragment extends Fragment
         
         dlgModMsg.show();
         
-        DialogUtil.dialogTimeOff(dlgModMsg, 90000);
+        DialogUtil.dialogTimeOff(dlgModMsg, mResetView,90000);
         
     }
 }

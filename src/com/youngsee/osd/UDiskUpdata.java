@@ -347,7 +347,6 @@ public class UDiskUpdata
                                        }, false);
                                        
                                        dlgUDiskUpdateFailure.show();
-                                       
                                        DialogUtil.dialogTimeOff(dlgUDiskUpdateFailure , 90000);
                  
                                        return;
@@ -387,7 +386,6 @@ public class UDiskUpdata
                                        }, false);
                                        
                                        dlgStartupImgUpdateFailed.show();
-                                       
                                        DialogUtil.dialogTimeOff(dlgStartupImgUpdateFailed,90000);
   
                                        return;
@@ -415,8 +413,7 @@ public class UDiskUpdata
                                        	}, false);
                                        
                                        dlgStartupImgUpdSuc.show();
-                                       
-                                       	DialogUtil.dialogTimeOff(dlgStartupImgUpdSuc,90000);
+                                       DialogUtil.dialogTimeOff(dlgStartupImgUpdSuc,90000);
                                        return;
                                    case STANDBY_IMG_UPDATE_FAILED:
                                        if (mProgressDlg != null && mProgressDlg.isShowing())
@@ -451,7 +448,6 @@ public class UDiskUpdata
 										}}, false);
                                        
                                        dlgStandbyImgUpdFailed.show();
-                                       
                                        DialogUtil.dialogTimeOff(dlgStandbyImgUpdFailed,90000);
   
                                        return;
@@ -479,10 +475,8 @@ public class UDiskUpdata
                                        	}, false);
                                        
                                        dlgStbImgUpdSucc.show();
-                                       
                                        DialogUtil.dialogTimeOff(dlgStbImgUpdSucc,90000);
                                        return;
-                                       
                                    case APK_SW_UPDATE_FAILED:
                                        if (mProgressDlg != null && mProgressDlg.isShowing())
                                        {
@@ -517,7 +511,6 @@ public class UDiskUpdata
 										}}, false);
                                        
                                        dlgApkSwUpdFad.show();
-                                       
                                        DialogUtil.dialogTimeOff(dlgApkSwUpdFad,90000);
 
                                        return;

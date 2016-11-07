@@ -81,11 +81,11 @@
                     android:text="@string/tools_boot_screen_update" /> -->
 		    
                 <Button
-                    android:id="@+id/tools_boot_screen_update"
+                    android:id="@+id/tools_reload_webview"
                     style="@style/osd_tools_text"
                     android:layout_width="200dp"
                     android:layout_height="70dp"
-                    android:text="@string/tools_boot_screen_update" />
+                    android:text="@string/tools_reload_webview" />
             </TableRow>
 
             <TableRow>

@@ -23,7 +23,7 @@ public class YSConfiguration{
     
     public final static String     FEATURE_CODE_YUESHI     = "YueShi";
     public final static String     FEATURE_CODE_COMMON     = "common";
-    
+
     private static YSConfiguration instance                = null;
     
     // For get the application context. It should has same life circle with

@@ -251,7 +251,7 @@ public class LogManager {
 			@Override
 			public void aborted() {
 				Logger.i("Aborted to upload the file: '"+file+"'.");
-				FileUtils.delFile(file);
+			//	FileUtils.delFile(file);
 				clearTaskInfoList(file, info);
 			}
 
@@ -262,14 +262,14 @@ public class LogManager {
 			@Override
 			public void completed() {
 				Logger.i("Completed to upload the file: '"+file+"'.");
-				FileUtils.delFile(file);
+			//	FileUtils.delFile(file);
 				clearTaskInfoList(file, info);
 			}
 
 			@Override
 			public void failed() {
 				Logger.i("Failed to upload the file: '"+file+"'.");
-				FileUtils.delFile(file);
+			//	FileUtils.delFile(file);
 				clearTaskInfoList(file, info);
 			}
         });
@@ -509,7 +509,7 @@ public class LogManager {
 			try {
 				while (!isInterrupted()) {
 					if ((mLogTaskList != null) && mLogTaskList.isEmpty()) {
-						delAllTemplogs();
+						//delAllTemplogs();
 						mLogTaskList = null;
 						mLogManagerThread = null;
 						break;
@@ -536,6 +536,26 @@ public class LogManager {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+	
+	public static void deleteAllLogFile(File file) {
+		if (file.isFile()) {
+			file.delete();
+			return;
+		}
+
+		if (file.isDirectory()) {
+			File[] childFiles = file.listFiles();
+			if (childFiles == null || childFiles.length == 0) {
+				file.delete();
+				return;
+			}
+
+			for (int i = 0; i < childFiles.length; i++) {
+				deleteAllLogFile(childFiles[i]);
+			}
+			file.delete();
 		}
 	}
 	

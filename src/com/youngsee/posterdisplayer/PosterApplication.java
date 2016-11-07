@@ -267,10 +267,14 @@ public class PosterApplication extends Application
     	
     	if (PosterMainActivity.INSTANCE != null)
     	{
+    	    // 获取状态栏的高度
+	        int resourceId = PosterMainActivity.INSTANCE.getResources().getIdentifier("navigation_bar_height", "dimen", "android");
+	        int height = PosterMainActivity.INSTANCE.getResources().getDimensionPixelSize(resourceId);
+	    
 		    // 获取屏幕实际大小(以像素为单位)
 		    DisplayMetrics metric = new DisplayMetrics();
 		    PosterMainActivity.INSTANCE.getWindowManager().getDefaultDisplay().getMetrics(metric);
-		    screenHeight = metric.heightPixels;
+		    screenHeight = metric.heightPixels + height;
     	}
 				
         return screenHeight;

@@ -231,7 +231,7 @@ public class MulticastManager
     	if ((mCurrentProgsync == MulticastCommon.MC_VALUE_PROGSYNC_OPEN_GROUP_MEMBERS) &&
     		((SystemClock.uptimeMillis() - mRecvSyncInfoTime) > 60 * 1000))		
     	{
-    		if (mulThread == null || multicastSocket == null || !multicastSocket.isConnected())
+    		if (mulThread == null || !mulThread.isAlive() || multicastSocket == null || !multicastSocket.isConnected())
     		{
     			Logger.i("The receive thread or Socket is null, sync info is time out.");
     			restartWork();
@@ -470,14 +470,6 @@ public class MulticastManager
 				Logger.e("mulThread  Catch a error.");
 				ex.printStackTrace();
 			} 
-			finally 
-			{
-				if (multicastSocket != null) 
-				{
-					multicastSocket.close();
-					multicastSocket = null;
-				}
-			}
         }
     }
 

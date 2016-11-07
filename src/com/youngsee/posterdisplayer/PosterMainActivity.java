@@ -8,7 +8,6 @@
 package com.youngsee.posterdisplayer;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,7 +39,6 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -78,10 +76,8 @@ import com.youngsee.common.DialogUtil.DialogDoubleButtonListener;
 import com.youngsee.common.FileUtils;
 import com.youngsee.common.MediaInfoRef;
 import com.youngsee.common.PackageInstaller;
-import com.youngsee.common.RuntimeExec;
 import com.youngsee.common.SubWindowInfoRef;
 import com.youngsee.common.SysParamManager;
-import com.youngsee.common.YSConfiguration;
 import com.youngsee.customview.AudioView;
 import com.youngsee.customview.DateTimeView;
 import com.youngsee.customview.GalleryView;
@@ -118,7 +114,7 @@ public class PosterMainActivity extends Activity {
 
 	private Dialog mUpdateApkDialog = null;
 	private Dialog mUpdateProgramDialog = null;
-	private Timer quitHomeTimer = null;
+
 	private BroadcastReceiver mReceiver = null;
 
 	private MediaInfoRef mBgImgInfo = null;
@@ -167,7 +163,7 @@ public class PosterMainActivity extends Activity {
 					SharedPreferences.Editor editor = sharedPreferences.edit();
 					editor.putInt("monitorInstalled", 1);
 					editor.putInt("versionCode", versionCode);
-					editor.commit();
+					editor.apply();
 
 					// start the APK
 				}
@@ -266,14 +262,14 @@ public class PosterMainActivity extends Activity {
 				if(install.installSysLib(lib_serialPort, lib_name)){
 				SharedPreferences.Editor editor=sharedPreferences.edit();
 				editor.putInt("libserial_port", 1);
-				editor.commit();
+				editor.apply();
 				}
 				}
 			}
 			
 			
 			// install the APK
- 			if (!apkIsExist(Contants.ENVMANAGER_PACKAGENAME)&&install_lib==1) {
+ 			if (!apkIsExist(Contants.ENVMANAGER_PACKAGENAME)&&sharedPreferences.getInt("libserial_port", 0)==1) {
 				
 				String envService = install.retrieveSourceFromAssets("EnvmntService.apk");
 				if(!TextUtils.isEmpty(envService))
@@ -292,9 +288,38 @@ public class PosterMainActivity extends Activity {
 			intent.putExtra("termGroup", SysParamManager.getInstance().getTermGrp());
 			PosterApplication.getInstance().sendStickyBroadcast(intent);
 		}
-	}
-
-	private void initReceiver() {
+		// 监测U盘是否插入
+		mReceiver = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				String action = intent.getAction();
+				String path = intent.getData().getPath();
+				if ((action.equals(Intent.ACTION_MEDIA_MOUNTED) || 
+					 action.equals(Intent.ACTION_MEDIA_REMOVED) || 
+					 action.equals(Intent.ACTION_MEDIA_BAD_REMOVAL))  &&
+					 FileUtils.isUsbPath(path))
+				{
+					if (action.equals(Intent.ACTION_MEDIA_MOUNTED)) 
+					{
+						String strApkPath = FileUtils.findApkInUdisk();
+						if (!TextUtils.isEmpty(strApkPath))
+						{
+							showUpdateApkDialog();
+						}
+						
+						if (PosterApplication.existsPgmInUdisk(path))
+						{
+						    showUpdateProgramDialog();
+						}
+					} 
+					else if (action.equals(Intent.ACTION_MEDIA_REMOVED) || action.equals(Intent.ACTION_MEDIA_BAD_REMOVAL))
+					{
+						dismissUpdateApkDialog();
+						dismissUpdateProgramDialog();
+					}
+				}
+			}
+		};
 		IntentFilter filter = new IntentFilter();
 		filter.addAction(Intent.ACTION_MEDIA_MOUNTED);
 		filter.addAction(Intent.ACTION_MEDIA_REMOVED);
@@ -333,8 +358,6 @@ public class PosterMainActivity extends Activity {
 		if (TextUtils.isEmpty(ScreenManager.getInstance().getPlayingPgmId())) {
 			LogUtils.getInstance().toAddPLog(0, Contants.PlayProgramStart, ScreenManager.getInstance().getPlayingPgmId(), "", "");
 		}
-
-		hideNavigationBar();
 
 		if (PowerOnOffManager.getInstance().getCurrentStatus() == PowerOnOffManager.STATUS_STANDBY) {
 			PowerOnOffManager.getInstance().setCurrentStatus(PowerOnOffManager.STATUS_ONLINE);
@@ -385,11 +408,6 @@ public class PosterMainActivity extends Activity {
 
 		if (mOsdPupupWindow.isShowing()) {
 			mOsdPupupWindow.dismiss();
-		}
-
-		if (quitHomeTimer != null) {
-			quitHomeTimer.cancel();
-			quitHomeTimer = null;
 		}
 
 		synchronized (this) {
@@ -452,19 +470,10 @@ public class PosterMainActivity extends Activity {
 	}
 
 	@Override
-	public void onWindowFocusChanged(boolean hasFocus) {
-		super.onWindowFocusChanged(hasFocus);
-		if (hasFocus) {
-			hideNavigationBar();
-		}
-	}
-
-	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		switch (keyCode) {
 		case KeyEvent.KEYCODE_BACK:
 			if ((System.currentTimeMillis() - mExitTime) > 2000) {
-				Toast.makeText(getApplicationContext(), "再按一次返回到桌面", Toast.LENGTH_SHORT).show();
 				mExitTime = System.currentTimeMillis();
 			} else {
 
@@ -502,7 +511,7 @@ public class PosterMainActivity extends Activity {
 					}, false);
 
 					dlg.show();
-					DialogUtil.dialogTimeOff(dlg, 90000);
+					DialogUtil.dialogTimeOff(dlg, mQuitView,90000);
 
 				} else {
 					Intent mHomeIntent = new Intent(Intent.ACTION_MAIN);
@@ -529,11 +538,6 @@ public class PosterMainActivity extends Activity {
 
 		case KeyEvent.KEYCODE_MEDIA_STOP:
 			return true; // 主窗口视频暂停
-
-		case KeyEvent.KEYCODE_VOLUME_UP:
-		case KeyEvent.KEYCODE_VOLUME_DOWN:
-			hideNavigationBar();
-			break;
 		}
 
 		return super.onKeyDown(keyCode, event);
@@ -1104,7 +1108,7 @@ public class PosterMainActivity extends Activity {
 			mEdit1.putString("app_" + i, mAppInfo.get(i).getPkgName());
 		}
 
-		mEdit1.commit();
+		mEdit1.apply();
 	}
 
 	private void showAppInfo() {

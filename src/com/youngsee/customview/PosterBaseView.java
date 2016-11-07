@@ -791,6 +791,7 @@ public abstract class PosterBaseView extends FrameLayout {
         	{
         		if (media.verifyCode.equals(this.mSyncMediaVryCode))
         		{
+        			mCurrentIdx = mSyncMediaPos;
         			return media;
         		}
         	}
@@ -798,11 +799,13 @@ public abstract class PosterBaseView extends FrameLayout {
         	{
         		if (media.filePath.equals(this.mSyncMediaName))
         		{
+        			mCurrentIdx = mSyncMediaPos;
         			return media;
         		}
         	}
         }
         
+        mCurrentIdx = -1;
         for (MediaInfoRef mediaInfo : mMediaList)
         {
         	if ("File".equals(this.mSyncMediaSrc))
@@ -819,6 +822,12 @@ public abstract class PosterBaseView extends FrameLayout {
         			return mediaInfo;
         		}
         	}
+        	mCurrentIdx++;
+        }
+        
+        if (mCurrentIdx >= mMediaList.size())
+        {
+        	mCurrentIdx = 0;
         }
         
         return null;
@@ -903,7 +912,7 @@ public abstract class PosterBaseView extends FrameLayout {
         syncInfo.WndName = mViewName;
         syncInfo.MediaFullName = mCurrentMedia.filePath;
         syncInfo.MediaSource = mCurrentMedia.source;
-        syncInfo.MediaVerifyCode = mCurrentMedia.verifyCode;
+        syncInfo.MediaVerifyCode = (mCurrentMedia.verifyCode == null) ? "0" : mCurrentMedia.verifyCode;
         syncInfo.MediaPosition = postion;
         MulticastManager.getInstance().sendSyncInfo(syncInfo);
     }

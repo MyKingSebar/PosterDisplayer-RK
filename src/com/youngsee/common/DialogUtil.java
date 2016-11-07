@@ -219,7 +219,11 @@ public class DialogUtil {
 		return dlg;
 	}
 
-	public static void dialogTimeOff(final Dialog dlg, int time)
+	public static void dialogTimeOff(final Dialog dlg,int time){
+		dialogTimeOff(dlg, null, time);
+	}
+	
+	public static void dialogTimeOff(final Dialog dlg,final View v, int time)
 	{
 		if (dlg.isShowing()) 
 		{
@@ -227,6 +231,7 @@ public class DialogUtil {
 			quitHomeTimer.schedule(new TimerTask() {
 				public void run() 
 				{
+					hideInputMethod(dlg.getContext(), v, dlg);
 					dlg.dismiss();
 				}
 			}, time);

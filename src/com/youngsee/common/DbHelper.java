@@ -285,7 +285,7 @@ public class DbHelper {
         c.close();
     }
     
-    //±£´æÍ¬²½×´Ì¬µ½Êı¾İ¿â
+    //ä¿å­˜åŒæ­¥çŠ¶æ€åˆ°æ•°æ®åº“
 	public void saveSyncFlagToDb(int syncFlag) {
 		ContentValues cv = new ContentValues();
 		cv.put(DbConstants.MULT_SYNC_FLAG, syncFlag);
@@ -301,7 +301,7 @@ public class DbHelper {
 		c.close();
 	}
     
-    //±£´æ±¾µØÍ¼°¸¿Úµ½Êı¾İ¿â
+    //ä¿å­˜æœ¬åœ°å›¾æ¡ˆå£åˆ°æ•°æ®åº“
 	public void saveSyncPortToDb(int port) {
 		ContentValues cv = new ContentValues();
 		cv.put(DbConstants.MULT_PORT, port);
@@ -347,7 +347,7 @@ public class DbHelper {
 		c.close();
 	}
     
-    //±£´æÍ¬²½×é²¥µØÖ·IPµ½Êı¾İ¿â
+    //ä¿å­˜åŒæ­¥ç»„æ’­åœ°å€IPåˆ°æ•°æ®åº“
 	public void saveSyncIpToDb(String ip) {
 		ContentValues cv = new ContentValues();
 			cv.put(DbConstants.MULT_IP, ip);

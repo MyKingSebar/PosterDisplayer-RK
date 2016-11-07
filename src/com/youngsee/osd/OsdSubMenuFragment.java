@@ -7,10 +7,12 @@
 
 package com.youngsee.osd;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -44,13 +46,14 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -58,10 +61,13 @@ import android.widget.Toast;
 import com.youngsee.common.DialogUtil;
 import com.youngsee.common.DialogUtil.DialogDoubleButtonListener;
 import com.youngsee.common.DbHelper;
+import com.youngsee.common.DialogUtil.DialogThreeButtonListener;
 import com.youngsee.common.FileUtils;
 import com.youngsee.common.RuntimeExec;
 import com.youngsee.common.SysOnOffTimeInfo;
 import com.youngsee.common.SysParamManager;
+import com.youngsee.logmanager.LogManager;
+import com.youngsee.logmanager.LogUtils;
 import com.youngsee.logmanager.Logger;
 import com.youngsee.multicast.MulticastCommon;
 import com.youngsee.multicast.MulticastManager;
@@ -98,7 +104,15 @@ public class OsdSubMenuFragment extends Fragment {
 	private EditText server_ntp_ip = null;
 	private EditText server_ntp_port = null;
 
+	// =====================================================logmanager=================================
+	private final static int CHANGEPALYSET = 0xa000;
+	private final static int CHANGESYSTEMSET = 0xa001;
+	private View logmamagerView = null;
+	private CheckBox playcbLogM = null;
+	private CheckBox systemcbLogM = null;
+	private SharedPreferences spfLogM = null;
 	// ====================================================Clock======================================
+
 	private View mEidtClockView = null;
 	private EditText mOnTimeEditText = null;
 	private EditText mOffTimeEditText = null;
@@ -147,18 +161,20 @@ public class OsdSubMenuFragment extends Fragment {
 	private boolean mIsKeptAlertDialog = false;
 
 	private boolean mIsInit = false;
-	
-//======================================		Dialog		=====================================	
-	
-	private Dialog 			mOnOffAlertDialog 											= null;
-	private Dialog 			dlgFactoryDeader 												= null;
-	private Dialog 			dlgUDiskUpdateHeader 									= null;
-	private Dialog 			dlgClearAllPro 													= null;
-	private Dialog 			dlgMulticastDisplayControl 								= null;
-	private Dialog 			dlgCancelSavePwd 											= null;
 
-//====================================================================================
-	
+	// ====================================== Dialog =====================================
+
+	private Dialog mOnOffAlertDialog = null;
+	private Dialog dlgFactoryDeader = null;
+	private Dialog dlgUDiskUpdateHeader = null;
+	private Dialog dlgClearAllPro = null;
+	private Dialog dlgMulticastDisplayControl = null;
+	private Dialog dlgCancelSavePwd = null;
+	private Dialog reloadWebViewDlg = null;
+	private Dialog logManagerDialog = null;
+
+	// ====================================================================================
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -258,7 +274,7 @@ public class OsdSubMenuFragment extends Fragment {
 						int displayHight = rect.bottom - rect.top;
 						int hight = decorView.getHeight();
 						boolean softInputIsVisible = (double) displayHight / hight < 0.8;
-						if (softInputIsVisible) {
+						if (softInputIsVisible && PosterOsdActivity.INSTANCE != null) {
 							PosterOsdActivity.INSTANCE.cancelDismissTime();
 						} else {
 							PosterOsdActivity.INSTANCE.setDismissTime();
@@ -718,8 +734,8 @@ public class OsdSubMenuFragment extends Fragment {
 		about_swVer.setText(SysParamManager.getInstance().getSwVer());
 		about_hwVer.setText(SysParamManager.getInstance().getHwVer());
 		about_connStatus.setText(WsClient.getInstance().isOnline() ? R.string.serv_online : R.string.serv_offline);
-		about_id.setText(PosterApplication.getCpuId().toUpperCase());
-		about_MAC.setText(PosterApplication.getEthFormatMac().toUpperCase());
+		about_id.setText(PosterApplication.getCpuId().toUpperCase(Locale.getDefault()));
+		about_MAC.setText(PosterApplication.getEthFormatMac().toUpperCase(Locale.getDefault()));
 		about_diskStatus.setText(FileUtils.getDiskUseSpace() + "/" + FileUtils.getDiskSpace());
 		if (WsClient.getInstance().isOnline()) {
 			about_IP.setText(PosterApplication.getLocalIpAddress());
@@ -743,29 +759,29 @@ public class OsdSubMenuFragment extends Fragment {
 				dlgClearAllPro = DialogUtil.showTipsDialog(getActivity(), getString(R.string.tools_dialog_clearallporgram), getString(R.string.enter), getString(R.string.cancel), new DialogDoubleButtonListener() {
 
 					@Override
-					public void onLeftClick(Context context , View v , int which) {
+					public void onLeftClick(Context context, View v, int which) {
 						new CleanDisk(getActivity()).cleanProgram();
 						ScreenManager.getInstance().osdNotify(ScreenManager.CLEAR_PGM_OPERATE);
-						if (dlgClearAllPro !=null) {
+						if (dlgClearAllPro != null) {
 							dlgClearAllPro.dismiss();
 							dlgClearAllPro = null;
 						}
 					}
 
 					@Override
-					public void onRightClick(Context context , View v , int which) {
+					public void onRightClick(Context context, View v, int which) {
 						PosterOsdActivity.INSTANCE.setDismissTime();
-						if (dlgClearAllPro !=null) {
+						if (dlgClearAllPro != null) {
 							dlgClearAllPro.dismiss();
 							dlgClearAllPro = null;
 						}
 					}
 				}, false);
-				
+
 				dlgClearAllPro.show();
-				
+
 				DialogUtil.dialogTimeOff(dlgClearAllPro, 90000);
-				
+
 			}
 		});
 
@@ -777,7 +793,7 @@ public class OsdSubMenuFragment extends Fragment {
 				dlgUDiskUpdateHeader = DialogUtil.showTipsDialog(getActivity(), getString(R.string.tools_dialog_u_disk_update_header), getString(R.string.enter), getString(R.string.cancel), new DialogDoubleButtonListener() {
 
 					@Override
-					public void onLeftClick(Context context , View v , int which) {
+					public void onLeftClick(Context context, View v, int which) {
 						UDiskUpdata diskUpdate = new UDiskUpdata(getActivity());
 						diskUpdate.updateProgram();
 						if (dlgUDiskUpdateHeader != null) {
@@ -787,7 +803,7 @@ public class OsdSubMenuFragment extends Fragment {
 					}
 
 					@Override
-					public void onRightClick(Context context , View v , int which) {
+					public void onRightClick(Context context, View v, int which) {
 						PosterOsdActivity.INSTANCE.setDismissTime();
 						if (dlgUDiskUpdateHeader != null) {
 							dlgUDiskUpdateHeader.dismiss();
@@ -796,11 +812,11 @@ public class OsdSubMenuFragment extends Fragment {
 					}
 
 				}, false);
-				
+
 				dlgUDiskUpdateHeader.show();
-				
+
 				DialogUtil.dialogTimeOff(dlgUDiskUpdateHeader, 90000);
-				
+
 			}
 		});
 
@@ -853,7 +869,7 @@ public class OsdSubMenuFragment extends Fragment {
 				PosterOsdActivity.INSTANCE.cancelDismissTime();
 				dlgUDiskUpdateHeader = DialogUtil.showTipsDialog(getActivity(), getString(R.string.tools_dialog_u_disk_update_header), getString(R.string.enter), getString(R.string.cancel), new DialogDoubleButtonListener() {
 					@Override
-					public void onLeftClick(Context context , View v , int which) {
+					public void onLeftClick(Context context, View v, int which) {
 						UDiskUpdata diskUpdate = new UDiskUpdata(getActivity());
 						diskUpdate.updateStandbyPic();
 						if (dlgUDiskUpdateHeader != null) {
@@ -863,7 +879,7 @@ public class OsdSubMenuFragment extends Fragment {
 					}
 
 					@Override
-					public void onRightClick(Context context , View v , int which) {
+					public void onRightClick(Context context, View v, int which) {
 						PosterOsdActivity.INSTANCE.setDismissTime();
 						if (dlgUDiskUpdateHeader != null) {
 							dlgUDiskUpdateHeader.dismiss();
@@ -872,9 +888,9 @@ public class OsdSubMenuFragment extends Fragment {
 					}
 
 				}, false);
-				
+
 				dlgUDiskUpdateHeader.show();
-				
+
 				DialogUtil.dialogTimeOff(dlgUDiskUpdateHeader, 90000);
 			}
 		});
@@ -887,7 +903,7 @@ public class OsdSubMenuFragment extends Fragment {
 				dlgUDiskUpdateHeader = DialogUtil.showTipsDialog(getActivity(), getString(R.string.tools_dialog_u_disk_update_header), getString(R.string.enter), getString(R.string.cancel), new DialogDoubleButtonListener() {
 
 					@Override
-					public void onLeftClick(Context context , View v , int which) {
+					public void onLeftClick(Context context, View v, int which) {
 						UDiskUpdata diskUpdate = new UDiskUpdata(getActivity());
 						diskUpdate.updateSW();
 						if (dlgUDiskUpdateHeader != null) {
@@ -897,7 +913,7 @@ public class OsdSubMenuFragment extends Fragment {
 					}
 
 					@Override
-					public void onRightClick(Context context , View v , int which) {
+					public void onRightClick(Context context, View v, int which) {
 						PosterOsdActivity.INSTANCE.setDismissTime();
 						if (dlgUDiskUpdateHeader != null) {
 							dlgUDiskUpdateHeader.dismiss();
@@ -906,9 +922,9 @@ public class OsdSubMenuFragment extends Fragment {
 					}
 
 				}, false);
-				
+
 				dlgUDiskUpdateHeader.show();
-				
+
 				DialogUtil.dialogTimeOff(dlgUDiskUpdateHeader, 90000);
 			}
 		});
@@ -921,15 +937,15 @@ public class OsdSubMenuFragment extends Fragment {
 				dlgFactoryDeader = DialogUtil.showTipsDialog(getActivity(), getString(R.string.tools_dialog_factory_header), getString(R.string.enter), getString(R.string.cancel), new DialogDoubleButtonListener() {
 
 					@Override
-					public void onLeftClick(Context context , View v , int which) {
+					public void onLeftClick(Context context, View v, int which) {
 						RestoreFactory rstFactory = new RestoreFactory(getActivity());
 						rstFactory.factoryRestore();
-						
+
 						if (dlgFactoryDeader != null) {
 							dlgFactoryDeader.dismiss();
 							dlgFactoryDeader = null;
 						}
-						
+
 						try {
 							RuntimeExec.getInstance().runRootCmd("reboot");
 						} catch (IOException e) {
@@ -942,7 +958,7 @@ public class OsdSubMenuFragment extends Fragment {
 					}
 
 					@Override
-					public void onRightClick(Context context , View v , int which) {
+					public void onRightClick(Context context, View v, int which) {
 						PosterOsdActivity.INSTANCE.setDismissTime();
 						if (dlgFactoryDeader != null) {
 							dlgFactoryDeader.dismiss();
@@ -951,9 +967,9 @@ public class OsdSubMenuFragment extends Fragment {
 					}
 
 				}, false);
-				
+
 				dlgFactoryDeader.show();
-				
+
 				DialogUtil.dialogTimeOff(dlgFactoryDeader, 90000);
 			}
 		});
@@ -981,118 +997,168 @@ public class OsdSubMenuFragment extends Fragment {
 				cancelSavePwd();
 			}
 		});
-        //开机画面更新
-        ((Button)mMenus[PosterOsdActivity.OSD_TOOL_ID].findViewById(R.id.tools_boot_screen_update)).setOnClickListener(new OnClickListener() {
-			
-			@Override
-			public void onClick(View v) {
-				
-			}
-		});
-        //同步播放
-        ((Button)mMenus[PosterOsdActivity.OSD_TOOL_ID].findViewById(R.id.multicast_display_control)).setOnClickListener(new OnClickListener() {
+		// 网页刷新控制
+		((Button) mMenus[PosterOsdActivity.OSD_TOOL_ID].findViewById(R.id.tools_reload_webview)).setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View v) {
-				// TODO Auto-generated method stub
+				reloadWebView();
+			}
+		});
+		// 同步播放
+		((Button) mMenus[PosterOsdActivity.OSD_TOOL_ID].findViewById(R.id.multicast_display_control)).setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
 				synchronousPlayControl();
 			}
 		});
-        
-    }
 
-	
+	}
+
 	@SuppressLint("InflateParams")
-	private void  synchronousPlayControl() {
-		// TODO Auto-generated method stub
-    	final View multicastCtrlView = LayoutInflater.from(getActivity()).inflate(R.layout.multicast_control, null);
-    	
-    	@SuppressWarnings("unused")
-		RadioGroup mulGro=(RadioGroup)multicastCtrlView.findViewById(R.id.multicast_group);
-    	final RadioButton mulGroLed=(RadioButton)multicastCtrlView.findViewById(R.id.multicast_group_leader);
-    	final RadioButton mulGroMember=(RadioButton)multicastCtrlView.findViewById(R.id.multicast_group_member);
-    	final RadioButton mulClo=(RadioButton)multicastCtrlView.findViewById(R.id.multicast_close);
-    	
-    	@SuppressWarnings("unused")
-		TableRow mulIpAddConRow = (TableRow)multicastCtrlView.findViewById(R.id.multicast_ip_address_row);
-    	@SuppressWarnings("unused")
-		TableRow mulLocalPortConRow = (TableRow)multicastCtrlView.findViewById(R.id.multicast_local_port_row);
-    	@SuppressWarnings("unused")
-		TableRow mulPortRow = (TableRow)multicastCtrlView.findViewById(R.id.multicast_port_row);
-    	
-    	final TextView mulIpAddCon = (TextView)multicastCtrlView.findViewById(R.id.multicast_ip_address_context);
-    	final TextView mulLocalPortCon = (TextView)multicastCtrlView.findViewById(R.id.multicast_local_port_context);
-    	final TextView mulPort = (TextView)multicastCtrlView.findViewById(R.id.multicast_port_context);
-    	
-    	// Read @param from DB
-    	String strBcastIp = DbHelper.getInstance().getBcastIpFromDB();
-    	int nLocalPort = DbHelper.getInstance().getBcastLocalPortFromDB();
-    	int nSyncFlag = DbHelper.getInstance().getPgmSyncFlagFromDB();
-    	int	nPort = DbHelper.getInstance().getBcastPortFromDB();
-    	
-    	switch (nSyncFlag) {
-			case MulticastCommon.MC_VALUE_PROGSYNC_OPEN_GROUP_LEADER:
-				mulGroLed.setChecked(true);
-				break;
-			case MulticastCommon.MC_VALUE_PROGSYNC_OPEN_GROUP_MEMBERS:
-				mulGroMember.setChecked(true);
-				break;
-			default:
-				mulClo.setChecked(true);
-				break;
-		}
-    	
-    	mulIpAddCon.setText(strBcastIp);
-    	mulLocalPortCon.setText(String.valueOf(nLocalPort));
-    	mulPort.setText(String.valueOf(nPort));
-    	dlgMulticastDisplayControl = DialogUtil.showTipsDialog(getActivity(), getString(R.string.multicast_display_control), multicastCtrlView,getString(R.string.enter),getString(R.string.cancel), new DialogDoubleButtonListener() {
+	private void reloadWebView() {
+		final SharedPreferences sharedPreferences = getActivity().getSharedPreferences("reload_for_priod", Activity.MODE_PRIVATE);
+		boolean onOffReloadForPeriod = sharedPreferences.getBoolean("isReload", false);
+		int timeForPeriod = sharedPreferences.getInt("time_period", 10);
+		final View reloadView = LayoutInflater.from(getActivity()).inflate(R.layout.reload_webview_control, null);
+		final EditText reloadPeriodET = (EditText) reloadView.findViewById(R.id.reload_period);
+		reloadPeriodET.setText(String.valueOf(timeForPeriod));
+
+		final CheckBox reloadWebviewCB = (CheckBox) reloadView.findViewById(R.id.reload_webview);
+		reloadWebviewCB.setChecked(onOffReloadForPeriod);
+		reloadWebViewDlg = DialogUtil.showTipsDialog(getActivity(), getString(R.string.reload_webview), reloadView, getString(R.string.enter), getString(R.string.cancel), new DialogDoubleButtonListener() {
 
 			@Override
-			public synchronized void onLeftClick(Context context , View v , int which) {
-				// TODO Auto-generated method stub
-				//获取数据库同步参数
+			public void onRightClick(Context context, View v, int which) {
+				if (reloadWebViewDlg != null) {
+					DialogUtil.hideInputMethod(getActivity(), reloadView, reloadWebViewDlg);
+					reloadWebViewDlg.dismiss();
+					reloadWebViewDlg = null;
+				}
+			}
+
+			@Override
+			public void onLeftClick(Context context, View v, int which) {
+				SharedPreferences.Editor editor = sharedPreferences.edit();
+				editor.putBoolean("time_period", reloadWebviewCB.isChecked());
+				String strTime = reloadPeriodET.getText().toString();
+				int t = 10;
+				if (!TextUtils.isEmpty(strTime)) {
+					t = Integer.valueOf(strTime);
+				}
+				if (t < 10 && t > 3 * 60 * 60) {
+					Toast.makeText(getActivity(), "刷新时间不能低于10秒，或者大于10800", Toast.LENGTH_LONG).show();
+				} else {
+					editor.putInt("time_period", t);
+				}
+				editor.apply();
+				if (reloadWebViewDlg != null) {
+					DialogUtil.hideInputMethod(getActivity(), reloadView, reloadWebViewDlg);
+					reloadWebViewDlg.dismiss();
+					reloadWebViewDlg = null;
+				}
+			}
+		}, false);
+		reloadWebViewDlg.show();
+		DialogUtil.dialogTimeOff(reloadWebViewDlg, reloadView, 90000);
+	}
+
+	@SuppressLint("InflateParams")
+	private void synchronousPlayControl() {
+		View multicastCtrlView = LayoutInflater.from(getActivity()).inflate(R.layout.multicast_control, null);
+
+		RadioButton mulGroLed = (RadioButton) multicastCtrlView.findViewById(R.id.multicast_group_leader);
+		RadioButton mulGroMember = (RadioButton) multicastCtrlView.findViewById(R.id.multicast_group_member);
+		RadioButton mulClo = (RadioButton) multicastCtrlView.findViewById(R.id.multicast_close);
+
+		TextView mulIpAddCon = (TextView) multicastCtrlView.findViewById(R.id.multicast_ip_address_context);
+		TextView mulLocalPortCon = (TextView) multicastCtrlView.findViewById(R.id.multicast_local_port_context);
+		TextView mulPort = (TextView) multicastCtrlView.findViewById(R.id.multicast_port_context);
+
+		// Read @param from DB
+		String strBcastIp = DbHelper.getInstance().getBcastIpFromDB();
+		int nLocalPort = DbHelper.getInstance().getBcastLocalPortFromDB();
+		int nSyncFlag = DbHelper.getInstance().getPgmSyncFlagFromDB();
+		int nPort = DbHelper.getInstance().getBcastPortFromDB();
+
+		switch (nSyncFlag) {
+		case MulticastCommon.MC_VALUE_PROGSYNC_OPEN_GROUP_LEADER:
+			mulGroLed.setChecked(true);
+			break;
+		case MulticastCommon.MC_VALUE_PROGSYNC_OPEN_GROUP_MEMBERS:
+			mulGroMember.setChecked(true);
+			break;
+		default:
+			mulClo.setChecked(true);
+			break;
+		}
+
+		mulIpAddCon.setText(strBcastIp);
+		mulLocalPortCon.setText(String.valueOf(nLocalPort));
+		mulPort.setText(String.valueOf(nPort));
+		dlgMulticast(multicastCtrlView, mulGroLed, mulGroMember, mulClo, mulIpAddCon, mulLocalPortCon, mulPort);
+	}
+
+	private void dlgMulticast(final View multicastCtrlView, final RadioButton mulGroLed, final RadioButton mulGroMember, final RadioButton mulClo, final TextView mulIpAddCon, final TextView mulLocalPortCon, final TextView mulPort) {
+		dlgMulticastDisplayControl = DialogUtil.showTipsDialog(getActivity(), getString(R.string.multicast_display_control), multicastCtrlView, getString(R.string.enter), getString(R.string.cancel), new DialogDoubleButtonListener() {
+
+			@Override
+			public synchronized void onLeftClick(Context context, View v, int which) {
+				// 获取数据库同步参数
 				String strBcastIp = mulIpAddCon.getText().toString();
-				int port = Integer.valueOf(mulPort.getText().toString());
-				int localPort =  Integer.valueOf(mulLocalPortCon.getText().toString());
+				int port = 0;
+				int localPort = 0;
+				String strPort = mulPort.getText().toString();
+				String strLocalPort = mulLocalPortCon.getText().toString();
+
+				if (!TextUtils.isEmpty(strLocalPort)) {
+					localPort = Integer.valueOf(mulLocalPortCon.getText().toString());
+				}
+
+				if (!TextUtils.isEmpty(strPort)) {
+					port = Integer.valueOf(mulPort.getText().toString());
+				}
+
 				int progsync = MulticastCommon.MC_VALUE_PROGSYNC_CLOSE;
-				
-				if (mulGroLed.isChecked()==true) {
+
+				if (mulGroLed.isChecked() == true) {
 					progsync = MulticastCommon.MC_VALUE_PROGSYNC_OPEN_GROUP_LEADER;
-				}else	if (mulGroMember.isChecked()==true) {
+				} else if (mulGroMember.isChecked() == true) {
 					progsync = MulticastCommon.MC_VALUE_PROGSYNC_OPEN_GROUP_MEMBERS;
-				}else	if (mulClo.isChecked()==true) {
+				} else if (mulClo.isChecked() == true) {
 					progsync = MulticastCommon.MC_VALUE_PROGSYNC_CLOSE;
 				}
-				
-				if (progsync !=MulticastCommon.MC_VALUE_PROGSYNC_CLOSE) {
+
+				if (progsync != MulticastCommon.MC_VALUE_PROGSYNC_CLOSE) {
 					Pattern ipCheckString = Pattern.compile("(2{2}[4-9]|23\\d)(\\.( 25[0-5]|2[0-4]\\d|((1\\d{2})|([1-9]\\d|\\d)))){3}");
 					Matcher m = ipCheckString.matcher(strBcastIp);
-					if (!m.matches()&&!TextUtils.isEmpty(strBcastIp)){
+					if (!m.matches() && !TextUtils.isEmpty(strBcastIp)) {
 						Toast.makeText(getActivity(), "ip地址输入错误，请按照:(224-239).(0-225).(0-225).(0-225)的格式录入。或不做任何输入恢复默认值", Toast.LENGTH_LONG).show();
 						strBcastIp = null;
-							} else if (!(localPort > 1023 && localPort < 9999) && localPort != 0) {
+					} else if (!(localPort > 1023 && localPort < 9999) && localPort != 0) {
 						Toast.makeText(getActivity(), "本地端口号输入错误，请在（1024-9998）范围内录入。或输入 0 恢复默认值", Toast.LENGTH_SHORT).show();
 						localPort = 0;
-					}else if ((port==localPort)&&port!=0) {
+					} else if ((port == localPort) && port != 0) {
 						Toast.makeText(getActivity(), "组播端口号与本地端口号冲突。", Toast.LENGTH_SHORT).show();
-					}else if (!(port>1023&&port<9999)&&port!=0){
+					} else if (!(port > 1023 && port < 9999) && port != 0) {
 						Toast.makeText(getActivity(), "端口号输入错误，请在（1024-9998）范围内录入。", Toast.LENGTH_SHORT).show();
 						port = 0;
 					}
-				}else {
+				} else {
 					Toast.makeText(getActivity(), "关闭同步", Toast.LENGTH_LONG).show();
 				}
-				
+
 				DbHelper.getInstance().saveSyncFlagToDb(progsync);
 				DbHelper.getInstance().saveSyncIpToDb(strBcastIp);
 				DbHelper.getInstance().saveSyncPortToDb(port);
 				DbHelper.getInstance().saveSynLocalPortToDb(localPort);
-				
+
 				final int progsyncdb = progsync;
 				final int portdb = port;
 				final int localPortdb = localPort;
 				final String strBcastIpdb = strBcastIp;
-				
+
 				// 获取当前使用的同步参数
 				final int currentProgsync = MulticastManager.getInstance().getCurrentSynIdicate();
 				final int currentLocalPort = MulticastManager.getInstance().getCurrentLocalPort();
@@ -1100,23 +1166,17 @@ public class OsdSubMenuFragment extends Fragment {
 				final String currentIp = MulticastManager.getInstance().getCurrentGroupIp();
 				Thread synCtr = new Thread("sunCtrol") {
 					@Override
-					public void run() 
-					{
+					public void run() {
 						// 数据库为开，当前为关，开启同步
-						if (progsyncdb != MulticastCommon.MC_VALUE_PROGSYNC_CLOSE	&& 
-							 currentProgsync == MulticastCommon.MC_VALUE_PROGSYNC_CLOSE) 
-						{
+						if (progsyncdb != MulticastCommon.MC_VALUE_PROGSYNC_CLOSE && currentProgsync == MulticastCommon.MC_VALUE_PROGSYNC_CLOSE) {
 							// 启动同步
 							MulticastManager.getInstance().startWork();
 							Logger.i("启动同步" + currentThread().getId());
 						} // 数据库为关，当前为开，关闭同步
-						else if (progsyncdb == MulticastCommon.MC_VALUE_PROGSYNC_CLOSE	&&	
-									currentProgsync	!=	MulticastCommon.MC_VALUE_PROGSYNC_CLOSE)
-						{
+						else if (progsyncdb == MulticastCommon.MC_VALUE_PROGSYNC_CLOSE && currentProgsync != MulticastCommon.MC_VALUE_PROGSYNC_CLOSE) {
 							// 关闭同步
 							MulticastManager.getInstance().stopWork();
-							if (currentProgsync == MulticastCommon.MC_VALUE_PROGSYNC_OPEN_GROUP_LEADER)
-							{
+							if (currentProgsync == MulticastCommon.MC_VALUE_PROGSYNC_OPEN_GROUP_LEADER) {
 								final MulticastSyncInfoRef syncInfo = new MulticastSyncInfoRef();
 								syncInfo.SyncFlag = MulticastCommon.MC_SYNCFLAG_CLOSE;
 								syncInfo.ProgramState = 0;
@@ -1131,18 +1191,12 @@ public class OsdSubMenuFragment extends Fragment {
 							}
 							Logger.i("关闭同步" + currentThread().getId());
 						} // 数据库为开，当前为开，组长组员身份不同 改变组长组员身份
-						else if (progsyncdb != MulticastCommon.MC_VALUE_PROGSYNC_CLOSE	&& 
-									currentProgsync != MulticastCommon.MC_VALUE_PROGSYNC_CLOSE	&& 
-									progsyncdb != currentProgsync)
-						{
+						else if (progsyncdb != MulticastCommon.MC_VALUE_PROGSYNC_CLOSE && currentProgsync != MulticastCommon.MC_VALUE_PROGSYNC_CLOSE && progsyncdb != currentProgsync) {
 							// 改变组长或组员的身份
 							MulticastManager.getInstance().restartWork();
 							Logger.i("同步身份切换 " + currentThread().getId());
 						}// 端口 本地端口 IP改变
-						else if ((portdb != currentPort && portdb != 0)  || 
-									(localPortdb != currentLocalPort && localPortdb != 0) || 
-									(!TextUtils.isEmpty(strBcastIpdb) && !strBcastIpdb.equals(currentIp)))
-						{
+						else if ((portdb != currentPort && portdb != 0) || (localPortdb != currentLocalPort && localPortdb != 0) || (!TextUtils.isEmpty(strBcastIpdb) && !strBcastIpdb.equals(currentIp))) {
 							// 改变同步参数
 							MulticastManager.getInstance().restartWork();
 						}
@@ -1157,7 +1211,7 @@ public class OsdSubMenuFragment extends Fragment {
 			}
 
 			@Override
-			public void onRightClick(Context context , View v , int which) {
+			public void onRightClick(Context context, View v, int which) {
 				if (dlgMulticastDisplayControl != null) {
 					DialogUtil.hideInputMethod(getActivity(), multicastCtrlView, dlgMulticastDisplayControl);
 					dlgMulticastDisplayControl.dismiss();
@@ -1165,14 +1219,13 @@ public class OsdSubMenuFragment extends Fragment {
 				}
 			}
 		}, false);
-    	
-    	dlgMulticastDisplayControl.show();
-    	
-    	DialogUtil.dialogTimeOff(dlgMulticastDisplayControl, 90000);
-    }
 
-    private void saveServerParam()
-    {
+		dlgMulticastDisplayControl.show();
+
+		DialogUtil.dialogTimeOff(dlgMulticastDisplayControl, multicastCtrlView, 90000);
+	}
+
+	private void saveServerParam() {
 		String newWeburl = server_webURL.getText().toString();
 		String ftpip = server_ftp_IP.getText().toString();
 		String ftpport = server_ftp_port.getText().toString();
@@ -1251,14 +1304,123 @@ public class OsdSubMenuFragment extends Fragment {
 	 * 日志管理
 	 */
 	private void logManager() {
-		LogManagerDialog ldlg = new LogManagerDialog(getActivity(), R.style.logsetdialog);
-		ldlg.setCancelable(true);
-		Window wd = ldlg.getWindow();
-		android.view.WindowManager.LayoutParams lp = wd.getAttributes();
-		lp.gravity = Gravity.CENTER;
-		wd.setAttributes(lp);
-		ldlg.setCanceledOnTouchOutside(false);
-		ldlg.show();
+		spfLogM = getActivity().getSharedPreferences("logset", Activity.MODE_PRIVATE);
+		logmamagerView = LayoutInflater.from(getActivity()).inflate(R.layout.logmanager_dialog, null);
+		playcbLogM = (CheckBox) logmamagerView.findViewById(R.id.logmanager_dialog_palycbox);
+		systemcbLogM = (CheckBox) logmamagerView.findViewById(R.id.logmanager_dialog_systemcbox);
+		playcbLogM.setChecked(spfLogM.getBoolean("play", true));
+		systemcbLogM.setChecked(spfLogM.getBoolean("system", true));
+		playcbLogM.setOnCheckedChangeListener(onCheckedChangeListener);
+		systemcbLogM.setOnCheckedChangeListener(onCheckedChangeListener);
+		/*
+		 * logManagerDialog = DialogUtil.showTipsDialog(getActivity(),
+		 * getString(R.string.tools_dialog_log_header), logmamagerView,
+		 * getString(R.string.tools_dialog_log_upload),
+		 * getString(R.string.cancel), new DialogDoubleButtonListener() {
+		 * 
+		 * @Override public void onRightClick(Context context, View v, int
+		 * which) { if (logManagerDialog != null) { logManagerDialog.dismiss();
+		 * logManagerDialog = null; } }
+		 * 
+		 * @Override public void onLeftClick(Context context, View v, int which)
+		 * { LogManager.getInstance().uploadLog(LogManager.LOGTYPE_NORMAL, 0);
+		 * if (logManagerDialog != null) { logManagerDialog.dismiss();
+		 * logManagerDialog = null; } } }, false);
+		 */
+		logManagerDialog = DialogUtil.showTipsDialog(getActivity(), getString(R.string.tools_dialog_log_header), null, logmamagerView, getString(R.string.tools_dialog_log_upload), getString(R.string.tools_dialog_log_clear), getString(R.string.cancel), new DialogThreeButtonListener() {
+
+			@Override
+			public void onThirdClick(Context context, View v, int which) {
+				// TODO Auto-generated method stub
+				if (logManagerDialog != null) {
+					logManagerDialog.dismiss();
+					logManagerDialog = null;
+				}
+			}
+
+			@Override
+			public void onSecondClick(Context context, View v, int which) {
+				// TODO Auto-generated method stub
+				StringBuilder sb = new StringBuilder();
+				sb.append(FileUtils.getHardDiskPath());
+				sb.append(File.separator);
+				sb.append("ystemplog");
+				FileUtils.delDir(sb.toString());
+				if (logManagerDialog != null) {
+					logManagerDialog.dismiss();
+					logManagerDialog = null;
+				}
+			}
+
+			@Override
+			public void onFirstClick(Context context, View v, int which) {
+				// TODO Auto-generated method stub
+				LogManager.getInstance().uploadLog(LogManager.LOGTYPE_NORMAL, 0);
+				if (logManagerDialog != null) {
+					logManagerDialog.dismiss();
+					logManagerDialog = null;
+				}
+			}
+		}, false);
+		logManagerDialog.show();
+
+		DialogUtil.dialogTimeOff(logManagerDialog, 90000);
+		/*
+		 * LogManagerDialog ldlg = new LogManagerDialog(getActivity(),
+		 * R.style.logsetdialog); ldlg.setCancelable(true); Window wd =
+		 * ldlg.getWindow(); android.view.WindowManager.LayoutParams lp =
+		 * wd.getAttributes(); lp.gravity = Gravity.CENTER;
+		 * wd.setAttributes(lp); ldlg.setCanceledOnTouchOutside(false);
+		 * ldlg.show();
+		 */
+	}
+
+	OnCheckedChangeListener onCheckedChangeListener = new OnCheckedChangeListener() {
+
+		@Override
+		public void onCheckedChanged(CompoundButton arg0, boolean arg1) {
+			switch (arg0.getId()) {
+			case R.id.logmanager_dialog_palycbox:
+				changeLogSet(CHANGEPALYSET, arg1);
+				Logger.i("change playlogset");
+				break;
+			case R.id.logmanager_dialog_systemcbox:
+				changeLogSet(CHANGESYSTEMSET, arg1);
+				Logger.i("change systemlogset");
+				break;
+			default:
+				break;
+			}
+		}
+	};
+
+	/**
+	 * 改变日志记录设置
+	 * 
+	 * @param which
+	 *            哪个日志
+	 * @param isselected
+	 *            是否记录
+	 */
+	private void changeLogSet(int which, boolean isselected) {
+		boolean isresult = true;
+		SharedPreferences.Editor edi = spfLogM.edit();
+		switch (which) {
+		case CHANGEPALYSET:
+			isresult = isselected == spfLogM.getBoolean("play", true) ? isselected : isselected;
+			edi.putBoolean("play", isresult);
+			LogUtils.getInstance().setPlayLogFlag(isresult);
+
+			break;
+		case CHANGESYSTEMSET:
+			isresult = isselected == spfLogM.getBoolean("system", true) ? isselected : isselected;
+			edi.putBoolean("system", isresult);
+			LogUtils.getInstance().setSysLogFlag(isresult);
+			break;
+		default:
+			break;
+		}
+		edi.commit();
 	}
 
 	private void cancelSavePwd() {
@@ -1266,22 +1428,22 @@ public class OsdSubMenuFragment extends Fragment {
 		dlgCancelSavePwd = DialogUtil.showTipsDialog(getActivity(), getString(R.string.tools_dialog_cancel_title), getString(R.string.enter), getString(R.string.cancel), new DialogDoubleButtonListener() {
 
 			@Override
-			public void onLeftClick(Context context , View v , int which) {
+			public void onLeftClick(Context context, View v, int which) {
 				SharedPreferences mSharedPreferences = getActivity().getSharedPreferences(PosterOsdActivity.OSD_CONFIG, Context.MODE_PRIVATE);
 				SharedPreferences.Editor mEditor = mSharedPreferences.edit();
 				mEditor.putBoolean(PosterOsdActivity.OSD_ISMEMORY, false);
 				mEditor.commit();
 				Toast.makeText(getActivity(), getResources().getText(R.string.tools_dialog_cancel_success), Toast.LENGTH_LONG).show();
-				
+
 				if (dlgCancelSavePwd != null) {
 					dlgCancelSavePwd.dismiss();
 					dlgCancelSavePwd = null;
 				}
-				
+
 			}
 
 			@Override
-			public void onRightClick(Context context , View v , int which) {
+			public void onRightClick(Context context, View v, int which) {
 				if (dlgCancelSavePwd != null) {
 					dlgCancelSavePwd.dismiss();
 					dlgCancelSavePwd = null;
@@ -1289,9 +1451,9 @@ public class OsdSubMenuFragment extends Fragment {
 			}
 
 		}, false);
-		
+
 		dlgCancelSavePwd.show();
-		
+
 		DialogUtil.dialogTimeOff(dlgCancelSavePwd, 90000);
 	}
 
@@ -1493,7 +1655,7 @@ public class OsdSubMenuFragment extends Fragment {
 		mOnOffAlertDialog = DialogUtil.showTipsDialog(getActivity(), getString(R.string.clock_dialog_add), mEidtClockView, getString(R.string.enter), getString(R.string.cancel), new DialogDoubleButtonListener() {
 
 			@Override
-			public void onLeftClick(Context context , View v , int which) {
+			public void onLeftClick(Context context, View v, int which) {
 				int week = 0;
 				for (int i = 0; i < 7; i++) {
 					if (mWeekCheckBoxs[i].isChecked()) {
@@ -1520,30 +1682,30 @@ public class OsdSubMenuFragment extends Fragment {
 					onOffTimeAdapter.addItem(item);
 
 				}
-				
+
 				if (mOnOffAlertDialog != null) {
 					DialogUtil.hideInputMethod(getActivity(), mEidtClockView, mOnOffAlertDialog);
 					mOnOffAlertDialog.dismiss();
 					mOnOffAlertDialog = null;
 				}
-				
+
 			}
 
-			public void onRightClick(Context context , View v , int which) {
+			public void onRightClick(Context context, View v, int which) {
 
 				if (mOnOffAlertDialog != null) {
 					DialogUtil.hideInputMethod(getActivity(), mEidtClockView, mOnOffAlertDialog);
 					mOnOffAlertDialog.dismiss();
 					mOnOffAlertDialog = null;
 				}
-				
+
 			}
 
 		}, false);
-		
+
 		mOnOffAlertDialog.show();
-		
-		DialogUtil.dialogTimeOff(mOnOffAlertDialog, 90000);
+
+		DialogUtil.dialogTimeOff(mOnOffAlertDialog, mEidtClockView, 90000);
 	}
 
 	private boolean isValidTime(final String timeStr) {
@@ -1602,7 +1764,7 @@ public class OsdSubMenuFragment extends Fragment {
 		mOnOffAlertDialog = DialogUtil.showTipsDialog(getActivity(), getString(R.string.clock_dialog_modify), mEidtClockView, getString(R.string.enter), getString(R.string.cancel), new DialogDoubleButtonListener() {
 
 			@Override
-			public void onLeftClick(Context context , View v , int which) {
+			public void onLeftClick(Context context, View v, int which) {
 				int week = 0;
 				for (int i = 0; i < 7; i++) {
 					if (mWeekCheckBoxs[i].isChecked()) {
@@ -1629,29 +1791,29 @@ public class OsdSubMenuFragment extends Fragment {
 					onOffTimeAdapter.notifyDataSetChanged();
 
 				}
-				
+
 				if (mOnOffAlertDialog != null) {
 					DialogUtil.hideInputMethod(getActivity(), mEidtClockView, mOnOffAlertDialog);
 					mOnOffAlertDialog.dismiss();
 					mOnOffAlertDialog = null;
 				}
-				
+
 			}
 
 			@Override
-			public void onRightClick(Context context , View v , int which) {
+			public void onRightClick(Context context, View v, int which) {
 
 				if (mOnOffAlertDialog != null) {
 					DialogUtil.hideInputMethod(getActivity(), mEidtClockView, mOnOffAlertDialog);
 					mOnOffAlertDialog.dismiss();
 					mOnOffAlertDialog = null;
 				}
-				
+
 			}
 		}, false);
-		
+
 		mOnOffAlertDialog.show();
-		
-		DialogUtil.dialogTimeOff(mOnOffAlertDialog, 90000);
+
+		DialogUtil.dialogTimeOff(mOnOffAlertDialog, mEidtClockView, 90000);
 	}
 }

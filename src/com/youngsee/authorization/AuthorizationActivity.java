@@ -282,6 +282,7 @@ public class AuthorizationActivity extends Activity implements OnClickListener {
 					WsClient.getInstance().osdChangeServerConfig();
 				}
 				if (dlg != null) {
+					DialogUtil.hideInputMethod(context, etxtWebUrl, dlg);
 					dlg.dismiss();
 					dlg = null;
 				}
@@ -290,6 +291,7 @@ public class AuthorizationActivity extends Activity implements OnClickListener {
 			@Override
 			public void onRightClick(Context context, View v, int which) {
 				if (dlg != null) {
+					DialogUtil.hideInputMethod(context, etxtWebUrl, dlg);
 					dlg.dismiss();
 					dlg = null;
 				}
@@ -299,7 +301,7 @@ public class AuthorizationActivity extends Activity implements OnClickListener {
 
 		dlg.show();
 
-		DialogUtil.dialogTimeOff(dlg, 90000);
+		DialogUtil.dialogTimeOff(dlg, dlgview,90000);
 
 	}
 

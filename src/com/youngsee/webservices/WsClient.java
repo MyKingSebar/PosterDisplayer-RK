@@ -1456,7 +1456,7 @@ public class WsClient
                     {
                         mState = STATE_IDLE;
                         Logger.w("Net link is down, please connect the network firstly.");
-                        Thread.sleep(1000);
+                        Thread.sleep(3000);
                         continue;
                     }
                     
