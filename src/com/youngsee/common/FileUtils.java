@@ -1288,6 +1288,20 @@ public class FileUtils
     					{
     						return usbFile.getAbsolutePath();
     					}
+    					else if (usbFile.isDirectory() && usbFile.getTotalSpace() > 0)
+    					{
+    						usbSubPaths = usbFile.listFiles();
+    						if (usbSubPaths != null)
+    						{
+    							for (File usbSubFile : usbSubPaths)
+    							{
+    								if (usbSubFile.isFile() && usbSubFile.getName().equalsIgnoreCase(filename)) 
+    								{
+										return usbSubFile.getAbsolutePath();
+									}
+    							}
+    						}
+    					}
     				}
     		    }
     		    else

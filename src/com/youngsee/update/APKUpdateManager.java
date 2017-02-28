@@ -10,6 +10,7 @@ package com.youngsee.update;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -17,8 +18,6 @@ import java.util.regex.Pattern;
 
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -27,6 +26,7 @@ import android.os.Message;
 
 import com.youngsee.common.FileUtils;
 import com.youngsee.common.Md5;
+import com.youngsee.common.RuntimeExec;
 import com.youngsee.ftpoperation.FtpFileInfo;
 import com.youngsee.ftpoperation.FtpHelper;
 import com.youngsee.ftpoperation.FtpOperationInterface;
@@ -154,7 +154,7 @@ public class APKUpdateManager {
 	
 	private void checkAndUpdateApk() {
 		String[] remoteXmlFileArray = FtpHelper.getInstance()
-				.getRemoteFilesName("/0/soft/android/DMA_YS*.xml");
+				.getRemoteFilesName("/0/soft/android/DMA200_APP*.xml");
 		long currentVersion = getApkVersionFromStr(
 				PosterApplication.getInstance().getVerName());
 		String latestXml = null;
@@ -710,13 +710,18 @@ public class APKUpdateManager {
 	}
 	
 	private void updateApk(String file) {
-        if (file != null) {
-        	Intent intent = new Intent(Intent.ACTION_VIEW);
-        	intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            intent.setDataAndType(Uri.fromFile(new File(file)),
-                    "application/vnd.android.package-archive");
-            PosterApplication.getInstance().startActivity(intent);
+        if (file != null){
+        	try {
+				RuntimeExec.getInstance().runRootCmd("pm install -r "+file);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }
+
     }
 	
 	private void postResult(final int regCode, final int result) {

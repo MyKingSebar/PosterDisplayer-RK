@@ -620,7 +620,7 @@ public class XmlCmdParse
                 }
                 if ((update != -1) && (file != null) && (verifyCode != null))
                 {
-                    if ((update == 2) && file.contains("DMA_YS"))  // APK更新
+                    if ((update == 2) && file.contains("DMA200_APP"))  // APK更新
                     {
                         Bundle bundle = new Bundle();
                         bundle.putString("apkXmlFile", file);
