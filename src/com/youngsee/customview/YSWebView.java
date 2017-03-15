@@ -10,8 +10,11 @@ package com.youngsee.customview;
 import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterMainActivity;
 import com.youngsee.posterdisplayer.R;
+
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -21,22 +24,45 @@ import android.webkit.CookieManager;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
+import android.webkit.WebSettings.PluginState;
 import android.webkit.WebSettings.RenderPriority;
 import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.graphics.Bitmap;
 import android.net.http.SslError;
+import android.os.Handler;
 import android.os.SystemClock;
 
 public class YSWebView extends PosterBaseView
 {
-    private Context mContext = null;
     private WebView mWv = null;
 
     private static int MAX_CLICK_CNTS    = 5;
 	private long  mLastClickTime         = 0;
 	private static int mCurrentClickCnts = 0;
+	
+	
+	private SharedPreferences sharedPreferences = mContext.getSharedPreferences("reload_for_priod", Activity.MODE_PRIVATE);
+	private int timeForPeriod=0 ;
+	
+	private Handler mHandler = new Handler();
+	private Runnable mRunnable = new Runnable() {
+		@Override
+		public void run() {
+			if (mWv !=null) {
+				timeForPeriod = sharedPreferences.getInt("time_period", 60);
+				if (sharedPreferences.getBoolean("isReload", false)) {
+					try {
+						mWv.reload();
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+				mHandler.postDelayed(mRunnable, timeForPeriod * 1000);
+			}
+		}
+	};
 	
     public YSWebView(Context context)
     {
@@ -56,10 +82,10 @@ public class YSWebView extends PosterBaseView
         initView(context);
     }
 
-    @SuppressLint("SetJavaScriptEnabled")
+    @SuppressWarnings("deprecation")
+	@SuppressLint("SetJavaScriptEnabled")
     private void initView(Context context)
     {
-        mContext = context;
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         inflater.inflate(R.layout.view_web, this);
         
@@ -72,9 +98,8 @@ public class YSWebView extends PosterBaseView
             
             // Support java script
             webSettings.setJavaScriptEnabled(true);// 可用JS
-           // webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+            webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
             
-            webSettings.setLoadsImagesAutomatically(true);
             webSettings.setUseWideViewPort(true);
             webSettings.setSaveFormData(true);
             webSettings.setSavePassword(true);
@@ -86,6 +111,7 @@ public class YSWebView extends PosterBaseView
             //Support zoom page
             webSettings.setSupportZoom(true); // 可缩放
             webSettings.setBuiltInZoomControls(true);
+    		webSettings.setDisplayZoomControls(true);
 
             //set xml dom cache
             webSettings.setDomStorageEnabled(true);
@@ -93,25 +119,30 @@ public class YSWebView extends PosterBaseView
             //提高渲染的优先级
             webSettings.setRenderPriority(RenderPriority.HIGH);
 
+			String dir = context.getDir("database", Context.MODE_PRIVATE).getPath();
+    		webSettings.setDatabasePath(dir);
+    		webSettings.setGeolocationDatabasePath(dir);
+
             // set cache
             String appCachePath = PosterMainActivity.INSTANCE.getDir("netCache", Context.MODE_PRIVATE).getAbsolutePath();
             webSettings.setAppCacheEnabled(true);
             webSettings.setAppCachePath(appCachePath);
             webSettings.setAppCacheMaxSize(1024*1024*5);
             webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
-            
-            webSettings.setSupportMultipleWindows(true);                       
-            webSettings.setAppCacheEnabled(true);
+  
+            webSettings.setSupportMultipleWindows(true);   
             webSettings.setDatabaseEnabled(true);
-            webSettings.setDomStorageEnabled(true);
-            
+
+            webSettings.setPluginState(PluginState.ON);
             // 滚动条风格，为0就是不给滚动条留空间，滚动条覆盖在网页上
             mWv.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);  
             mWv.setLongClickable(true);
+            mWv.setClickable(true);
             mWv.setScrollbarFadingEnabled(true);
             mWv.setDrawingCacheEnabled(true);
-            
-            // set WebViewClient
+           
+           
+    		 // set WebViewClient
             mWv.setWebViewClient(new WebViewClient()
             {
                 @Override
@@ -143,12 +174,12 @@ public class YSWebView extends PosterBaseView
                 
                 @Override
                 public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                     
+                     super.onPageStarted(view, url, favicon);
                 }
                 
                 @Override
                 public void onPageFinished(WebView view, String url) {
-                  
+                  super.onPageFinished(view, url);
                 }
                 
                 @Override
@@ -159,7 +190,7 @@ public class YSWebView extends PosterBaseView
                         processUrl = "http://" + url;
                     }
                     view.loadUrl(processUrl);
-                    return true;
+                    return super.shouldOverrideUrlLoading(view, processUrl);
                 }
             });
 
@@ -193,9 +224,8 @@ public class YSWebView extends PosterBaseView
                             PosterMainActivity.INSTANCE.showOsd();
         					mLastClickTime = 0;
         					mCurrentClickCnts = 0;
+        					return true;
         				}
-        				
-                        return true;
                     }
                    return false;           
                 }
@@ -212,14 +242,16 @@ public class YSWebView extends PosterBaseView
                     }                  
                 }                
             });
+
         }
     }
 
-    private void setUrl(String url)
+    private void setUrl(final String url)
     {
         if (mWv != null)
         {
             mWv.loadUrl(url);
+			mHandler.postDelayed(mRunnable, timeForPeriod*1000);
         }
     }
 
@@ -235,9 +267,14 @@ public class YSWebView extends PosterBaseView
         return false;
     }
 
+    
     @Override
     public void onViewDestroy()
     {
+    	if(mHandler!=null){
+    		mHandler.removeCallbacks(mRunnable);
+    	}
+    	
         if (mWv != null)
         {
             mWv.destroy();
@@ -279,7 +316,6 @@ public class YSWebView extends PosterBaseView
     @Override
     public void stopWork()
     {
-        // TODO Auto-generated method stub
-        
+    	
     }
 }
