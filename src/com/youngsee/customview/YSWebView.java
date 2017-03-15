@@ -109,8 +109,9 @@ public class YSWebView extends PosterBaseView
             webSettings.setAllowFileAccess(true);
             
             //Support zoom page
-//            webSettings.setSupportZoom(true); // 可缩放
-//            webSettings.setBuiltInZoomControls(true);
+            webSettings.setSupportZoom(true); // 可缩放
+            webSettings.setBuiltInZoomControls(true);
+    		webSettings.setDisplayZoomControls(true);
 
             //set xml dom cache
             webSettings.setDomStorageEnabled(true);
@@ -128,11 +129,8 @@ public class YSWebView extends PosterBaseView
             webSettings.setAppCachePath(appCachePath);
             webSettings.setAppCacheMaxSize(1024*1024*5);
             webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
-            
+  
             webSettings.setSupportMultipleWindows(true);   
-            webSettings.setSupportZoom(false);
-			webSettings.setBuiltInZoomControls(false);
-    		webSettings.setDisplayZoomControls(false);
             webSettings.setDatabaseEnabled(true);
 
             webSettings.setPluginState(PluginState.ON);
