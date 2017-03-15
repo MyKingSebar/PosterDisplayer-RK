@@ -19,3 +19,7 @@ V4.7.0.9
 	5.优化了部分代码结构
 	6.同步播放时，如果出现1分钟收不到同步包的情况，则同步功能失效，直到收到下一个同步包为止
 	7.屏幕自适应的比例算法单位不采用dip，使用像素为单位
+
+
+V4.7.0.10
+        1.解决WebView无法自适应网页大小（修改view_web.xml布局文件 LinearLayout 改为FrameLayout,WebView Width和Heigth由wrap_content 改为match_parent）
