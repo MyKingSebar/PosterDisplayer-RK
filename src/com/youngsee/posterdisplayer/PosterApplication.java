@@ -531,9 +531,18 @@ public class PosterApplication extends Application
     	    {
     		    for (File file : files) 
     		    {
-    			    if (file.isDirectory() && 
+                    if (file.isDirectory() && file.getTotalSpace()>0){
+                        for(File usbSubfile : file.listFiles()){
+                            if(usbSubfile.isDirectory() &&
+                                    usbSubfile.getName().trim().toLowerCase().endsWith(".pgm")){
+                                return true;
+                            }
+                        }
+                    }
+    			    else if (file.isDirectory() &&
     			    	file.getName().trim().toLowerCase().endsWith(".pgm")) 
     			    {
+    			    	
     				    return true;
     			    }
     		    }

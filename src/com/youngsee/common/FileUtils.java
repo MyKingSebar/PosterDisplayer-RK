@@ -1353,7 +1353,17 @@ public class FileUtils
     		    {
     		        for (File usbFile : usbPaths)
     				{
-    					if (usbFile.isFile() && 
+    		        	if(usbFile.isDirectory() && usbFile.getTotalSpace() > 0){
+    		        		for (File usbSubFile : usbFile.listFiles()){
+    	    					if (usbSubFile.isFile() && 
+    	    							usbSubFile.getName().trim().toLowerCase().endsWith(".apk") &&
+    	        						isPosterApk(usbSubFile.getAbsolutePath()))
+    	        					{
+    	        						return usbSubFile.getAbsolutePath();
+    	        					}
+    		        		}
+    		        	}
+    		        	else if (usbFile.isFile() && 
     						usbFile.getName().trim().toLowerCase().endsWith(".apk") &&
     						isPosterApk(usbFile.getAbsolutePath()))
     					{

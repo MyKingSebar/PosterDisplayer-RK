@@ -192,7 +192,17 @@ public class UDiskUpdata
         		    {
         		        for (File usbFile : usbPaths)
         				{
-        					if (usbFile.isDirectory() && 
+                            if (usbFile.isDirectory() && usbFile.getTotalSpace() > 0)
+                            {
+                                for(File usbSubFile : usbFile.listFiles()){
+                                    if(usbSubFile.isDirectory() && usbSubFile.getName().trim().toLowerCase().endsWith(".pgm"))
+                                    {
+                                         Logger.i("usbSubFile"+usbSubFile.getAbsolutePath().toString());
+                                         listPgmFile.add(usbSubFile);
+                                    }
+                                }
+                            }
+        					else if (usbFile.isDirectory() &&
         						usbFile.getName().trim().toLowerCase().endsWith(".pgm"))
         					{
         						listPgmFile.add(usbFile);

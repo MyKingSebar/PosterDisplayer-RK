@@ -1435,7 +1435,8 @@ public class ScreenManager
                 sb.setLength(0);
                 sb.append(todayDate);
                 sb.append("T");
-                sb.append(tempPgmInfo.startTime.replace(":", ""));
+                sb.append(convertStartTime(tempPgmInfo.startTime));
+                //sb.append(tempPgmInfo.startTime.replace(":", ""));
                 time.parse(sb.toString());
                 todayStartTime = time.toMillis(false);    // 当天的开始时间                
                 
@@ -1466,7 +1467,8 @@ public class ScreenManager
                         sb.setLength(0);
                         sb.append(todayDate);
                         sb.append("T");
-                        sb.append(tempPgmInfo.startTime.replace(":", ""));
+                        sb.append(convertStartTime(tempPgmInfo.startTime));
+                        //sb.append(tempPgmInfo.startTime.replace(":", ""));
                         time.parse(sb.toString());
                         tempPgmStartTime = time.toMillis(false);
                         
@@ -1578,7 +1580,8 @@ public class ScreenManager
                 sb.setLength(0);
                 sb.append(todayDate);
                 sb.append("T");
-                sb.append(tempPgmInfo.startTime.replace(":", ""));
+                sb.append(convertStartTime(tempPgmInfo.startTime));
+                //sb.append(tempPgmInfo.startTime.replace(":", ""));
                 time.parse(sb.toString());
                 todayStartTime = time.toMillis(false);    // 当天的开始时间
                 
@@ -2249,4 +2252,23 @@ public class ScreenManager
             super.handleMessage(msg);
         }
     };
+    
+    private String convertStartTime(String startTime){
+    	String[] spliteInfo = startTime.split(":");
+    	int[] convertTime = new int[3];
+    	String[] convertInfo = new String[3];
+    	String convertstartTime= "";
+    	for(int i = 0; i <spliteInfo.length; i++){
+    		convertTime[i] = Integer.parseInt(spliteInfo[i]);
+    		if(convertTime[i] < 10){
+    			convertInfo[i] = "0" + convertTime[i];
+    			convertstartTime += convertInfo[i];
+    		}else{
+    			convertInfo[i] = spliteInfo[i];
+    			convertstartTime += spliteInfo[i];
+    		}
+    	}
+    	return convertstartTime;
+    	
+    }
 }

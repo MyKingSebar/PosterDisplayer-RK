@@ -64,19 +64,44 @@ public class AuthorizationHelper {
 			return null;
 		}
 		
-		long currMaxSpace = 0;
-    	String savePath = null;
-    	long fileSpace = 0;
-    	for (int i = 0; i < listUsbPath.size(); i++)
-    	{
-    		fileSpace = (new File(listUsbPath.get(i))).getUsableSpace();
-    		if (fileSpace > currMaxSpace)
-    		{
-    			savePath = listUsbPath.get(i);
-    			currMaxSpace = fileSpace;
-    		}
-    	}
-    	return savePath;
+		File usbRootPath = null;
+		File[] usbPaths = null;
+		File[] usbSubPaths = null;
+		for(int i = 0; i < listUsbPath.size(); i++){
+			usbRootPath = new File (listUsbPath.get(i));
+			usbPaths = usbRootPath.listFiles();
+			if(usbPaths != null){
+				if(usbRootPath.getTotalSpace() > 0){
+					for(File usbFile : usbPaths)
+					{
+						if(usbFile.isDirectory() && usbFile.getTotalSpace() > 0){
+							return usbFile.getAbsolutePath();
+						}
+					}
+				}
+			}
+			else
+			{
+				for (File usbFile : usbPaths){
+					if(usbFile.isDirectory() && usbFile.getTotalSpace() > 0)
+					{
+						usbSubPaths = usbFile.listFiles();
+						if (usbSubPaths != null)
+						{
+							for (File usbSubfile : usbSubPaths)
+							{
+								if(usbSubfile.isDirectory() && usbSubfile.getTotalSpace() >0 )
+								{
+									return usbSubfile.getAbsolutePath();
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		
+    	return null;
     }
 	
 	private boolean doExportDevInfo() {
