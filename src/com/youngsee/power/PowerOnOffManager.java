@@ -55,7 +55,6 @@ public class PowerOnOffManager {
 	
 	private int mCurrentStatus = STATUS_IDLE;
 	
-	private Dialog mAlertDialog = null;
 	private Dialog dlgAutoScreenOff = null;
 	
 	public static PowerOnOffManager getInstance() {
@@ -272,9 +271,9 @@ public class PowerOnOffManager {
 	}
 	
 	public void dismissPromptDialog() {
-		if ((mAlertDialog != null) && mAlertDialog.isShowing()) {
-    		mAlertDialog.dismiss();
-    		mAlertDialog = null;
+		if ((dlgAutoScreenOff != null) && dlgAutoScreenOff.isShowing()) {
+			dlgAutoScreenOff.dismiss();
+			dlgAutoScreenOff = null;
     	}
 	}
 	
