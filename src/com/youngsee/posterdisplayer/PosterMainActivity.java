@@ -86,7 +86,7 @@ import com.youngsee.customview.MultiMediaView;
 import com.youngsee.customview.PosterBaseView;
 import com.youngsee.customview.TimerView;
 import com.youngsee.customview.YSHorizontalScrollView;
-import com.youngsee.customview.YSWebView;
+import com.youngsee.customview.YsWebViewSpecial;
 import com.youngsee.logmanager.LogManager;
 import com.youngsee.logmanager.LogUtils;
 import com.youngsee.logmanager.Logger;
@@ -739,7 +739,7 @@ public class PosterMainActivity extends Activity {
 				} else if (wndType.contains("Gallery")) {
 					tempSubWnd = new GalleryView(this);
 				} else if (wndType.contains("Web")) {
-					tempSubWnd = new YSWebView(this);
+					tempSubWnd = new YsWebViewSpecial(this);
 				} else if (wndType.contains("Timer")) {
 					tempSubWnd = new TimerView(this);
 				}

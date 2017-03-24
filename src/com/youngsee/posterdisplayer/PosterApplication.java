@@ -417,12 +417,12 @@ public class PosterApplication extends Application
         	if (getScreenWidth() < getScreenHeigth())
         	{
         		// portrait
-        		dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.pdaiji_ys);
+        		dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.pdaiji);
         	}
         	else
         	{
         		// landscape
-        		dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.daiji_ys);
+        		dstImg = BitmapFactory.decodeResource(getResources(), R.drawable.daiji);
         	}
         }
         else
