@@ -1,10 +1,17 @@
 package com.youngsee.power;
 
+import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
+
 import com.youngsee.common.Actions;
 import com.youngsee.common.DialogUtil;
 import com.youngsee.common.DialogUtil.DialogSingleButtonListener;
+import com.youngsee.common.Contants;
+import com.youngsee.common.RuntimeExec;
 import com.youngsee.common.SysOnOffTimeInfo;
 import com.youngsee.common.YSConfiguration;
+import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.posterdisplayer.PosterMainActivity;
 import com.youngsee.posterdisplayer.PosterOsdActivity;
@@ -13,11 +20,6 @@ import com.youngsee.posterdisplayer.R;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.Looper;
-import android.os.Message;
 import android.text.format.Time;
 import android.view.Gravity;
 import android.view.View;
@@ -25,10 +27,7 @@ import android.widget.Toast;
 
 public class PowerOnOffManager {
 	private static PowerOnOffManager INSTANCE = null;
-	
-	private final int EVENT_SET_SCREEN_OFF = 0x9000;
-	private final int EVENT_ALERTDIALOG_TIMEOUT = 0x9001;
-	
+
 	private final long MILLISECOND_DAY = 24*60*60*1000;
 	private final long MILLISECOND_HOUR = 60*60*1000;
 	private final long MILLISECOND_MINUTE = 60*1000;
@@ -47,15 +46,13 @@ public class PowerOnOffManager {
 	private final int URGENT_AUTOSCREENOFF_MINUTE = 1;
 	private final int URGENT_AUTOSCREENOFF_MILLISECOND = URGENT_AUTOSCREENOFF_MINUTE*60*1000;
 	
-	@SuppressWarnings("unused")
-    private final int DEFAULT_ALERTDIALOG_TIMEOUT = 30*1000;
-	
-	private HandlerThread mHandlerThread = null;
-	private MyHandler mHandler = null;
+    private final int DEFAULT_ALERTDIALOG_TIMEOUT = 60*1000;
 	
 	private int mCurrentStatus = STATUS_IDLE;
-	
 	private Dialog dlgAutoScreenOff = null;
+	
+	private boolean mIsScreenoff         = false;
+	private Timer mPowerOnOffTimer =  null;
 	
 	public static PowerOnOffManager getInstance() {
 		if (INSTANCE == null) {
@@ -65,24 +62,65 @@ public class PowerOnOffManager {
 	}
 	
 	private PowerOnOffManager() {
-		mHandlerThread = new HandlerThread("poweronoffmgr_ui_thread");
-		mHandlerThread.start();
-		mHandler = new MyHandler(mHandlerThread.getLooper());
 		setCurrentStatus(STATUS_ONLINE);
 	}
 	
-	public void destroy() {
+	private void PowerOnOffAction()
+	{
 		dismissPromptDialog();
-		
-		if (mHandler != null) {
-			mHandler.removeMessages(EVENT_SET_SCREEN_OFF);
-			mHandler.removeMessages(EVENT_ALERTDIALOG_TIMEOUT);
-			mHandler = null;
-		}
-		if (mHandlerThread != null) {
-			mHandlerThread.getLooper().quit();
-			mHandlerThread = null;
-		}
+    	setScreenOff(mIsScreenoff);
+    	Time currTime = new Time(Contants.TIME_ZONE_CHINA);
+        currTime.setToNow();
+        Logger.i("PowerOnOffAction() current time is: " + currTime.hour + ":" + currTime.minute + ":" + currTime.second);
+        SysOnOffTimeInfo[] systimeinfo = PosterApplication.getInstance().getSysOnOffTime();
+    	if (mIsScreenoff) 
+    	{
+    		setCurrentStatus(STATUS_STANDBY);
+    		long ontime = getNextScreenOnTime(currTime, systimeinfo);
+    		if (ontime > 0) 
+    		{
+    			mIsScreenoff  = false;
+    			startPowerOnOffTimer(ontime);
+    		}
+    	}
+    	else 
+    	{
+    		setCurrentStatus(STATUS_ONLINE);
+    		long offtime = getNextScreenOffTime(currTime, systimeinfo);
+    		if (offtime > 0) 
+    		{
+    			mIsScreenoff = true;
+    			startPowerOnOffTimer(offtime);
+    		}
+    	}
+	}
+	
+	private void cancelPowerOnOffTimer()
+    {
+        if (mPowerOnOffTimer != null)
+        {
+        	mPowerOnOffTimer.cancel();
+        	mPowerOnOffTimer = null;
+        }
+    }
+	
+	private void startPowerOnOffTimer(long delayMillis)
+	 {
+		    cancelPowerOnOffTimer();
+	        mPowerOnOffTimer = new Timer("PowerOnOffTimer");
+	        mPowerOnOffTimer.schedule(new TimerTask() {
+	            @Override
+	            public void run()
+	            {
+	            	PowerOnOffAction();
+	            }
+	        }, delayMillis);
+	        Logger.i("startPowerOnOffTimer(): mIsScreenoff is : " + mIsScreenoff + " delayMillis is: " + delayMillis);
+	 }
+	 
+	public void destroy() {
+		cancelPowerOnOffTimer();
+		dismissPromptDialog();
 	}
 	
 	public int getCurrentStatus() {
@@ -98,29 +136,33 @@ public class PowerOnOffManager {
 	}
 	
 	private int getNextWeekDay(final int currWeekDay) {
-		return (currWeekDay != 6) ? currWeekDay+1 : 0;
+		return (currWeekDay < 6) ? currWeekDay+1 : 0;
 	}
 	
 	private long getMillisFromTime(int day, int hour, int minute, int second) {
 		return MILLISECOND_DAY*day+MILLISECOND_HOUR*hour
 				+MILLISECOND_MINUTE*minute+MILLISECOND_SECOND*second;
 	}
-	
+
 	private long getNextScreenOffTime(Time currtime, SysOnOffTimeInfo[] systimeinfo) {
 		long nextOffTime = -1;
 
         if (systimeinfo != null) {
-            long currTimeMillis = getMillisFromTime(0, currtime.hour,
-            		currtime.minute, currtime.second);
+            long currTimeMillis = getMillisFromTime(0, currtime.hour, currtime.minute, currtime.second);
             int i, j, k;
             long tmpTimeMillis = -1;
     		long latestNextOffTime = -1;
         	for (i = 0; i < systimeinfo.length; i++) {
         		tmpTimeMillis = -1;
         		latestNextOffTime = -1;
+        		if (systimeinfo[i].offhour == 0xFF) 
+            	{
+            		Logger.d("getNextScreenOffTime(): the sys time is invaild, i = " + i);
+            		continue;
+            	}
+        		
                 for (j = currtime.weekDay, k = 0; k < 7; j = getNextWeekDay(j), k++) {
-                    if (((systimeinfo[i].week&(1<<j)) != 0) &&
-                    		(systimeinfo[i].offhour != 0xFF)) {
+                    if ((systimeinfo[i].week&(1<<j)) != 0) {
                     	tmpTimeMillis = getMillisFromTime(k, systimeinfo[i].offhour,
                     			systimeinfo[i].offminute, systimeinfo[i].offsecond);
                     	if ((j == currtime.weekDay) && (currTimeMillis > tmpTimeMillis)) {
@@ -131,6 +173,7 @@ public class PowerOnOffManager {
                     	}
                     }
                 }
+                
                 if ((latestNextOffTime != -1) &&
                 		((nextOffTime == -1) || (nextOffTime > latestNextOffTime))) {
                 	nextOffTime = latestNextOffTime;
@@ -145,17 +188,21 @@ public class PowerOnOffManager {
 		long nextOnTime = -1;
 		
         if (systimeinfo != null) {
-            long currTimeMillis = getMillisFromTime(0, currtime.hour,
-            		currtime.minute, currtime.second);
+            long currTimeMillis = getMillisFromTime(0, currtime.hour, currtime.minute, currtime.second);
             int i, j, k;
             long tmpTimeMillis = -1;
     		long latestNextOnTime = -1;
         	for (i = 0; i < systimeinfo.length; i++) {
         		tmpTimeMillis = -1;
         		latestNextOnTime = -1;
+        		if  (systimeinfo[i].onhour == 0xFF) 
+            	{
+            		Logger.d("getNextScreenOnTime(): the sys time is invaild, i = " + i);
+            		continue;
+            	}
+        		
                 for (j = currtime.weekDay, k = 0; k < 7; j = getNextWeekDay(j), k++) {
-                    if (((systimeinfo[i].week&(1<<j)) != 0) &&
-                    		(systimeinfo[i].onhour != 0xFF)) {
+                    if ((systimeinfo[i].week&(1<<j)) != 0) {
                     	tmpTimeMillis = getMillisFromTime(k, systimeinfo[i].onhour,
                     			systimeinfo[i].onminute, systimeinfo[i].onsecond);
                     	if ((j == currtime.weekDay) && (currTimeMillis > tmpTimeMillis)) {
@@ -166,6 +213,7 @@ public class PowerOnOffManager {
                     	}
                     }
                 }
+                
                 if ((latestNextOnTime != -1) &&
                 		((nextOnTime == -1) || (nextOnTime > latestNextOnTime))) {
                 	nextOnTime = latestNextOnTime;
@@ -177,11 +225,12 @@ public class PowerOnOffManager {
     }
 	
 	public void checkAndSetOnOffTime(int type) {
-		SysOnOffTimeInfo[] systimeinfo = PosterApplication.getInstance().getSysOnOffTime();
-		Time currTime = new Time();
+		cancelPowerOnOffTimer();
+		dismissPromptDialog();
+		Time currTime = new Time(Contants.TIME_ZONE_CHINA);
         currTime.setToNow();
-        dismissPromptDialog();
-        cancelScreenOffTimer();
+        Logger.i("checkAndSetOnOffTime() current time is: " + currTime.hour + ":" + currTime.minute + ":" + currTime.second);
+        SysOnOffTimeInfo[] systimeinfo = PosterApplication.getInstance().getSysOnOffTime();
         if ((systimeinfo != null) && (systimeinfo.length != 0)) {
 	        long nextOnTime = getNextScreenOnTime(currTime, systimeinfo);
 	        if (nextOnTime > 0) {
@@ -189,15 +238,18 @@ public class PowerOnOffManager {
 		        if (nextOffTime > 0) {
 					if (nextOnTime > nextOffTime) {
 						if (getCurrentStatus() == STATUS_STANDBY) {
-							sendEventToSetScreenOff(false, 0l); // Screen on immediately
+							mIsScreenoff  = false;
+							PowerOnOffAction(); // Screen on immediately
 						} else {
-							sendEventToSetScreenOff(true, nextOffTime);
+							mIsScreenoff  = true;
+							startPowerOnOffTimer(nextOffTime);
 						}
 					} else if (nextOffTime > nextOnTime) {
 						if (getCurrentStatus() == STATUS_ONLINE) {
 							switch (type) {
 							case AUTOSCREENOFF_IMMEDIATE:
-								sendEventToSetScreenOff(true, 0l); // Screen off immediately
+								mIsScreenoff  = true;
+								PowerOnOffAction(); // Screen off immediately
 								break;
 							case AUTOSCREENOFF_COMMON:
 								showPromptDialog(
@@ -206,8 +258,8 @@ public class PowerOnOffManager {
 										.getInstance().getResources()
 										.getString(R.string.autoscreenoff_prompt_msg),
 										COMMON_AUTOSCREENOFF_MINUTE));
-								sendEventToSetScreenOff(true,
-										COMMON_AUTOSCREENOFF_MILLISECOND);
+								mIsScreenoff  = true;
+								startPowerOnOffTimer(COMMON_AUTOSCREENOFF_MILLISECOND);
 								break;
 							case AUTOSCREENOFF_URGENT:
 								showPromptDialog(
@@ -216,21 +268,23 @@ public class PowerOnOffManager {
 										.getInstance().getResources()
 										.getString(R.string.autoscreenoff_prompt_msg),
 										URGENT_AUTOSCREENOFF_MINUTE));
-								sendEventToSetScreenOff(true,
-										URGENT_AUTOSCREENOFF_MILLISECOND);
+								mIsScreenoff  = true;
+								startPowerOnOffTimer(URGENT_AUTOSCREENOFF_MILLISECOND);
 								break;
 							default:
 								break;
 							}
 						} else {
-							sendEventToSetScreenOff(false, nextOnTime);
+							mIsScreenoff  = false;
+							startPowerOnOffTimer(nextOnTime);
 						}
 					}
 		        }
 	        }
         } else {
         	if (getCurrentStatus() == STATUS_STANDBY) {
-        		sendEventToSetScreenOff(false, 0l);
+        		mIsScreenoff  = false;
+        		PowerOnOffAction();    // Screen on  immediately
         	}
         }
 	}
@@ -256,7 +310,6 @@ public class PowerOnOffManager {
 				
 				@Override
 				public void onSingleClick(Context context , View v , int which) {
-					mHandler.removeMessages(EVENT_ALERTDIALOG_TIMEOUT);
 					if (dlgAutoScreenOff != null) {
 						dlgAutoScreenOff.dismiss();
 						dlgAutoScreenOff = null;
@@ -266,7 +319,7 @@ public class PowerOnOffManager {
 			
 			dlgAutoScreenOff.show();
 			
-			DialogUtil.dialogTimeOff(dlgAutoScreenOff, 90000);
+			DialogUtil.dialogTimeOff(dlgAutoScreenOff, DEFAULT_ALERTDIALOG_TIMEOUT);
 		}
 	}
 	
@@ -280,73 +333,22 @@ public class PowerOnOffManager {
 	public void wakeUp() {
 		dismissPromptDialog();
 		if (getCurrentStatus() == STATUS_STANDBY) {
-			cancelScreenOffTimer();
-			sendEventToSetScreenOff(false, 0l);
+			mIsScreenoff  = false;
+    		PowerOnOffAction();    // Screen on  immediately
 		}
 	}
 	
 	public void shutDown() {
+		dismissPromptDialog();
 		if (getCurrentStatus() == STATUS_ONLINE) {
-			cancelScreenOffTimer();
-			sendEventToSetScreenOff(true, 0l);
+			mIsScreenoff  = true;
+			PowerOnOffAction(); // Screen off immediately
 		}
-	}
-	
-	private void cancelScreenOffTimer() {
-		mHandler.removeMessages(EVENT_SET_SCREEN_OFF);
-	}
-	
-	private void sendEventToSetScreenOff(boolean off, long delayMillis) {
-		Bundle bundle = new Bundle();
-        bundle.putBoolean("screenoff", off);
-        Message msg = mHandler.obtainMessage();
-        msg.what = EVENT_SET_SCREEN_OFF;
-        msg.setData(bundle);
-        mHandler.sendMessageDelayed(msg, delayMillis);
 	}
 	
 	private void setScreenOff(boolean off) {
-    	Intent intent = new Intent(Actions.SCREEN_ACTION);
-        intent.putExtra("screenoff", off);
-        PosterApplication.getInstance().sendBroadcast(intent);
+            Intent intent = new Intent(Actions.SCREEN_ACTION);
+            intent.putExtra("screenoff", off);
+            PosterApplication.getInstance().sendBroadcast(intent);
     }
-	
-	private class MyHandler extends Handler {
-		public MyHandler(Looper looper) {
-			super(looper);
-		}
-
-		@Override
-		public void handleMessage(Message msg) {
-			switch (msg.what) {
-            case EVENT_SET_SCREEN_OFF:
-            	boolean screenoff = msg.getData().getBoolean("screenoff");
-            	setScreenOff(screenoff);
-            	SysOnOffTimeInfo[] systimeinfo = PosterApplication.getInstance().getSysOnOffTime();
-            	Time currTime = new Time();
-                currTime.setToNow();
-                dismissPromptDialog();
-            	if (screenoff) {
-            		setCurrentStatus(STATUS_STANDBY);
-            		long ontime = getNextScreenOnTime(currTime, systimeinfo);
-            		if (ontime > 0) {
-            			sendEventToSetScreenOff(false, ontime);
-            		}
-            	} else {
-            		setCurrentStatus(STATUS_ONLINE);
-            		long offtime = getNextScreenOffTime(currTime, systimeinfo);
-            		if (offtime > 0) {
-            			sendEventToSetScreenOff(true, offtime);
-            		}
-            	}
-            	break;
-            case EVENT_ALERTDIALOG_TIMEOUT:
-            	dismissPromptDialog();
-            	break;
-            default:
-                break;
-            }
-            super.handleMessage(msg);
-		}
-	}
 }

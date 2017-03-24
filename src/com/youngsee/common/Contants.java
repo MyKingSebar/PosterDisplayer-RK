@@ -135,4 +135,6 @@ public class Contants {
 	
 	public static final String UDISK_NAME_PREFIX1 = "usb";
 	public static final String UDISK_NAME_PREFIX2 = "sd";
+	
+	public static final String TIME_ZONE_CHINA = "Asia/Shanghai";
 }

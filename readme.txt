@@ -24,3 +24,5 @@ V4.7.0.9
 V4.7.0.10
         1.解决WebView无法自适应网页大小（修改view_web.xml布局文件 LinearLayout 改为FrameLayout,WebView Width和Heigth由wrap_content 改为match_parent）
         2.解决定时开关机dialog点击确定无法消失的问题
+		3.定时开关机改为定时器实现
+		4.WebView内核改为腾讯X5内核
