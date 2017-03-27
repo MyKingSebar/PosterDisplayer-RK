@@ -7,6 +7,7 @@
 
 package com.youngsee.customview;
 
+import com.youngsee.common.X5WebView;
 import com.youngsee.logmanager.Logger;
 import com.youngsee.posterdisplayer.PosterMainActivity;
 import com.youngsee.posterdisplayer.R;
@@ -16,10 +17,13 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.View.OnTouchListener;
 import android.webkit.CookieManager;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
@@ -36,245 +40,141 @@ import android.os.SystemClock;
 
 public class YSWebView extends PosterBaseView
 {
-    private WebView mWv = null;
+
+    private X5WebView mWv = null;
 
     private static int MAX_CLICK_CNTS    = 5;
-	private long  mLastClickTime         = 0;
-	private static int mCurrentClickCnts = 0;
-	
-	
-	private SharedPreferences sharedPreferences = mContext.getSharedPreferences("reload_for_priod", Activity.MODE_PRIVATE);
-	private int timeForPeriod=0 ;
-	
-	private Handler mHandler = new Handler();
-	private Runnable mRunnable = new Runnable() {
-		@Override
-		public void run() {
-			if (mWv !=null) {
-				timeForPeriod = sharedPreferences.getInt("time_period", 60);
-				if (sharedPreferences.getBoolean("isReload", false)) {
-					try {
-						mWv.reload();
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
-				}
-				mHandler.postDelayed(mRunnable, timeForPeriod * 1000);
-			}
-		}
-	};
-	
+    private long mLastClickTime          = 0;
+    private static int mCurrentClickCnts = 0;
+
+    private float mPosX = 0;
+    private float mPosY = 0;
+    private float mCurPosX = 0;
+    private float mCurPosY = 0;
+
+    private SharedPreferences sharedPreferences = mContext.getSharedPreferences("reload_for_priod", Activity.MODE_PRIVATE);
+    private int timeForPeriod=0 ;
+
+    private Handler mHandler = new Handler();
+    private Runnable mRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (mWv !=null) {
+                timeForPeriod = sharedPreferences.getInt("time_period", 60);
+                if (sharedPreferences.getBoolean("isReload", false)) {
+                    try {
+                        Logger.i("reload for web");
+                        mWv.reload();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                mHandler.postDelayed(mRunnable, timeForPeriod * 1000);
+            }
+        }
+    };
+
     public YSWebView(Context context)
     {
         super(context);
         initView(context);
+
     }
-    
+
     public YSWebView(Context context, AttributeSet attrs)
     {
-        super(context, attrs);
+        super(context,attrs);
         initView(context);
+
     }
-    
+
     public YSWebView(Context context, AttributeSet attrs, int defStyle)
     {
         super(context, attrs, defStyle);
         initView(context);
     }
 
-    @SuppressWarnings("deprecation")
-	@SuppressLint("SetJavaScriptEnabled")
-    private void initView(Context context)
-    {
+    private void initView(Context context){
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         inflater.inflate(R.layout.view_web, this);
-        
-        // Get widgets from XML file
-        mWv = (WebView) findViewById(R.id.wv);
-       
-        if (mWv != null)
-        {
-            WebSettings webSettings = mWv.getSettings();
-            
-            // Support java script
-            webSettings.setJavaScriptEnabled(true);// 可用JS
-            webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
-            
-            webSettings.setUseWideViewPort(true);
-            webSettings.setSaveFormData(true);
-            webSettings.setSavePassword(true);
-            CookieManager.getInstance().setAcceptCookie(true);
-            
-            // Support access Assets and resources
-            webSettings.setAllowFileAccess(true);
-            
-            //Support zoom page
-            webSettings.setSupportZoom(true); // 可缩放
-            webSettings.setBuiltInZoomControls(true);
-    		webSettings.setDisplayZoomControls(true);
+        mWv = (X5WebView) findViewById(R.id.wv);
+        mWv.setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction())
+                {
+                    case MotionEvent.ACTION_DOWN:
+                        mPosX = event.getX();
+                        mPosY = event.getY();
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        mCurPosX = event.getX();
+                        mCurPosY = event.getY();
+                        break;
+                    case MotionEvent.ACTION_UP:
+                        if (event.getAction() == MotionEvent.ACTION_UP)
+                        {
+                        	long clickTime = SystemClock.uptimeMillis();
+            				long dtime = clickTime - mLastClickTime;
+            				if (mLastClickTime == 0 || dtime < 3000) {
+            					mCurrentClickCnts++;
+            					mLastClickTime = clickTime;
+            				} else {
+            					mLastClickTime = 0;
+            					mCurrentClickCnts = 0;
+            				}
 
-            //set xml dom cache
-            webSettings.setDomStorageEnabled(true);
-            
-            //提高渲染的优先级
-            webSettings.setRenderPriority(RenderPriority.HIGH);
-
-			String dir = context.getDir("database", Context.MODE_PRIVATE).getPath();
-    		webSettings.setDatabasePath(dir);
-    		webSettings.setGeolocationDatabasePath(dir);
-
-            // set cache
-            String appCachePath = PosterMainActivity.INSTANCE.getDir("netCache", Context.MODE_PRIVATE).getAbsolutePath();
-            webSettings.setAppCacheEnabled(true);
-            webSettings.setAppCachePath(appCachePath);
-            webSettings.setAppCacheMaxSize(1024*1024*5);
-            webSettings.setCacheMode(WebSettings.LOAD_CACHE_ELSE_NETWORK);
-  
-            webSettings.setSupportMultipleWindows(true);   
-            webSettings.setDatabaseEnabled(true);
-
-            webSettings.setPluginState(PluginState.ON);
-            // 滚动条风格，为0就是不给滚动条留空间，滚动条覆盖在网页上
-            mWv.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);  
-            mWv.setLongClickable(true);
-            mWv.setClickable(true);
-            mWv.setScrollbarFadingEnabled(true);
-            mWv.setDrawingCacheEnabled(true);
-           
-           
-    		 // set WebViewClient
-            mWv.setWebViewClient(new WebViewClient()
-            {
-                @Override
-                public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                    try {
-                        mWv.stopLoading();
-                        mWv.clearFormData();
-                        mWv.clearAnimation();
-                        mWv.clearDisappearingChildren();
-                        mWv.clearView();
-                        mWv.clearHistory();
-                        mWv.destroyDrawingCache();
-                        mWv.freeMemory();
-                        if (mWv.canGoBack()) {
-                            mWv.goBack();
+            				// When click times is more than 5, then popup the tools bar
+            				if (mCurrentClickCnts > MAX_CLICK_CNTS) {
+                                PosterMainActivity.INSTANCE.showOsd();
+            					mLastClickTime = 0;
+            					mCurrentClickCnts = 0;
+            					return true;
+            				}
                         }
-                    }catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                        
                 }
-
-                @Override
-                public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
-                    /* 当load有ssl层的https页面时，如果这个网站的安全证书在Android无法得到认证， *
-                     * WebView就会变成一个空白页，而并不会像PC浏览器中那样跳出一个风险提示框              *
-                     * 忽略证书的错误继续Load页面内容                                                                                          */
-                     handler.proceed();
-                }
-                
-                @Override
-                public void onPageStarted(WebView view, String url, Bitmap favicon) {
-                     super.onPageStarted(view, url, favicon);
-                }
-                
-                @Override
-                public void onPageFinished(WebView view, String url) {
-                  super.onPageFinished(view, url);
-                }
-                
-                @Override
-                public boolean shouldOverrideUrlLoading(WebView view, final String url) {   
-                    String processUrl = url;
-                    if (!processUrl.startsWith("http://"))
-                    {
-                        processUrl = "http://" + url;
-                    }
-                    view.loadUrl(processUrl);
-                    return super.shouldOverrideUrlLoading(view, processUrl);
-                }
-            });
-
-            // Set WebChromeClient
-            mWv.setWebChromeClient(new WebChromeClient()
-            {
-                @Override
-                public void onReachedMaxAppCacheSize(long spaceNeeded, long totalUsedQuota, WebStorage.QuotaUpdater quotaUpdater) {
-                    quotaUpdater.updateQuota(spaceNeeded * 2);
-                }
-            });
-            
-            mWv.setOnTouchListener(new OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event)
+                return false;
+            }
+        });
+        
+        this.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (!v.hasFocus())
                 {
-                    if (event.getAction() == MotionEvent.ACTION_UP)
-                    {
-                    	long clickTime = SystemClock.uptimeMillis();
-        				long dtime = clickTime - mLastClickTime;
-        				if (mLastClickTime == 0 || dtime < 3000) {
-        					mCurrentClickCnts++;
-        					mLastClickTime = clickTime;
-        				} else {
-        					mLastClickTime = 0;
-        					mCurrentClickCnts = 0;
-        				}
-
-        				// When click times is more than 5, then popup the tools bar
-        				if (mCurrentClickCnts > MAX_CLICK_CNTS) {
-                            PosterMainActivity.INSTANCE.showOsd();
-        					mLastClickTime = 0;
-        					mCurrentClickCnts = 0;
-        					return true;
-        				}
-                    }
-                   return false;           
+                    v.requestFocus();
                 }
-            });
-            
-            this.setOnClickListener(new OnClickListener()
-            {
-                @Override
-                public void onClick(View v)
-                {
-                    if (!v.hasFocus())
-                    {
-                        v.requestFocus();
-                    }                  
-                }                
-            });
+            }
+        });
 
-        }
     }
 
-    private void setUrl(final String url)
-    {
-        if (mWv != null)
-        {
-            mWv.loadUrl(url);
-			mHandler.postDelayed(mRunnable, timeForPeriod*1000);
-        }
-    }
-
-    // 捕捉返回键
     public boolean onKeyDown(int keyCode, KeyEvent event)
     {
-        if ((keyCode == KeyEvent.KEYCODE_BACK) && mWv.canGoBack())
-        {
+        if ((keyCode == KeyEvent.KEYCODE_BACK) && mWv.canGoBack()){
             mWv.goBack();
             return true;
         }
-        
+
         return false;
     }
 
-    
+    private void setUrl(final String url){
+        if(mWv != null)
+        {
+            mWv.loadUrl(url);
+            mHandler.postDelayed(mRunnable,timeForPeriod*2000);
+        }
+    }
+
     @Override
-    public void onViewDestroy()
-    {
-    	if(mHandler!=null){
-    		mHandler.removeCallbacks(mRunnable);
-    	}
-    	
+    public void onViewDestroy() {
+        if(mHandler !=null)
+        {
+            mHandler.removeCallbacks(mRunnable);
+        }
+
         if (mWv != null)
         {
             mWv.destroy();
@@ -283,39 +183,31 @@ public class YSWebView extends PosterBaseView
     }
 
     @Override
-    public void onViewPause()
-    {
-        // TODO Auto-generated method stub
+    public void onViewPause() {
+
     }
 
     @Override
-    public void onViewResume()
-    {
-        // TODO Auto-generated method stub
+    public void onViewResume() {
+
     }
 
     @Override
-    public void startWork()
-    {
-    	if (mMediaList == null)
-        {
-            Logger.i("Media list is null.");
+    public void startWork() {
+        if (mMediaList == null) {
+            Logger.i("Media list is null");
             return;
-        }
-        else if (mMediaList.isEmpty())
-        {
+        } else if (mMediaList.isEmpty()) {
             Logger.i("No media in the list.");
             return;
         }
-    	
+
         mCurrentIdx = 0;
         mCurrentMedia = mMediaList.get(mCurrentIdx);
         setUrl(mCurrentMedia.filePath);
     }
-
     @Override
-    public void stopWork()
-    {
-    	
+    public void stopWork() {
+
     }
 }

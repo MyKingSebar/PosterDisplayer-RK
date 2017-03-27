@@ -158,8 +158,12 @@ public class XmlCmdParse
                 	strValue = strValue.replaceAll("-", "");
                     strValue = strValue.replaceAll(":", "");
                     strValue = strValue.replaceAll(" ", ".");
-                    String cmd = "date -s " + strValue;
-                    RuntimeExec.getInstance().runRootCmd(cmd);
+                    RuntimeExec.getInstance().runRootCmd("date -s " + strValue);
+                    RuntimeExec.getInstance().runRootCmd("clock -w");
+                    
+                    //系统校时后重新检测定时开关机
+                    PowerOnOffManager.getInstance().checkAndSetOnOffTime(
+                    		PowerOnOffManager.AUTOSCREENOFF_IMMEDIATE);
                 }
                 break;
             
@@ -771,13 +775,14 @@ public class XmlCmdParse
                         onOffTime.put("week" + i, GetValueFromTag(strRspCommand, (XmlCmdInfoRef.CMD_KEYWORDS_WEEK + i)));
                     }
                     SysParamManager.getInstance().setOnOffTimeParam(onOffTime);
+
+                    if (OsdSubMenuFragment.INSTANCE != null) {
+                    	OsdSubMenuFragment.INSTANCE.reflashOnOffTime();
+                    }
                     
                     // 生效
                     PowerOnOffManager.getInstance().checkAndSetOnOffTime(
                     		PowerOnOffManager.AUTOSCREENOFF_IMMEDIATE);
-                    if (OsdSubMenuFragment.INSTANCE != null) {
-                    	OsdSubMenuFragment.INSTANCE.reflashOnOffTime();
-                    }
                 }
                 break;
                 

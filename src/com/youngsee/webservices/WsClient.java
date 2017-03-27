@@ -13,9 +13,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.io.StringWriter;
+import java.net.URL;
+import java.net.URLConnection;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.ksoap2.SoapEnvelope;
@@ -26,6 +32,7 @@ import org.xmlpull.v1.XmlSerializer;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.net.TrafficStats;
 import android.os.Handler;
@@ -33,6 +40,7 @@ import android.os.Message;
 import android.text.TextUtils;
 import android.util.Xml;
 
+import com.youngsee.common.Actions;
 import com.youngsee.common.Contants;
 import com.youngsee.common.FileUtils;
 import com.youngsee.common.Md5;
@@ -41,6 +49,7 @@ import com.youngsee.common.SysParamManager;
 import com.youngsee.ftpoperation.FtpHelper;
 import com.youngsee.logmanager.LogUtils;
 import com.youngsee.logmanager.Logger;
+import com.youngsee.osd.OsdSubMenuFragment;
 import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.posterdisplayer.PosterMainActivity;
 import com.youngsee.power.PowerOnOffManager;
@@ -130,6 +139,7 @@ public class WsClient
     
     private String              mLocalMac                                = null;
     private boolean             mServerConfigChanged                     = false;
+    private boolean             mIsRecvPgmCmd                            = false;
 
     private WsClient(Context context)
     {
@@ -170,7 +180,7 @@ public class WsClient
     public void startRun()
     {
         stopRun();
-        mClientFSMThread = new ClientFSM(true);
+        mClientFSMThread = new ClientFSM("ClientNetFSMThread");
         mClientFSMThread.start();
     }
     
@@ -305,6 +315,7 @@ public class WsClient
         if (retSysParam.onOffTime != null)
         {
             SysParamManager.getInstance().setOnOffTimeParam(retSysParam.onOffTime);
+            mHandler.sendEmptyMessage(XmlCmdInfoRef.CMD_PTL_SETONOFF);
         }
         
         if (retSysParam.serverSet != null)
@@ -991,8 +1002,16 @@ public class WsClient
             // debug code
             String debugCode=retSoapObj.getProperty(0).toString();
             Logger.d(debugCode);
-            if(debugCode!=null&&debugCode.equals("MacConflict")){
-            	changeLocalMac(); 	
+            if(debugCode != null)
+            {
+            	if(debugCode.equals("MacConflict"))
+            	{
+            		changeLocalMac();
+            	}
+            	else if (debugCode.contains("<CMD>31</CMD>") || debugCode.contains("<CMD>99</CMD>"))
+            	{
+            		mIsRecvPgmCmd = true;
+            	}
             }
         }
         catch (Exception e)
@@ -1390,9 +1409,10 @@ public class WsClient
     {
         private boolean mIsRun = false;
         
-        public ClientFSM(boolean bIsRun)
+        public ClientFSM(String threadName)
         {
-            setRunFlag(bIsRun);
+        	super(threadName);
+            setRunFlag(true);
         }
         
         public void setRunFlag(boolean bIsRun)
@@ -1405,17 +1425,67 @@ public class WsClient
             return mIsRun;
         }
         
+        @SuppressLint("SimpleDateFormat")
+        private void SyncTiming() {
+        	try{
+        		URL url1 =  new URL("http://www.baidu.com");  //取得资源对象
+        		URLConnection uc1 = url1.openConnection();
+        		uc1.connect(); //发出连接
+        		long ld1 = uc1.getDate();// 取得百度网络日期时间
+        		
+        		URL url2 = new URL("http://www.bjtime.cn");  //取得资源对象
+        		URLConnection uc2 = url2.openConnection();
+        		uc2.connect(); //发出连接
+        		long ld2 = uc2.getDate();//取得北京时间网站日期
+        		
+        		long ld = ld1;
+        		long currentTime = System.currentTimeMillis();
+        		if (Math.abs(ld1 - ld2) > 5*60*1000)
+        		{
+        			if (Math.abs(ld1 - currentTime) < Math.abs(ld2 - currentTime))
+        			{
+        				ld = ld1;
+        			}
+        			else
+        			{
+        				ld = ld2;
+        			}
+        			if (Math.abs(ld - currentTime) > 60*1000)
+        			{
+        				Logger.i("Time is wrong, correct the time, ld is:" + ld);
+        				TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
+        				Date date = new Date(ld);
+        				SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd.HHmmss", Locale.CHINA);
+        				String dateStr = simpleDateFormat.format(date);
+        				RuntimeExec.getInstance().runRootCmd("date -s" + dateStr);
+        				RuntimeExec.getInstance().runRootCmd("clock -w");
+        				
+        				// 对时后重新检测定时开关机
+        				PowerOnOffManager.getInstance().checkAndSetOnOffTime(
+        						PowerOnOffManager.AUTOSCREENOFF_IMMEDIATE);
+        			}
+        		}
+        		
+        	} catch (Exception e){
+        		e.printStackTrace();
+        	}
+        }
+        
         @Override
         public void run()
         {
             Logger.i("New ClientFSM thread, id is: " + currentThread().getId());
             int nInterval = 0;
+            int nFirstTimes = 0;
+            boolean bIsSyncTime = false;
+            long lastSyncTimeMills = 0;
+            mIsRecvPgmCmd = false;
             
             while (mIsRun)
             {
                 try
                 {
-                    if (mLocalMac == null || "".equals(mLocalMac))
+                    if (TextUtils.isEmpty(mLocalMac))
                     {
                         mLocalMac = PosterApplication.getEthMacStr();
                     }
@@ -1429,16 +1499,27 @@ public class WsClient
                     
                     if (getServerURL() == null)
                     {
+                    	mState = STATE_IDLE;
                         Logger.w("server URL is null, please set the server URL firstly.");
                         Thread.sleep(1000);
                         continue;
                     }
                     else if (!PosterApplication.getInstance().isNetworkConnected())
                     {
+                    	if (System.currentTimeMillis() - lastSyncTimeMills > 60 * 60 * 1000)
+                    	{
+                    		bIsSyncTime = false;
+                    	}
                         mState = STATE_IDLE;
                         Logger.w("Net link is down, please connect the network firstly.");
-                        Thread.sleep(1000);
+                        Thread.sleep(3000);
                         continue;
+                    }
+                    else if (!bIsSyncTime)
+                    {
+                    	SyncTiming();
+                    	bIsSyncTime = true;
+                    	lastSyncTimeMills = System.currentTimeMillis();
                     }
                     
                     switch (mState)
@@ -1464,8 +1545,16 @@ public class WsClient
                         else
                         {
                         	mHeartbeatFailTimes = 0;
+                        	if (nFirstTimes < 10 && !mIsRecvPgmCmd)
+                        	{
+                        		nFirstTimes++;
+                        		nInterval = 1000;
+                        	}
+                        	else
+                        	{
                             nInterval = SysParamManager.getInstance().getCycleTime();;
                             nInterval = (nInterval > 1) ? (nInterval * 1000) : 1000;
+                        	}
                             Thread.sleep(nInterval);
                             continue;
                         }
@@ -1522,6 +1611,14 @@ public class WsClient
 				/* msg.getData().getString("verifyKey"), */
 				"0x10325476", msg.getData().getString("verifyCode"), msg
 						.getData().getInt("regCode"));
+				return;
+			case XmlCmdInfoRef.CMD_PTL_SETONOFF:
+				//刷新OSD
+				if (OsdSubMenuFragment.INSTANCE != null){
+					OsdSubMenuFragment.INSTANCE.reflashOnOffTime();
+				}
+				//计算开关机时间
+				PowerOnOffManager.getInstance().checkAndSetOnOffTime(PowerOnOffManager.AUTOSCREENOFF_COMMON);
 				return;
 			default:
 				break;

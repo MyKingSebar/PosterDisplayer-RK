@@ -133,4 +133,7 @@ public class Contants {
 	public static final String SETTING_PACKAGENAME = "com.android.settings";
 
 	public static final String UDISK_NAME_PREFIX = "usbhost";
+	
+	public static final String TIME_ZONE_CHINA = "Asia/Shanghai";
+
 }

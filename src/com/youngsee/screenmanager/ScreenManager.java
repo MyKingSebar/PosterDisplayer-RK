@@ -1980,7 +1980,7 @@ public class ScreenManager
 	
 	private RunningView runningView= null ;
 	
-	@TargetApi(Build.VERSION_CODES.KITKAT)
+	@TargetApi(19)
 	private void LoadProgram(ArrayList<SubWindowInfoRef> subWndList)
 	{
 		boolean isWaitMeidaReady = PosterApplication.getInstance().getConfiguration().isWaitForMediaReady();
