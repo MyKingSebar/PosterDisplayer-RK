@@ -1450,21 +1450,22 @@ public class WsClient
         			{
         				ld = ld2;
         			}
-        			if (Math.abs(ld - currentTime) > 60*1000)
-        			{
-        				Logger.i("Time is wrong, correct the time, ld is:" + ld);
-        				TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
-        				Date date = new Date(ld);
-        				SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd.HHmmss", Locale.CHINA);
-        				String dateStr = simpleDateFormat.format(date);
-        				RuntimeExec.getInstance().runRootCmd("date -s" + dateStr);
-        				RuntimeExec.getInstance().runRootCmd("clock -w");
-        				
-        				// 对时后重新检测定时开关机
-        				PowerOnOffManager.getInstance().checkAndSetOnOffTime(
-        						PowerOnOffManager.AUTOSCREENOFF_IMMEDIATE);
-        			}
+        			
         		}
+        		if (Math.abs(ld - currentTime) > 60*1000)
+    			{
+    				Logger.i("Time is wrong, correct the time, ld is:" + ld);
+    				TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
+    				Date date = new Date(ld);
+    				SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd.HHmmss", Locale.CHINA);
+    				String dateStr = simpleDateFormat.format(date);
+    				RuntimeExec.getInstance().runRootCmd("date -s" + dateStr);
+    				RuntimeExec.getInstance().runRootCmd("clock -w");
+    				
+    				// 对时后重新检测定时开关机
+    				PowerOnOffManager.getInstance().checkAndSetOnOffTime(
+    						PowerOnOffManager.AUTOSCREENOFF_IMMEDIATE);
+    			}
         		
         	} catch (Exception e){
         		e.printStackTrace();
