@@ -200,8 +200,8 @@ public class X5WebView extends WebView {
 	public X5WebView(Context arg0, AttributeSet arg1) {
 		super(arg0, arg1);
 		//this.setWebViewClientExtension(new X5WebViewEventHandler(this));// 配置X5webview的事件处理
-		//this.setWebViewClient(client);
-		//this.setWebChromeClient(chromeClient);
+		this.setWebViewClient(client);
+		this.setWebChromeClient(chromeClient);
 		//WebStorage webStorage = WebStorage.getInstance();
 		initWebViewSettings();
 		this.getView().setClickable(true);
