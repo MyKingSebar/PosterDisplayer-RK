@@ -18,12 +18,20 @@ public class YSConfiguration{
     private final static String    key_dock_bar            = "lunch_app_dock_bar";
     private final static String    key_environment_monitor = "environment_monitor";
     private final static String    key_install_ysctrl      = "install_ysctrl";
+    private final static String    key_board_type          = "board_type";
     private final static String    key_loadpgm_when_media_ready = "loadpgm_when_media_ready";
-	private final static String     quit_dialog_show= "quit_dialog_show";
+    private final static String     quit_dialog_show= "quit_dialog_show";
+    
+
     
     public final static String     FEATURE_CODE_YUESHI     = "YueShi";
     public final static String     FEATURE_CODE_COMMON     = "common";
-
+    
+    public final static String     BOARD_CODE_01           = "01";
+    public final static String     BOARD_CODE_GW           = "GW";
+    public final static String     BOARD_CODE_MR           = "MR";
+    public final static String     BOARD_CODE_MR_M3        = "MR3";
+    
     private static YSConfiguration instance                = null;
     
     // For get the application context. It should has same life circle with
@@ -36,6 +44,7 @@ public class YSConfiguration{
     private Boolean                mHasDockBar             = null;
     private Boolean                mHasEnvironmentMonitor  = null;
     private Boolean                mIsNeedInstallYsctrl    = null;
+    private String                 mBoardCode              = null;
     private Boolean                mIsWaitForMediaReady    = null;
     private Boolean                mIsNeedQuitDialog    = null;
     
@@ -84,6 +93,21 @@ public class YSConfiguration{
     
     
     /**
+     * get the board code.
+     *
+     * @return "01" for 01 board
+     *         "GW" for GuoWei board
+     *         "MR" for MeiRui board
+     */
+    public String getBoardCode(){
+        if(mBoardCode == null){
+            mBoardCode = (String)getProperties(key_board_type);
+        }
+
+        return mBoardCode;
+    }
+    
+    /**
      * Does the application has dock bar at the bottom of main window.
      * 
      * @return
@@ -101,6 +125,7 @@ public class YSConfiguration{
         
         return mHasDockBar;
     }
+    
     /**
      * Does the application has environment monitor.
      * 

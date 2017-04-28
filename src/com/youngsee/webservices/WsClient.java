@@ -15,6 +15,7 @@ import java.io.RandomAccessFile;
 import java.io.StringWriter;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -23,12 +24,18 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
+import java.text.DateFormat;
+import java.net.UnknownHostException;
 
 import org.ksoap2.SoapEnvelope;
 import org.ksoap2.serialization.SoapObject;
 import org.ksoap2.serialization.SoapSerializationEnvelope;
 import org.ksoap2.transport.KeepAliveHttpTransportSE;
 import org.xmlpull.v1.XmlSerializer;
+import org.apache.commons.net.ntp.NTPUDPClient;
+import org.apache.commons.net.ntp.TimeInfo;
+import org.apache.commons.net.ntp.TimeStamp;
+
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -224,6 +231,7 @@ public class WsClient
 			}
 			
 			PosterApplication.updateEthMacAddress(mByte);
+			Logger.i("change MAC because of mac conflict :"+PosterApplication.getEthFormatMac());
 		}
     }
     
@@ -348,17 +356,9 @@ public class WsClient
         // 重启设备，参数立即生效
         if (mServerConfigChanged)
         {
-            try {
-				RuntimeExec.getInstance().runRootCmd("reboot");
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+        	PosterApplication.getInstance().rebootSystem();
         }
-
+        
         return true;
     }
     
@@ -1006,7 +1006,7 @@ public class WsClient
             // 设置Envelope属性
             envelope.dotNet = true; // 支持.Net开发的WebService
             envelope.bodyOut = rpc; // 设置bodyOut属性
-            
+
             // 创建HttpTransportSE对象，并指定WSDL文档的URL
             transport = new KeepAliveHttpTransportSE(serverWebUrl, SOAP_SESSION_TIMEOUT);
             
@@ -1309,7 +1309,6 @@ public class WsClient
             /** 设置内容 **/
             if (null != paramMap && paramMap.size() > 0)
             {
-				
                 Map.Entry entry = null;
                 Object key = null;
                 Object val = null;
@@ -1444,48 +1443,42 @@ public class WsClient
         
         @SuppressLint("SimpleDateFormat")
 		private void SyncTiming() {
-    		try {
-    			URL url1 = new URL("http://www.baidu.com");  // 取得资源对象
-    			URLConnection uc1 = url1.openConnection();
-    			uc1.connect(); // 发出连接
-    			long ld1 = uc1.getDate(); // 取得百度网站日期时间
-    			
-    			URL url2 = new URL("http://www.bjtime.cn");  // 取得资源对象
-    			URLConnection uc2 = url2.openConnection();
-    			uc2.connect(); // 发出连接
-    			long ld2 = uc2.getDate(); // 取得北京时间网站日期时间
-    			
-    			long ld = ld1;
-    			long currentTime = System.currentTimeMillis();
-    			if (Math.abs(ld1 - ld2) >  5* 60*1000)   //  两个网站时间相差超过5分钟，则判断哪个时间与系统时间最接近
-    			{
-    				if (Math.abs(ld1 - currentTime) < Math.abs(ld2 - currentTime))
-    				{
-    			        ld = ld1;
-    				}
-    				else
-    				{
-    					ld = ld2;
-    				}
-    			}
-    			
-    			if (Math.abs(ld -currentTime ) > 60*1000)   // 时间相差1分钟，则校准
-    			{
-    				Logger.i("Time is wrong, correct the time, ld is: " + ld);
-    				TimeZone.setDefault(TimeZone.getTimeZone("GMT+8"));
-    				Date date = new Date(ld);
-    				SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd.HHmmss", Locale.CHINA);
-    		        String dateStr = simpleDateFormat.format(date);
-    				RuntimeExec.getInstance().runRootCmd("date -s " + dateStr);
-    				RuntimeExec.getInstance().runRootCmd("clock -w");
-    				
-    				// 对时后重新检测定时开关机
-    				PowerOnOffManager.getInstance().checkAndSetOnOffTime(
-                    		PowerOnOffManager.AUTOSCREENOFF_IMMEDIATE);
-    			}
-    		} catch (Exception e) {
-    			e.printStackTrace();
-    		}
+    		NTPUDPClient timeClient = null;
+        	try{
+        		timeClient = new NTPUDPClient();
+        		String timeServerUrl1= "time1.aliyun.com";
+        		timeClient.setDefaultTimeout(30000);
+        		
+        		InetAddress timeServerAddress = InetAddress.getByName(timeServerUrl1);
+        		TimeInfo timeInfo = timeClient.getTime(timeServerAddress);
+        		TimeStamp timeStamp = timeInfo.getMessage().getTransmitTimeStamp();
+        		DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd.HHmmss");
+        		String dateStr = dateFormat.format(timeStamp.getDate());
+        		
+        		Logger.i("System current time in mainboard: " + System.currentTimeMillis());
+				Logger.i("Network check systemtime through NTP method by time1.aliyun.com , timeStamp: "  + timeStamp.toDateString());
+				Logger.i("Network check systemtime through NTP method by time1.aliyun.com"  + dateStr);
+				long timeinfo = timeStamp.getTime();
+				Logger.i("Network check systemtime timestamp long info " + timeinfo);
+				//如果时间相差一分钟则写入从网络获取的时间
+				if(Math.abs(timeinfo - System.currentTimeMillis()) > 1000*60 ){
+				    RuntimeExec.getInstance().runRootCmd("date -s " + dateStr);
+				    RuntimeExec.getInstance().runRootCmd("clock -w");				
+				}
+				// 对时后重新检测定时开关机
+				PowerOnOffManager.getInstance().checkAndSetOnOffTime(
+                		PowerOnOffManager.AUTOSCREENOFF_IMMEDIATE);
+        	}catch(UnknownHostException e){
+        		e.printStackTrace();
+        	}catch(IOException e){
+        		e.printStackTrace();
+        	}catch(Exception e){
+        		e.printStackTrace();
+        	}finally {
+        		if (timeClient != null){
+        	        timeClient.close();
+        		}
+        	}
     	}
 
         @Override
