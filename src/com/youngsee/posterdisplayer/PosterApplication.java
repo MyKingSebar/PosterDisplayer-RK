@@ -1665,4 +1665,28 @@ public class PosterApplication extends Application
         }
         return false;
     }
+    
+    public void rebootSystem()
+    {
+        	String board = PosterApplication.getInstance().getConfiguration().getBoardCode();
+	        if (YSConfiguration.BOARD_CODE_01.equalsIgnoreCase(board))
+	        {
+	    	    Intent intent = new Intent(Actions.WATCHDOG_DISABLE_01_ACTION);
+                PosterApplication.getInstance().sendBroadcast(intent);
+	        }
+	    
+		    try 
+		    {
+		    	Logger.i("reboot system.......");
+				RuntimeExec.getInstance().runRootCmd("reboot");
+			} 
+		    catch (IOException e) 
+		    {
+				e.printStackTrace();
+			} 
+		    catch (InterruptedException e) 
+		    {
+				e.printStackTrace();
+			}
+    }
 }
