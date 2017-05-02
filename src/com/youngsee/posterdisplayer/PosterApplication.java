@@ -1633,7 +1633,7 @@ public class PosterApplication extends Application
      * @return 1:0° 2:90° 4:180° 8:270° 默认值是1
      */
     public int getHwRotation() {
-	    return (int) Settings.System.getLong(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION_ANGLES,1);
+	    return (int) Settings.System.getLong(getContentResolver(), Settings.System.ACCELEROMETER_ROTATION,1);
 	}
 
     
