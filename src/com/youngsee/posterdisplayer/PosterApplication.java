@@ -754,6 +754,33 @@ public class PosterApplication extends Application
         
         return sb1.toString();
     }
+    
+    public static String getLogFileFullPath2(int type, int date)
+    {
+
+        StringBuilder sb1 = new StringBuilder();
+        if (type == 0)
+        {
+            sb1.append(PosterApplication.LOCAL_PLAY_LOGNAME);
+        }
+        else if (type == 1)
+        {
+            sb1.append(PosterApplication.LOCAL_SYSTEM_LOGNAME);
+        }
+        sb1.append(getEthMacStr()).append("_");
+
+        if (date == 0)
+        {
+            sb1.append(PosterApplication.getCurrentDate());
+        }
+        else if (date == 1)
+        {
+            sb1.append(PosterApplication.getYesterdayDate());
+        }
+        sb1.append(".log");
+
+        return sb1.toString();
+    }
 
     // /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1347,14 +1374,14 @@ public class PosterApplication extends Application
      */
     public static String getCurrentTime()
     {
-        Time time = new Time();
+        Time time = new Time(Contants.TIME_ZONE_CHINA);
         time.setToNow();
         StringBuilder sb = new StringBuilder();
         sb.append(time.year).append("-");
-        sb.append(time.month + 1).append("-");
-        sb.append(time.monthDay);
+        sb.append(((time.month + 1) < 10) ? ("0" + (time.month + 1)) : (time.month + 1)).append("-");
+        sb.append((time.monthDay < 10) ? ("0" + time.monthDay) : time.monthDay);
         sb.append(" ");
-        sb.append(time.hour).append(":");
+        sb.append((time.hour < 10) ? ("0" + time.hour) : time.hour).append(":");
         sb.append((time.minute < 10) ? ("0" + time.minute) : time.minute).append(":");
         sb.append((time.second < 10) ? ("0" + time.second) : time.second);
         return sb.toString();
@@ -1501,14 +1528,15 @@ public class PosterApplication extends Application
                         @Override
                         public void completed()
                         {
-                            String slogname = getLogFileFullPath(0, 1);
-                            StringBuilder sbr = new StringBuilder();
-                            sbr.append("<FILE>/logs/");
-                            sbr.append(slogname);
-                            sbr.append("</FILE><VERCODE>0</VERCODE><SIZE>");
-                            sbr.append(FileUtils.getFileLength(slogname));
-                            sbr.append("</SIZE><TYPE>2</TYPE>");
-                            WsClient.getInstance().postResultBack(XmlCmdInfoRef.CMD_PTL_CPEPLAYLOGFTPUP, 0, 0, sbr.toString());
+                       	   String slogname = PosterApplication.getLogFileFullPath(0, 0);
+                           String slogname2 = PosterApplication.getLogFileFullPath2(0, 0);
+                           StringBuilder sbr = new StringBuilder();
+                           sbr.append("<FILE>/logs/");
+                           sbr.append(slogname2);
+                           sbr.append("</FILE><VERCODE>0</VERCODE><SIZE>");
+                           sbr.append(FileUtils.getFileLength(slogname));
+                           sbr.append("</SIZE><TYPE>2</TYPE>");
+                           WsClient.getInstance().postResultBack(30, 0, 0, sbr.toString());
                         }
                         
                         @Override

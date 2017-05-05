@@ -586,14 +586,16 @@ public class XmlCmdParse
                         @Override
                         public void completed()
                         {
-                            String slogname = PosterApplication.getLogFileFullPath(0, 0);
-                            StringBuilder sbr = new StringBuilder();
-                            sbr.append("<FILE>/logs/");
-                            sbr.append(slogname);
-                            sbr.append("</FILE><VERCODE>0</VERCODE><SIZE>");
-                            sbr.append(FileUtils.getFileLength(slogname));
-                            sbr.append("</SIZE><TYPE>2</TYPE>");
-                            WsClient.getInstance().postResultBack(XmlCmdInfoRef.CMD_PTL_CPEPLAYLOGFTPUP, nRegPLog, 0, sbr.toString());
+                       	 String slogname = PosterApplication.getLogFileFullPath(0, 0);
+                         String slogname2 = PosterApplication.getLogFileFullPath2(0, 0);
+                         StringBuilder sbr = new StringBuilder();
+                         sbr.append("<FILE>/logs/");
+                         sbr.append(slogname2);
+                         sbr.append("</FILE><VERCODE>0</VERCODE><SIZE>");
+                         sbr.append(FileUtils.getFileLength(slogname));
+                         sbr.append("</SIZE><TYPE>2</TYPE>");
+//                         WsClient.getInstance().postResultBack(30, nRegPLog, 0, sbr.toString());
+                         WsClient.getInstance().postResultBack(30, 0, 0, sbr.toString());
                         }
 
                         @Override
