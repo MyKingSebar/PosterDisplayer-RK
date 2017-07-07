@@ -7,15 +7,19 @@
 
 package com.youngsee.customview;
 
+import com.youngsee.common.RuntimeExec;
 import com.youngsee.common.X5WebView;
 import com.youngsee.logmanager.Logger;
+import com.youngsee.posterdisplayer.PosterApplication;
 import com.youngsee.posterdisplayer.PosterMainActivity;
 import com.youngsee.posterdisplayer.R;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -25,6 +29,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnTouchListener;
 import android.webkit.CookieManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -37,11 +42,15 @@ import android.graphics.Bitmap;
 import android.net.http.SslError;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.widget.Button;
+import android.widget.ImageView;
 
 public class YSWebView extends PosterBaseView
 {
 
     private X5WebView mWv = null;
+    private ImageView web_button = null;
+    private String home_Url = null;
 
     private static int MAX_CLICK_CNTS    = 5;
     private long mLastClickTime          = 0;
@@ -148,7 +157,45 @@ public class YSWebView extends PosterBaseView
             }
         });
 
+        web_button = (ImageView) findViewById(R.id.web_home);
+        web_button.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (home_Url == null) {
+                    mWv.reload();
+                }else {
+                    mWv.loadUrl(home_Url);
+                }
+            }
+        });
+        mWv.addJavascriptInterface(new JsInteration(),"android");
+
     }
+
+    public class JsInteration{
+        @JavascriptInterface
+        public void startSystemBrowser(String website){
+            Log.d("PosterdisplayerWebview",website+"");
+            Intent intent = new Intent();
+            Uri content_url = Uri.parse(website);
+            intent.setAction("android.intent.action.VIEW");
+            intent.setData(content_url);
+            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            mContext.sendBroadcast(new Intent().setAction("com.youngsee.posterdisplayer.startthird"));
+            mContext.startActivity(intent);
+        }
+
+        @JavascriptInterface
+        public String getLocalCpuID(){
+            return PosterApplication.getCpuId();
+        }
+
+        @JavascriptInterface
+        public String getMacAddress(){
+            return PosterApplication.getEthFormatMac();
+        }
+    }
+
 
     public boolean onKeyDown(int keyCode, KeyEvent event)
     {
@@ -205,6 +252,8 @@ public class YSWebView extends PosterBaseView
         mCurrentIdx = 0;
         mCurrentMedia = mMediaList.get(mCurrentIdx);
         setUrl(mCurrentMedia.filePath);
+        //setUrl("file:///android_asset/jsToJava.html");
+        home_Url = mCurrentMedia.filePath;
     }
     @Override
     public void stopWork() {
