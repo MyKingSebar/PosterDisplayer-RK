@@ -698,6 +698,45 @@ public class PosterMainActivity extends Activity {
 
 			PosterBaseView tempSubWnd = null;
 			mSubWndCollection = new HashSet<PosterBaseView>();
+			for (SubWindowInfoRef subWndInfo : subWndList) {
+				tempSubWnd = null;
+
+				// 窗体类型和名称
+				if ((wndType = subWndInfo.getSubWindowType()) == null) {
+					continue;
+				}
+				wndName = subWndInfo.getSubWindowName();
+
+				// 窗体位置
+				xPos = subWndInfo.getXPos();
+				yPos = subWndInfo.getYPos();
+				width = subWndInfo.getWidth();
+				height = subWndInfo.getHeight();
+
+				// 素材
+				mediaList = subWndInfo.getSubWndMediaList();
+
+				// 创建窗口
+				if (wndType.contains("Web")) {
+					xPos = 0;
+					yPos = 0;
+					width = PosterApplication.getScreenWidth();
+					height = PosterApplication.getScreenHeigth();
+					tempSubWnd = new YSWebView(this);
+				}
+
+				// 设置窗口参数，并添加
+				if (tempSubWnd != null) {
+					tempSubWnd.setViewName(wndName);
+					tempSubWnd.setViewType(wndType);
+					tempSubWnd.setMediaList(mediaList);
+					tempSubWnd.setViewPosition(xPos, yPos);
+					tempSubWnd.setViewSize(width, height);
+					mMainLayout.addView(tempSubWnd);
+					mSubWndCollection.add(tempSubWnd);
+				}
+			}
+
 
 			// Through the sub window list, and create the correct view for it.
 			for (SubWindowInfoRef subWndInfo : subWndList) {
@@ -719,7 +758,7 @@ public class PosterMainActivity extends Activity {
 				mediaList = subWndInfo.getSubWndMediaList();
 
 				// 创建窗口
-				if (wndType.contains("Main") || wndType.contains("StandbyScreen")) {
+				if (wndType.contains("StandbyScreen")) {
 					tempSubWnd = new MultiMediaView(this, true);
 				} else if (wndType.contains("Background")) {
 					// 背景图片
@@ -738,10 +777,44 @@ public class PosterMainActivity extends Activity {
 					tempSubWnd = new DateTimeView(this);
 				} else if (wndType.contains("Gallery")) {
 					tempSubWnd = new GalleryView(this);
-				} else if (wndType.contains("Web")) {
-					tempSubWnd = new YSWebView(this);
-				} else if (wndType.contains("Timer")) {
+				}else if (wndType.contains("Timer")) {
 					tempSubWnd = new TimerView(this);
+				}
+
+				// 设置窗口参数，并添加
+				if (tempSubWnd != null) {
+					tempSubWnd.setViewName(wndName);
+					tempSubWnd.setViewType(wndType);
+					tempSubWnd.setMediaList(mediaList);
+					tempSubWnd.setViewPosition(xPos, yPos);
+					tempSubWnd.setViewSize(width, height);
+					mMainLayout.addView(tempSubWnd);
+					mSubWndCollection.add(tempSubWnd);
+				}
+			}
+
+
+			for (SubWindowInfoRef subWndInfo : subWndList) {
+				tempSubWnd = null;
+
+				// 窗体类型和名称
+				if ((wndType = subWndInfo.getSubWindowType()) == null) {
+					continue;
+				}
+				wndName = subWndInfo.getSubWindowName();
+
+				// 窗体位置
+				xPos = subWndInfo.getXPos();
+				yPos = subWndInfo.getYPos();
+				width = subWndInfo.getWidth();
+				height = subWndInfo.getHeight();
+
+				// 素材
+				mediaList = subWndInfo.getSubWndMediaList();
+
+				// 创建窗口
+				if (wndType.contains("Main") ) {
+					tempSubWnd = new MultiMediaView(this, true);
 				}
 
 				// 设置窗口参数，并添加
